@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>View Customer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #F3E5F5);
+    }
+
+    .main-container {
+      display: flex;
+      position: relative;
+      max-width: 1200px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .left-panel, .right-panel {
+      padding: 70px;
+      flex: 1;
+    }
+
+    .left-panel {
+      border-right: 1px solid #ddd;
+    }
+
+    h2 {
+      text-align: center;
+      color: #004aad;
+      margin: 20px 0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1.5px solid #ccc;
+      background-color: #f9f9f9;
+      font-size: 14px;
+    }
+
+    input:disabled, textarea:disabled {
+      background-color: #f2f2f2;
+      color: #555;
+    }
+
+    textarea {
+      grid-column: 1 / -1;
+    }
+
+    .top-button {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      padding: 12px 20px;
+      background: linear-gradient(to right, #004aad, #007bff);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 10;
+      text-decoration: none;
+    }
+
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 52px;
+    }
+
+    .upload-box {
+      border: 2px dashed #004aad;
+      padding: 15px;
+      text-align: center;
+      border-radius: 10px;
+      background-color: #f0f8ff;
+    }
+
+    .preview-img, .preview-doc {
+      margin-top: 10px;
+      max-width: 100%;
+      border-radius: 10px;
+    }
+
+    iframe.preview-doc {
+      height: 200px;
+    }
+
+    @media (max-width: 900px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .left-panel, .right-panel {
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .top-button {
+        position: static;
+        width: 90%;
+        margin: 0 auto 20px;
+        display: block;
+      }
+
+      .upload-section {
+        margin-top: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="main-container">
+    <div style="position: absolute; top: 20px; left: 30px;">
+      <h2 style="margin: 0; color: #004aad;">Customer Details</h2>
+    </div>
+
+    <a href="/pages/customer-list.html" class="top-button">Back</a>
+    <a href="#" id="editBtn" class="top-button" style="right: 120px;">Edit</a>
+
+    <div class="left-panel">
+      <div class="form-grid" id="customerDetails"></div>
+    </div>
+
+    <div class="right-panel">
+      <div class="upload-section">
+        <div class="upload-box">
+          <div class="preview-img-container">
+            <img id="photoPreview" class="preview-img" src="/images/placeholder.png" alt="Photo Preview" />
+          </div>
+        </div>
+        <div class="upload-box">
+          <iframe id="docPreview" class="preview-doc" src="" frameborder="0"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let customerId;
+
+    async function loadCustomer() {
+      const params = new URLSearchParams(window.location.search);
+      customerId = params.get('id');
+      if (!customerId) return;
+
+      const res = await fetch(`/customers/${customerId}`);
+      if (!res.ok) {
+        document.getElementById('customerDetails').innerHTML = '<p>Customer not found.</p>';
+        return;
+      }
+
+      const c = await res.json();
+      const detailsDiv = document.getElementById('customerDetails');
+
+      const fields = {
+        'Customer Code': c.customer_code,
+        'Name': c.name,
+        'Contact No': c.contact_no,
+        'Alternate Contact No': c.alt_contact_no,
+        'Start Date': c.start_date,
+        'End Date': c.end_date,
+        'Loan Duration': c.loan_duration,
+        'Loan Amount': c.loan_amount,
+        'File Charge': c.file_charge,
+        'Agent Fee': c.agent_fee,
+        'EMI': c.emi,
+        'Advance Days': c.advance_days,
+        'Amount After Deduction': c.amount_after_deduction,
+        'Agent Commission': c.agent_commission,
+        'Status': c.status,
+        'Remark': c.remark
+      };
+
+      for (const value of Object.values(fields)) {
+        const input = document.createElement(value === c.remark ? 'textarea' : 'input');
+        input.type = 'text';
+        input.value = value || '-';
+        input.disabled = true;
+        detailsDiv.appendChild(input);
+      }
+
+     
+      // Set previews
+      document.getElementById('photoPreview').src = c.photo_path || '/images/placeholder.png';
+      document.getElementById('docPreview').src = c.document_path || '';
+    }
+
+    document.getElementById('editBtn').addEventListener('click', function () {
+      if (customerId) {
+        window.location.href = `/pages/edit-customer.html?id=${customerId}`;
+      }
+    });
+
+
+    loadCustomer();
+  </script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Customer List - Loan Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+    background: #F3E5F5; /* Soft pastel purple */
+      color: #333;
+    }
+    .navbar {
+      background-color: #1f2a44;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar-title {
+      font-size: 20px;
+      color: white;
+      font-weight: 600;
+    }
+    .logout-btn, .back-btn {
+      background: #f44336;
+      padding: 8px 14px;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+    .logout-btn:hover, .back-btn:hover { background-color: #d32f2f; }
+    .container {
+      max-width: 98%;
+      margin: 30px auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      overflow-x: auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h2 {
+      color: #004aad;
+    }
+    .create-btn {
+      background: #004aad;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+
+    .create-btn:hover {
+      background: #00307a;
+    }
+    table {
+      width: 100%;
+      min-width: 1800px;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    th {
+      background-color: #9b59b6;
+      color: #fff;
+      position: sticky;
+      top: 0;
+    }
+    .actions {
+      display: flex;
+      gap: 6px;
+    }
+    .icon-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .icon-view { color: #03a9f4; }
+    .icon-delete { color: #f44336; }
+    input.filter-input {
+      width: 100%;
+      padding: 5px;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      overflow: auto;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 1100px;
+      width: 100%;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      position: relative;
+      max-height: 95vh;
+      overflow-y: auto;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 16px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #888;
+      cursor: pointer;
+    }
+    .close-modal:hover { color: #f44336; }
+    @media (max-width: 768px) {
+      .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .container { padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <span class="navbar-title">Customer List</span>
+    <div style="display: flex; gap: 10px;">
+      <a href="dashboard.html" class="back-btn">← Back</a>
+      <a href="/auth/logout" class="logout-btn">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h2>Customer List</h2>
+      <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px;">
+          <button class="create-btn" onclick="openCreateCustomerModal()">+ Create Customer</button>
+          <button class="create-btn" onclick="downloadTemplate()">📥 Download Template</button>
+          <label class="upload-btn">
+            📤
+            <input type="file" id="excelFile" accept=".xlsx,.xls" onchange="uploadExcel()" />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <table id="customerTable">
+      <thead>
+        <tr>
+          <th>Actions</th>
+          <th>ID<br><input class="filter-input" onkeyup="filterTable(1)" placeholder="Filter" /></th>
+          <th>Code<br><input class="filter-input" onkeyup="filterTable(2)" placeholder="Filter" /></th>
+          <th>Name<br><input class="filter-input" onkeyup="filterTable(3)" placeholder="Filter" /></th>
+          <th>Contact<br><input class="filter-input" onkeyup="filterTable(4)" placeholder="Filter" /></th>
+          <th>Alt No.</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Duration</th>
+          <th>Loan Amt</th>
+          <th>File Chg</th>
+          <th>Agent Fee</th>
+          <th>EMI</th>
+          <th>Adv Days</th>
+          <th>Given Amt</th>
+          <th>Agent Comm.</th>
+          <th>Status</th>
+          <th>Remark</th>
+        </tr>
+      </thead>
+      <tbody id="customerBody"></tbody>
+    </table>
+  </div>
+
+  <div class="modal" id="createCustomerModal">
+    <div class="modal-content" id="createCustomerContent">
+      <span class="close-modal" onclick="closeCreateCustomerModal()">×</span>
+    </div>
+  </div>
+
+  <script>
+    async function loadCustomers() {
+      const res = await fetch('/customers/list', { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
+      const customers = await res.json();
+      const tbody = document.getElementById('customerBody');
+      tbody.innerHTML = '';
+      customers.forEach(c => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="actions">
+            <button class="icon-btn icon-view" title="View" onclick="viewCustomer(${c.id})">🔍</button>
+            <button class="icon-btn icon-delete" title="Delete" onclick="deleteCustomer(${c.id})">🗑️</button>
+          </td>
+          <td>${c.id}</td>
+          <td>${c.customer_code}</td>
+          <td>${c.name}</td>
+          <td>${c.contact_no}</td>
+          <td>${c.alt_contact_no}</td>
+          <td>${c.start_date}</td>
+          <td>${c.end_date}</td>
+          <td>${c.loan_duration}</td>
+          <td>${c.loan_amount}</td>
+          <td>${c.file_charge}</td>
+          <td>${c.agent_fee}</td>
+          <td>${c.emi}</td>
+          <td>${c.advance_days}</td>
+          <td>${c.amount_after_deduction}</td>
+          <td>${c.agent_commission}</td>
+          <td>${c.status}</td>
+          <td>${c.remark}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function filterTable(colIndex) {
+      const input = document.querySelectorAll('.filter-input')[colIndex - 1].value.toUpperCase();
+      const rows = document.querySelectorAll('#customerTable tbody tr');
+      rows.forEach(row => {
+        const cell = row.cells[colIndex];
+        row.style.display = cell && cell.textContent.toUpperCase().includes(input) ? '' : 'none';
+      });
+    }
+
+    async function deleteCustomer(id) {
+      if (confirm("Are you sure you want to delete this customer?")) {
+        const res = await fetch(`/customers/delete/${id}`, { method: 'DELETE' });
+        if (res.ok) loadCustomers();
+        else alert("Failed to delete customer.");
+      }
+    }
+
+    function viewCustomer(id) {
+      window.location.href = `/pages/view-customer.html?id=${id}`;
+    }
+
+    function openCreateCustomerModal() {
+      const modal = document.getElementById('createCustomerModal');
+      const content = document.getElementById('createCustomerContent');
+      fetch('/pages/create-customer.html')
+        .then(res => res.text())
+        .then(html => {
+          const sanitized = html.replace(/<\/*(html|head|body)[^>]*>/gi, '');
+          content.innerHTML = '<span class="close-modal" onclick="closeCreateCustomerModal()">×</span>' + sanitized;
+          modal.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => {
+            const form = content.querySelector('form');
+            if (form) {
+              const loan = form.querySelector('#loan_amount');
+              const emi = form.querySelector('#emi');
+              const adv = form.querySelector('#advance_days');
+              const amt = form.querySelector('#amount_after_deduction');
+              const start = form.querySelector('#start_date');
+              const end = form.querySelector('#end_date');
+              [loan, emi, adv].forEach(el => {
+                el && el.addEventListener('input', () => {
+                  const loanVal = parseFloat(loan.value) || 0;
+                  const emiVal = parseFloat(emi.value) || 0;
+                  const advVal = parseInt(adv.value) || 0;
+                  amt.value = loanVal - (emiVal * advVal);
+                });
+              });
+              start && start.addEventListener('change', () => {
+                const date = new Date(start.value);
+                if (!isNaN(date)) {
+                  date.setDate(date.getDate() + 100);
+                  end.value = date.toISOString().split('T')[0];
+                }
+              });
+              form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+                const res = await fetch('/customers/create', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                  alert('Customer created successfully!');
+                  closeCreateCustomerModal();
+                  loadCustomers();
+                } else {
+                  alert(result.error || 'Error occurred.');
+                }
+              });
+            }
+          }, 200);
+        })
+        .catch(() => {
+          content.innerHTML = '<p>Failed to load form</p>';
+          modal.style.display = 'flex';
+        });
+    }
+
+    function closeCreateCustomerModal() {
+      const modal = document.getElementById('createCustomerModal');
+      const content = document.getElementById('createCustomerContent');
+      modal.style.display = 'none';
+      content.innerHTML = '';
+      document.body.style.overflow = 'auto';
+    }
+
+    window.onload = loadCustomers;
+
+    async function uploadExcel() {
+      const input = document.getElementById('excelFile');
+      if (!input.files.length) return;
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append('excel', file);
+      const res = await fetch('/customers/upload-excel', { method: 'POST', body: formData });
+      const result = await res.json();
+      if (res.ok) {
+        alert('Excel uploaded and data imported successfully!');
+        loadCustomers();
+      } else {
+        alert(result.error || 'Upload failed.');
+      }
+    }
+
+    function downloadTemplate() {
+      window.location.href = '/customers/template';
+    }
+  </script>
+</body>
+</html>

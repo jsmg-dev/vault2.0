@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +13,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(to right, #004aad, #007bff);
+      background: linear-gradient(to right, #F3E5F5);
     }
 
     .main-container {
@@ -29,7 +28,7 @@
     }
 
     .left-panel, .right-panel {
-      padding: 30px;
+      padding: 100px 70px 70px 70px;
       flex: 1;
     }
 
@@ -134,7 +133,7 @@
 
       .top-button {
         position: static;
-        width: 90%;
+        width: 100%;
         margin: 0 auto 20px;
         display: block;
       }
@@ -146,14 +145,11 @@
   </style>
 </head>
 <body>
-   <h2>Create New Customer</h2>
-    <button type="submit" form="customerForm" class="top-button">Save</button>
 
 <div class="main-container">
-  <!-- Create Button at Top Right -->
- 
+  <h2 style="position: absolute; top: 20px; left: 30px;">Create New Customer</h2>
+  <button type="submit" form="customerForm" class="top-button">Save</button>
 
-  <!-- Left Side -->
   <div class="left-panel">
     <form action="/customers/create" method="POST" id="customerForm" enctype="multipart/form-data">
       <div class="form-grid">
@@ -181,17 +177,14 @@
     </form>
   </div>
 
-  <!-- Right Side -->
   <div class="right-panel">
     <div class="upload-section">
-      <!-- Photo Upload -->
       <div class="upload-box">
         <label for="photoUpload">📷 Upload Photo</label>
         <input type="file" id="photoUpload" name="customerphoto" accept="image/*" />
         <img id="photoPreview" class="preview-img" style="display: none;" />
       </div>
 
-      <!-- Document Upload -->
       <div class="upload-box">
         <label for="docUpload">📄 Upload Document</label>
         <input type="file" id="docUpload" name="customerdocument" />

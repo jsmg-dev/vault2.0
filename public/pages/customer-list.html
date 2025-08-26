@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -198,6 +199,12 @@
     </div>
   </div>
 
+  <div class="modal" id="editCustomerModal">
+    <div class="modal-content" id="editCustomerContent">
+      <span class="close-modal" onclick="closeEditCustomerModal()">×</span>
+    </div>
+  </div>
+
   <script>
     async function loadCustomers() {
       const res = await fetch('/customers/list', { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
@@ -208,7 +215,7 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td class="actions">
-            <button class="icon-btn icon-view" title="View" onclick="viewCustomer(${c.id})">🔍</button>
+            <button class="icon-btn icon-view" title="Edit" onclick="openEditCustomerModal(${c.id})">✏️</button>
             <button class="icon-btn icon-delete" title="Delete" onclick="deleteCustomer(${c.id})">🗑️</button>
           </td>
           <td>${c.id}</td>
@@ -321,6 +328,147 @@
       modal.style.display = 'none';
       content.innerHTML = '';
       document.body.style.overflow = 'auto';
+    }
+
+    // EDIT POPUP
+    function openEditCustomerModal(id) {
+      const modal = document.getElementById('editCustomerModal');
+      const content = document.getElementById('editCustomerContent');
+      fetch('/pages/edit-customer.html?id=' + encodeURIComponent(id))
+        .then(res => res.text())
+        .then(html => {
+          const sanitized = html.replace(/<\/*(html|head|body)[^>]*>/gi, '');
+          content.innerHTML = '<span class="close-modal" onclick="closeEditCustomerModal()">×</span>' + sanitized;
+          modal.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          initEditCustomerForm(content, id);
+        })
+        .catch(() => {
+          content.innerHTML = '<p>Failed to load edit form</p>';
+          modal.style.display = 'flex';
+        });
+    }
+
+    function closeEditCustomerModal() {
+      const modal = document.getElementById('editCustomerModal');
+      const content = document.getElementById('editCustomerContent');
+      modal.style.display = 'none';
+      content.innerHTML = '';
+      document.body.style.overflow = 'auto';
+    }
+
+    function initEditCustomerForm(root, customerId) {
+      const form = root.querySelector('#editForm');
+      if (!form) return;
+
+      const el = id => root.querySelector('#' + id);
+
+      // Prefill
+      fetch(`/customers/${customerId}`)
+        .then(r => r.json())
+        .then(c => {
+          el('customer_code').value = c.customer_code || '';
+          el('name').value = c.name || '';
+          el('contact_no').value = c.contact_no || '';
+          el('alt_contact_no').value = c.alt_contact_no || '';
+          el('start_date').value = c.start_date || '';
+          el('end_date').value = c.end_date || '';
+          el('loan_duration').value = c.loan_duration || '';
+          el('loan_amount').value = c.loan_amount || '';
+          el('file_charge').value = c.file_charge || '';
+          el('agent_fee').value = c.agent_fee || '';
+          el('emi').value = c.emi || '';
+          el('advance_days').value = c.advance_days || '';
+          el('amount_after_deduction').value = c.amount_after_deduction || '';
+          el('agent_commission').value = c.agent_commission || '';
+          el('status').value = c.status || '';
+          el('remark').value = c.remark || '';
+          if (el('photoPreview')) { el('photoPreview').src = c.photo_path || ''; el('photoPreview').style.display = c.photo_path ? 'block' : 'none'; }
+          if (el('docPreview')) { el('docPreview').innerText = c.document_path || ''; }
+        });
+
+      // End date auto-calc
+      el('start_date').addEventListener('change', () => {
+        const start = new Date(el('start_date').value);
+        if (!isNaN(start.getTime())) {
+          const end = new Date(start);
+          end.setDate(start.getDate() + 100);
+          el('end_date').value = end.toISOString().split('T')[0];
+        }
+      });
+
+      // Deduction calc
+      function calcDeduction() {
+        const loan = parseFloat(el('loan_amount').value) || 0;
+        const file = parseFloat(el('file_charge').value) || 0;
+        const fee  = parseFloat(el('agent_fee').value) || 0;
+        const emi  = parseFloat(el('emi').value) || 0;
+        const adv  = parseFloat(el('advance_days').value) || 0;
+        const net = loan - file - fee - (emi * adv);
+        el('amount_after_deduction').value = net > 0 ? net.toFixed(2) : 0;
+      }
+      ['loan_amount', 'file_charge', 'agent_fee', 'emi', 'advance_days'].forEach(id => {
+        el(id).addEventListener('input', calcDeduction);
+      });
+
+      // Previews
+      if (el('photoUpload')) {
+        el('photoUpload').addEventListener('change', () => {
+          const f = el('photoUpload').files[0];
+          if (f) {
+            const r = new FileReader();
+            r.onload = e => { el('photoPreview').src = e.target.result; el('photoPreview').style.display = 'block'; };
+            r.readAsDataURL(f);
+          }
+        });
+      }
+      if (el('docUpload')) {
+        el('docUpload').addEventListener('change', () => {
+          const f = el('docUpload').files[0];
+          if (f) el('docPreview').innerText = `Selected: ${f.name}`;
+        });
+      }
+
+      // Submit
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = root.querySelector('.top-button[type="submit"], #updateBtn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+        try {
+          const payload = {
+            customer_code: el('customer_code').value,
+            name: el('name').value,
+            contact_no: el('contact_no').value,
+            alt_contact_no: el('alt_contact_no').value,
+            start_date: el('start_date').value,
+            end_date: el('end_date').value,
+            loan_duration: el('loan_duration').value,
+            loan_amount: el('loan_amount').value,
+            file_charge: el('file_charge').value,
+            agent_fee: el('agent_fee').value,
+            emi: el('emi').value,
+            advance_days: el('advance_days').value,
+            amount_after_deduction: el('amount_after_deduction').value,
+            agent_commission: el('agent_commission').value,
+            status: el('status').value,
+            remark: el('remark').value
+          };
+          const res = await fetch(`/customers/update/${customerId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            alert('Customer updated successfully');
+            closeEditCustomerModal();
+            loadCustomers();
+          } else {
+            alert('Update failed');
+          }
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = 'Update'; }
+        }
+      });
     }
 
     window.onload = loadCustomers;

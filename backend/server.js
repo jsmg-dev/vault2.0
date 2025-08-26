@@ -1,10 +1,22 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
+const db = require('./db');
 const session = require('express-session'); // <-- IMPORT HERE
+const cors = require('cors');
 const app = express();
 const port = 8080;
+
+// CORS for Angular dev server (localhost and 127.0.0.1)
+app.use(cors({
+  origin: [
+    'http://localhost:4200',
+    'http://127.0.0.1:4200'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Add after bodyParser middleware
 app.use(session({
@@ -16,21 +28,13 @@ app.use(session({
 
 
 
-// === Connect to SQLite Database ===
-const db = new sqlite3.Database('./loan.db', (err) => {
-  if (err) {
-    console.error('❌ Failed to connect to database:', err.message);
-  } else {
-    console.log('✅ Connected to SQLite database');
-  }
-});
+// Expose db on app locals for legacy usage if needed
 app.locals.db = db;
 
 // === Middleware ===
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+// API-only server for Angular SPA; static assets served by Angular
 
 
 // === Import Routes ===
@@ -47,9 +51,26 @@ app.use('/customers', customerRoutes);
 app.use('/deposits', depositRoutes);
 app.use('/reports', reportsRoutes);
 
-// === Login Page ===
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/pages/login.html'));
+// === Bootstrap: ensure users table and seed default admin ===
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      username TEXT UNIQUE,
+      password TEXT,
+      role TEXT
+    )
+  `);
+  db.get(`SELECT COUNT(*) as cnt FROM users`, [], (err, row) => {
+    if (!err && row && row.cnt === 0) {
+      db.run(
+        `INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)`,
+        ['Administrator', 'admin', 'admin123', 'admin']
+      );
+      console.log('Seeded default admin user: admin/admin123');
+    }
+  });
 });
 
 // === Login Handler ===
@@ -69,7 +90,7 @@ app.post('/login', (req, res) => {
       req.session.userRole = row.role; // important for user management grid
       req.session.username = row.username;
 
-      return res.redirect('/pages/dashboard.html');
+      return res.json({ success: true, user: { id: row.id, username: row.username, role: row.role } });
     } else {
       return res.status(401).send('Invalid username or password');
     }

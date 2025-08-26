@@ -1,0 +1,150 @@
+<div class="deposits-container">
+  <!-- Header with breadcrumb -->
+  <div class="header-section">
+    <div class="breadcrumb">
+      <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">Deposits</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openCreateModal()">
+        <i class="fas fa-plus"></i> New Deposit
+      </button>
+      <button class="btn-secondary" (click)="downloadTemplate()">
+        <i class="fas fa-download"></i> Template
+      </button>
+      <label class="btn-upload">
+        <i class="fas fa-upload"></i> Import Excel
+        <input type="file" #excelFile accept=".xlsx,.xls" (change)="uploadExcel($event)" />
+      </label>
+      <button class="btn-fullscreen" (click)="toggleFullscreen()" title="Toggle Fullscreen">
+        <i class="fas fa-expand"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Total Deposits</h3>
+        <p class="stat-value">₹ {{ totalDeposits | number }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Active Customers</h3>
+        <p class="stat-value">{{ activeCustomers | number }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-calendar"></i>
+      </div>
+      <div class="stat-content">
+        <h3>This Month</h3>
+        <p class="stat-value">₹ {{ monthlyDeposits | number }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deposits Table -->
+  <div class="table-container">
+    <div class="table-header">
+      <h2>Deposits List</h2>
+      <div class="table-actions">
+        <input 
+          type="text" 
+          placeholder="Search deposits..." 
+          class="search-input"
+          (input)="filterDeposits($event)"
+        />
+        <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedDeposits.length === 0">
+          <i class="fas fa-trash"></i> Delete Selected
+        </button>
+      </div>
+    </div>
+
+    <table class="deposits-table">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
+          </th>
+          <th>Actions</th>
+          <th>Customer Code</th>
+          <th>Customer Name</th>
+          <th>Amount</th>
+          <th>Penalty</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let deposit of filteredDeposits" [class.selected]="selectedDeposits.includes(deposit.id)">
+          <td>
+            <input type="checkbox" [checked]="selectedDeposits.includes(deposit.id)" (change)="toggleSelection(deposit.id)" />
+          </td>
+          <td class="actions">
+            <button class="btn-icon btn-edit" (click)="editDeposit(deposit)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteDeposit(deposit.id)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+          <td>{{ deposit.customer_code }}</td>
+          <td>{{ deposit.customer_name }}</td>
+          <td class="amount">₹ {{ deposit.amount | number }}</td>
+          <td class="penalty">{{ deposit.penalty | number }}</td>
+          <td>{{ deposit.date | date:'shortDate' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal" [class.show]="showModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>{{ editingDeposit ? 'Edit' : 'Create' }} Deposit</h3>
+      <button class="modal-close" (click)="closeModal()">×</button>
+    </div>
+    <form (submit)="saveDeposit($event)" class="deposit-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer Code *</label>
+          <input type="text" name="customer_code" [(ngModel)]="depositForm.customer_code" required />
+        </div>
+        <div class="form-group">
+          <label>Customer Name *</label>
+          <input type="text" name="customer_name" [(ngModel)]="depositForm.customer_name" required />
+        </div>
+        <div class="form-group">
+          <label>Amount *</label>
+          <input type="number" name="amount" [(ngModel)]="depositForm.amount" step="0.01" required />
+        </div>
+        <div class="form-group">
+          <label>Penalty</label>
+          <input type="number" name="penalty" [(ngModel)]="depositForm.penalty" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" name="date" [(ngModel)]="depositForm.date" required />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">
+          {{ editingDeposit ? 'Update' : 'Create' }} Deposit
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

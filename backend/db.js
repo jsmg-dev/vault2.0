@@ -3,8 +3,8 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-// Define absolute path for the SQLite database file
-const dbPath = path.resolve(__dirname, 'loan.db');
+// Define absolute path for the SQLite database file (moved to project-level db folder)
+const dbPath = path.resolve(__dirname, '..', 'db', 'loan.db');
 
 // Ensure the database file exists (optional safety check)
 if (!fs.existsSync(dbPath)) {

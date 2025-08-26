@@ -1,0 +1,308 @@
+<div class="customers-container">
+  <!-- Header with breadcrumb -->
+  <div class="header-section">
+    <div class="breadcrumb">
+      <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">Customer Management</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openCreateCustomerModal()">
+        <i class="fas fa-plus"></i> Create Customer
+      </button>
+      <button class="btn-secondary" (click)="downloadTemplate()">
+        <i class="fas fa-download"></i> Template
+      </button>
+      <label class="btn-upload">
+        <i class="fas fa-upload"></i> Import Excel
+        <input type="file" #excelFile accept=".xlsx,.xls" (change)="uploadExcel($event)" />
+      </label>
+      <button class="btn-fullscreen" (click)="toggleFullscreen()" title="Toggle Fullscreen">
+        <i class="fas fa-expand"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Total Customers</h3>
+        <p class="stat-value">{{ totalCustomers | number }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Active Customers</h3>
+        <p class="stat-value">{{ activeCustomers | number }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-calendar"></i>
+      </div>
+      <div class="stat-content">
+        <h3>This Month</h3>
+        <p class="stat-value">{{ monthlyCustomers | number }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customers Table -->
+  <div class="table-container">
+    <div class="table-header">
+      <h2>Customers List</h2>
+      <div class="table-actions">
+        <input 
+          type="text" 
+          placeholder="Search customers..." 
+          class="search-input"
+          (input)="filterCustomers($event)"
+        />
+        <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedCustomers.length === 0">
+          <i class="fas fa-trash"></i> Delete Selected
+        </button>
+      </div>
+    </div>
+
+    <table class="customers-table">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
+          </th>
+          <th>Actions</th>
+          <th>ID</th>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Alt Contact</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Duration</th>
+          <th>Loan Amount</th>
+          <th>File Charge</th>
+          <th>Agent Fee</th>
+          <th>EMI</th>
+          <th>Advance Days</th>
+          <th>Given Amount</th>
+          <th>Agent Commission</th>
+          <th>Status</th>
+          <th>Remark</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of filteredCustomers" [class.selected]="selectedCustomers.includes(customer.id)">
+          <td>
+            <input type="checkbox" [checked]="selectedCustomers.includes(customer.id)" (change)="toggleSelection(customer.id)" />
+          </td>
+          <td class="actions">
+            <button class="btn-icon btn-edit" (click)="openEditCustomerModal(customer.id)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteCustomer(customer.id)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+          <td>{{ customer.id }}</td>
+          <td>{{ customer.customer_code }}</td>
+          <td>{{ customer.name }}</td>
+          <td>{{ customer.contact_no }}</td>
+          <td>{{ customer.alt_contact_no || 'N/A' }}</td>
+          <td>{{ customer.start_date | date:'shortDate' }}</td>
+          <td>{{ customer.end_date | date:'shortDate' || 'N/A' }}</td>
+          <td>{{ customer.loan_duration || 'N/A' }}</td>
+          <td class="amount">₹ {{ customer.loan_amount | number }}</td>
+          <td>{{ customer.file_charge || 'N/A' }}</td>
+          <td>{{ customer.agent_fee || 'N/A' }}</td>
+          <td>{{ customer.emi || 'N/A' }}</td>
+          <td>{{ customer.advance_days || 'N/A' }}</td>
+          <td class="amount">₹ {{ customer.amount_after_deduction || 'N/A' }}</td>
+          <td>{{ customer.agent_commission || 'N/A' }}</td>
+          <td>
+            <span class="status-badge" [class.status-active]="customer.status === 'active'" [class.status-inactive]="customer.status === 'inactive'">
+              {{ customer.status || 'active' }}
+            </span>
+          </td>
+          <td>{{ customer.remark || 'N/A' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create Customer Modal -->
+<div class="modal" [class.show]="showCreateModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Create New Customer</h3>
+      <button class="modal-close" (click)="closeCreateCustomerModal()">×</button>
+    </div>
+    <form (submit)="createCustomer($event)" class="customer-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer Code *</label>
+          <input type="text" name="customer_code" required />
+        </div>
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" name="name" required />
+        </div>
+        <div class="form-group">
+          <label>Contact No *</label>
+          <input type="text" name="contact_no" required />
+        </div>
+        <div class="form-group">
+          <label>Alt Contact</label>
+          <input type="text" name="alt_contact_no" />
+        </div>
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" name="start_date" required />
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" name="end_date" />
+        </div>
+        <div class="form-group">
+          <label>Loan Duration</label>
+          <input type="number" name="loan_duration" />
+        </div>
+        <div class="form-group">
+          <label>Loan Amount *</label>
+          <input type="number" name="loan_amount" step="0.01" required />
+        </div>
+        <div class="form-group">
+          <label>File Charge</label>
+          <input type="number" name="file_charge" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Agent Fee</label>
+          <input type="number" name="agent_fee" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>EMI</label>
+          <input type="number" name="emi" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Advance Days</label>
+          <input type="number" name="advance_days" />
+        </div>
+        <div class="form-group">
+          <label>Amount After Deduction</label>
+          <input type="number" name="amount_after_deduction" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Agent Commission</label>
+          <input type="number" name="agent_commission" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label>Remark</label>
+          <textarea name="remark" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="closeCreateCustomerModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Customer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal" [class.show]="showEditModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Edit Customer</h3>
+      <button class="modal-close" (click)="closeEditCustomerModal()">×</button>
+    </div>
+    <form (submit)="updateCustomer($event)" class="customer-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer Code *</label>
+          <input type="text" name="customer_code" [(ngModel)]="editForm.customer_code" required />
+        </div>
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" name="name" [(ngModel)]="editForm.name" required />
+        </div>
+        <div class="form-group">
+          <label>Contact No *</label>
+          <input type="text" name="contact_no" [(ngModel)]="editForm.contact_no" required />
+        </div>
+        <div class="form-group">
+          <label>Alt Contact</label>
+          <input type="text" name="alt_contact_no" [(ngModel)]="editForm.alt_contact_no" />
+        </div>
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" name="start_date" [(ngModel)]="editForm.start_date" required />
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" name="end_date" [(ngModel)]="editForm.end_date" />
+        </div>
+        <div class="form-group">
+          <label>Loan Duration</label>
+          <input type="number" name="loan_duration" [(ngModel)]="editForm.loan_duration" />
+        </div>
+        <div class="form-group">
+          <label>Loan Amount *</label>
+          <input type="number" name="loan_amount" step="0.01" [(ngModel)]="editForm.loan_amount" required />
+        </div>
+        <div class="form-group">
+          <label>File Charge</label>
+          <input type="number" name="file_charge" step="0.01" [(ngModel)]="editForm.file_charge" />
+        </div>
+        <div class="form-group">
+          <label>Agent Fee</label>
+          <input type="number" name="agent_fee" step="0.01" [(ngModel)]="editForm.agent_fee" />
+        </div>
+        <div class="form-group">
+          <label>EMI</label>
+          <input type="number" name="emi" step="0.01" [(ngModel)]="editForm.emi" />
+        </div>
+        <div class="form-group">
+          <label>Advance Days</label>
+          <input type="number" name="advance_days" [(ngModel)]="editForm.advance_days" />
+        </div>
+        <div class="form-group">
+          <label>Amount After Deduction</label>
+          <input type="number" name="amount_after_deduction" step="0.01" [(ngModel)]="editForm.amount_after_deduction" />
+        </div>
+        <div class="form-group">
+          <label>Agent Commission</label>
+          <input type="number" name="agent_commission" step="0.01" [(ngModel)]="editForm.agent_commission" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status" [(ngModel)]="editForm.status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label>Remark</label>
+          <textarea name="remark" rows="3" [(ngModel)]="editForm.remark"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="closeEditCustomerModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Update Customer</button>
+      </div>
+    </form>
+  </div>
+</div>

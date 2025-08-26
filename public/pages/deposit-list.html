@@ -196,7 +196,6 @@
       const data = await res.json();
       const tbody = document.getElementById('depositBody');
       tbody.innerHTML = '';
-      console.log("📄 Loaded deposits:", data.length);
       data.forEach(d => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -225,51 +224,130 @@
       }
     }
 
+    // Initialize the injected deposit form (works even if scripts inside deposit.html don't run)
+    function initDepositForm(root) {
+      const form = root.querySelector('#depositForm');
+      if (!form) return;
+
+      const dropdown = root.querySelector('#customer-dropdown');
+      const codeInput = root.querySelector('#customer_code');
+      const amountInput = root.querySelector('#amount');
+      const penaltyInput = root.querySelector('#penalty');
+      const dateInput = root.querySelector('#date');
+      const submitBtn = root.querySelector('#submitBtn');
+      const hint = root.querySelector('#load-hint');
+
+      // Bind change -> update code field from data-code
+      function updateCustomerCodeField() {
+        const opt = dropdown.options[dropdown.selectedIndex];
+        const code = opt ? (opt.getAttribute('data-code') || '') : '';
+        if (codeInput) codeInput.value = code;
+      }
+      dropdown.addEventListener('change', updateCustomerCodeField, false);
+
+      // Load customers into the dropdown and store code in data-code
+      async function loadCustomers() {
+        dropdown.innerHTML = '<option value="">Loading...</option>';
+        try {
+          const res = await fetch('/deposits/dropdown/customers', { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const customers = await res.json();
+
+          dropdown.innerHTML = '<option value="">Select Customer</option>';
+          customers.forEach(c => {
+            const option = document.createElement('option');
+            option.value = String(c.id);
+            option.textContent = c.name || '';
+            if (c.customer_code) option.setAttribute('data-code', c.customer_code);
+            dropdown.appendChild(option);
+          });
+
+          dropdown.value = '';
+          updateCustomerCodeField();
+          if (hint) hint.style.display = 'none';
+        } catch (err) {
+          if (codeInput) codeInput.value = '';
+          dropdown.innerHTML = '<option value="">-- Failed to load customers --</option>';
+          if (hint) hint.style.display = 'block';
+        }
+      }
+
+      // Form submit -> create deposit
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
+        try {
+          const selectedId = dropdown.value;
+          const selectedText = (dropdown.options[dropdown.selectedIndex] || {}).text || '';
+          const customer_name = selectedText || '';
+          const customer_code = (codeInput && codeInput.value || '').trim();
+          const amount = Number(((amountInput && amountInput.value) || '').trim());
+          const penaltyRaw = ((penaltyInput && penaltyInput.value) || '').trim();
+          const penalty = penaltyRaw === '' ? 0 : Number(penaltyRaw);
+          const date = ((dateInput && dateInput.value) || '').trim();
+
+          if (!selectedId) { alert('❌ Please select a customer.'); return; }
+          if (!customer_code) { alert('❌ Customer code not loaded.'); return; }
+          if (!(amount > 0)) { alert('❌ Please enter a valid positive amount.'); return; }
+          if (!(penalty >= 0)) { alert('❌ Penalty must be zero or positive.'); return; }
+          if (!date) { alert('❌ Please enter a valid date.'); return; }
+
+          const payload = { customer_name, customer_code, amount, penalty, date };
+          const res = await fetch('/deposits/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json().catch(function(){ return {}; });
+
+          if (res.ok) {
+            alert('✅ Deposit submitted successfully');
+            closeDepositModal();
+            fetchDeposits();
+          } else {
+            alert('❌ ' + (result.error || ('Failed (HTTP ' + res.status + ')')));
+          }
+        } catch (err) {
+          alert('❌ Error submitting deposit.');
+        } finally {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Deposit'; }
+        }
+      });
+
+      loadCustomers();
+    }
+
     function openNewDepositModal() {
       const modal = document.getElementById('depositModal');
       const content = document.getElementById('depositFormContent');
       fetch('/pages/deposit.html')
         .then(res => res.text())
         .then(html => {
+          // Strip outer html/head/body tags
           const sanitized = html.replace(/<\/*(html|head|body)[^>]*>/gi, '');
           content.innerHTML = '<span class="close-modal" onclick="closeDepositModal()">×</span>' + sanitized;
           modal.style.display = 'flex';
           document.body.style.overflow = 'hidden';
-          populateCustomerDropdown();
-          setTimeout(() => {
-            const form = content.querySelector('form');
-            if (form) form.addEventListener('submit', () => { setTimeout(() => { closeDepositModal(); fetchDeposits(); }, 500); });
-          }, 200);
-        });
-    }
-
-    function populateCustomerDropdown() {
-      fetch('/deposits/dropdown/customers')
-        .then(res => res.json())
-        .then(customers => {
-          const dropdown = document.getElementById('customer-dropdown');
-          dropdown.innerHTML = '';
-          const defaultOption = document.createElement('option');
-          defaultOption.value = '';
-          defaultOption.textContent = 'Select Customer';
-          dropdown.appendChild(defaultOption);
-          customers.forEach(customer => {
-            const option = document.createElement('option');
-            option.value = customer.id;
-            option.textContent = customer.name;
-            dropdown.appendChild(option);
-          });
+          // Ensure the injected form is initialized (scripts inside deposit.html won't run)
+          initDepositForm(content);
         })
-        .catch(err => console.error('Error loading customers:', err));
+        .catch(() => {
+          alert('❌ Failed to load deposit form.');
+        });
     }
 
     function closeDepositModal() {
       const modal = document.getElementById('depositModal');
       const content = document.getElementById('depositFormContent');
       modal.style.display = 'none';
-      content.innerHTML = '';
+      content.innerHTML = '<span class="close-modal" onclick="closeDepositModal()">×</span>';
       document.body.style.overflow = 'auto';
     }
+
+    // Close modal on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeDepositModal();
+    });
 
     async function uploadExcel() {
       const input = document.getElementById('excelFile');

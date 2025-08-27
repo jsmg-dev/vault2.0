@@ -13,7 +13,8 @@ const port = process.env.PORT || 8080;   // <--- from .env
 app.use(cors({
   origin: [
     'http://localhost:4200',
-    'http://127.0.0.1:4200'
+    'http://127.0.0.1:4200',
+    'https://vaultssb.netlify.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-reports',
@@ -48,7 +49,7 @@ export class ReportsComponent implements OnInit {
 
   async loadCustomers() {
     try {
-      const res = await fetch('/customers/list', { credentials: 'include' });
+      const res = await fetch(`${environment.apiUrl}/customers/list`, { credentials: 'include' });
       this.customers = await res.json();
     } catch (err) {
       console.error('Failed to load customers:', err);
@@ -57,7 +58,7 @@ export class ReportsComponent implements OnInit {
 
   async checkEmiNotifications() {
     try {
-      const res = await fetch('/emi/notifications', { credentials: 'include' });
+      const res = await fetch(`${environment.apiUrl}/emi/notifications`, { credentials: 'include' });
       const data = await res.json();
       this.emiNotifications = data.notifications || [];
     } catch (err) {
@@ -79,7 +80,7 @@ export class ReportsComponent implements OnInit {
     }
 
     try {
-      let query = `/reports/generate?type=${this.activeTab}&start=${this.reportForm.start_date}&end=${this.reportForm.end_date}`;
+      let query = `${environment.apiUrl}/reports/generate?type=${this.activeTab}&start=${this.reportForm.start_date}&end=${this.reportForm.end_date}`;
       
       if (this.activeTab === 'deposit' && this.reportForm.customer_id) {
         query += `&customer_id=${this.reportForm.customer_id}`;

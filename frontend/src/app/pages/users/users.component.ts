@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-users',
@@ -30,7 +31,7 @@ export class UsersComponent implements OnInit {
 
   async loadUsers() {
     try {
-      const res = await fetch('/users/list', { credentials: 'include' });
+      const res = await fetch(`${environment.apiUrl}/users/list`, { credentials: 'include' });
       this.users = await res.json();
       this.filteredUsers = [...this.users];
     } catch (err) {
@@ -86,8 +87,8 @@ export class UsersComponent implements OnInit {
     
     try {
       const url = this.editingUser 
-        ? `/users/update/${this.editingUser.id}`
-        : '/users/create';
+        ? `${environment.apiUrl}/users/update/${this.editingUser.id}`
+        : `${environment.apiUrl}/users/create`;
       
       const method = 'POST';
       
@@ -114,7 +115,7 @@ export class UsersComponent implements OnInit {
   async deleteUser(id: number) {
     if (confirm('Delete this user?')) {
       try {
-        const res = await fetch(`/users/delete/${id}`, {
+        const res = await fetch(`${environment.apiUrl}/users/delete/${id}`, {
           method: 'DELETE',
           credentials: 'include'
         });
@@ -156,7 +157,7 @@ export class UsersComponent implements OnInit {
     
     if (confirm(`Delete ${this.selectedUsers.length} selected users?`)) {
       try {
-        const res = await fetch('/users/delete-multiple', {
+        const res = await fetch(`${environment.apiUrl}/users/delete-multiple`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ids: this.selectedUsers }),

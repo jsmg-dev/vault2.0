@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 declare var Chart: any;
 
@@ -24,7 +25,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   async ngOnInit() {
     try {
-      const res = await fetch('/api/customers/count', { credentials: 'include' });
+      const res = await fetch(`${environment.apiUrl}/api/customers/count`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         this.totalCustomers = Number(data.totalCustomers || 0);

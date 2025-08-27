@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-deposits',
@@ -30,7 +31,7 @@ export class DepositsComponent implements OnInit {
 
   async loadDeposits() {
     try {
-      const res = await fetch('/deposits/list', { credentials: 'include' });
+      const res = await fetch(`${environment.apiUrl}/deposits/list`, { credentials: 'include' });
       this.deposits = await res.json();
       this.filteredDeposits = [...this.deposits];
     } catch (err) {
@@ -79,8 +80,8 @@ export class DepositsComponent implements OnInit {
     
     try {
       const url = this.editingDeposit 
-        ? `/deposits/update/${this.editingDeposit.id}`
-        : '/deposits/create';
+        ? `${environment.apiUrl}/deposits/update/${this.editingDeposit.id}`
+        : `${environment.apiUrl}/deposits/create`;
       
       const method = this.editingDeposit ? 'PUT' : 'POST';
       
@@ -108,7 +109,7 @@ export class DepositsComponent implements OnInit {
   async deleteDeposit(id: number) {
     if (confirm('Delete this deposit?')) {
       try {
-        const res = await fetch(`/deposits/delete/${id}`, {
+        const res = await fetch(`${environment.apiUrl}/deposits/delete/${id}`, {
           method: 'DELETE',
           credentials: 'include'
         });
@@ -150,7 +151,7 @@ export class DepositsComponent implements OnInit {
     
     if (confirm(`Delete ${this.selectedDeposits.length} selected deposits?`)) {
       try {
-        const res = await fetch('/deposits/delete-multiple', {
+        const res = await fetch(`${environment.apiUrl}/deposits/delete-multiple`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ids: this.selectedDeposits }),
@@ -176,7 +177,7 @@ export class DepositsComponent implements OnInit {
     formData.append('excel', file);
     
     try {
-      const res = await fetch('/deposits/upload-excel', {
+      const res = await fetch(`${environment.apiUrl}/deposits/upload-excel`, {
         method: 'POST',
         body: formData,
         credentials: 'include'

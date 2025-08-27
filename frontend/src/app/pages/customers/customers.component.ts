@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-customers',
@@ -31,7 +32,7 @@ export class CustomersComponent implements OnInit {
 
   async loadCustomers() {
     try {
-      const res = await fetch('/customers/list', { 
+      const res = await fetch(`${environment.apiUrl}/customers/list`, { 
         method: 'GET', 
         headers: { 'Cache-Control': 'no-cache' },
         credentials: 'include'
@@ -89,7 +90,7 @@ export class CustomersComponent implements OnInit {
   async deleteCustomer(id: number) {
     if (confirm("Are you sure you want to delete this customer?")) {
       try {
-        const res = await fetch(`/customers/delete/${id}`, { 
+        const res = await fetch(`${environment.apiUrl}/customers/delete/${id}`, { 
           method: 'DELETE',
           credentials: 'include'
         });
@@ -118,7 +119,7 @@ export class CustomersComponent implements OnInit {
     }
     
     try {
-      const res = await fetch('/customers/create', {
+      const res = await fetch(`${environment.apiUrl}/customers/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -140,7 +141,7 @@ export class CustomersComponent implements OnInit {
   async updateCustomer(event: Event) {
     event.preventDefault();
     try {
-      const res = await fetch(`/customers/update/${this.editForm.id}`, {
+      const res = await fetch(`${environment.apiUrl}/customers/update/${this.editForm.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(this.editForm),
@@ -166,7 +167,7 @@ export class CustomersComponent implements OnInit {
     formData.append('excel', file);
     
     try {
-      const res = await fetch('/customers/upload-excel', { 
+      const res = await fetch(`${environment.apiUrl}/customers/upload-excel`, { 
         method: 'POST', 
         body: formData,
         credentials: 'include'
@@ -215,7 +216,7 @@ export class CustomersComponent implements OnInit {
     
     if (confirm(`Delete ${this.selectedCustomers.length} selected customers?`)) {
       try {
-        const res = await fetch('/customers/delete-multiple', {
+        const res = await fetch(`${environment.apiUrl}/customers/delete-multiple`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ids: this.selectedCustomers }),

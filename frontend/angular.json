@@ -29,7 +29,7 @@
               "src/assets",
               {
                 "glob": "_redirects",
-                "input": "src",
+                "input": ".",
                 "output": "/"
               }
             ],
@@ -52,7 +52,13 @@
                   "maximumError": "10kb"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,

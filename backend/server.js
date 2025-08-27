@@ -5,7 +5,9 @@ const db = require('./db');
 const session = require('express-session'); // <-- IMPORT HERE
 const cors = require('cors');
 const app = express();
-const port = 8080;
+require('dotenv').config();   // <--- load .env
+
+const port = process.env.PORT || 8080;   // <--- from .env
 
 // CORS for Angular dev server (localhost and 127.0.0.1)
 app.use(cors({
@@ -20,7 +22,7 @@ app.use(cors({
 
 // Add after bodyParser middleware
 app.use(session({
-  secret: 'your-very-strong-secret', // change to your own secret
+  secret: process.env.SESSION_SECRET || 'dev-secret',  // <--- from .env
   resave: false,
   saveUninitialized: false,  // only store session if modified
   cookie: { maxAge: 60 * 60 * 1000 } // 1 hour

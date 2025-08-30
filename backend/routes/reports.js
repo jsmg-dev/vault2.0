@@ -1,81 +1,60 @@
+// routes/reports.js
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const { Parser } = require("json2csv");
 
 // 📌 Fetch reports (Customer / Deposit / EMI)
-router.get("/generate", (req, res) => {
+router.get("/generate", async (req, res) => {
   const { type, start, end } = req.query;
 
   if (!type || !start || !end) {
-    return res
-      .status(400)
-      .json({ error: "Missing required query parameters" });
+    return res.status(400).json({ error: "Missing required query parameters" });
   }
 
-  if (type === "customer") {
-    // Customer details report
-    const query = `
-      SELECT id, customer_code, name, contact_no, start_date, end_date, loan_amount, status
-      FROM customers
-      WHERE DATE(start_date) BETWEEN $1 AND $2
-      ORDER BY start_date ASC
-    `;
+  try {
+    let result;
 
-    db.all(query, [start, end], (err, rows) => {
-      if (err) {
-        console.error("❌ DB error fetching customer reports:", err.message);
-        return res.status(500).json({ error: "Failed to fetch customer report" });
-      }
-      res.json(rows);
-    });
+    if (type === "customer") {
+      const query = `
+        SELECT id, customer_code, name, contact_no, start_date, end_date, loan_amount, status
+        FROM customers
+        WHERE start_date::date BETWEEN $1 AND $2
+        ORDER BY start_date ASC
+      `;
+      result = await db.query(query, [start, end]);
+    } else if (type === "deposit") {
+      const query = `
+        SELECT 
+          c.customer_code, 
+          c.name AS customer_name, 
+          COALESCE(SUM(d.amount), 0) AS total_deposit,
+          MAX(d.date) AS last_deposit_date
+        FROM customers c
+        LEFT JOIN deposits d ON c.customer_code = d.customer_code
+        WHERE d.date::date <= $1
+        GROUP BY c.customer_code, c.name
+        ORDER BY c.customer_code
+      `;
+      result = await db.query(query, [end]);
+    } else if (type === "emi") {
+      const query = `
+        SELECT 
+          c.customer_code,
+          c.name AS customer_name,
+          c.start_date,
+          c.emi,
+          COALESCE(SUM(d.amount), 0) AS total_deposit
+        FROM customers c
+        LEFT JOIN deposits d ON c.customer_code = d.customer_code
+        WHERE c.status = 'active'
+          AND c.start_date::date BETWEEN $1 AND $2
+        GROUP BY c.customer_code, c.name, c.start_date, c.emi
+      `;
+      result = await db.query(query, [start, end]);
 
-  } else if (type === "deposit") {
-    // Deposit report
-    const query = `
-      SELECT 
-        c.customer_code, 
-        c.name AS customer_name, 
-        IFNULL(SUM(d.amount), 0) AS total_deposit,
-        MAX(d.date) AS last_deposit_date
-      FROM customers c
-      LEFT JOIN deposits d ON c.customer_code = d.customer_code
-      WHERE DATE(d.date) <= $1
-      GROUP BY c.customer_code, c.name
-      ORDER BY c.customer_code
-    `;
-
-    db.all(query, [end], (err, rows) => {
-      if (err) {
-        console.error("❌ DB error fetching deposit reports:", err.message);
-        return res.status(500).json({ error: "Failed to fetch deposit report" });
-      }
-      res.json(rows);
-    });
-
-  } else if (type === "emi") {
-    // Next EMI report (loan amount comes from deposits)
-    const query = `
-      SELECT 
-        c.customer_code,
-        c.name AS customer_name,
-        c.start_date,
-        c.emi,
-        IFNULL(SUM(d.amount), 0) AS total_deposit
-      FROM customers c
-      LEFT JOIN deposits d ON c.customer_code = d.customer_code
-      WHERE c.status = 'active'
-        AND DATE(c.start_date) BETWEEN DATE($1) AND DATE($2)
-      GROUP BY c.customer_code, c.name, c.start_date, c.emi
-    `;
-
-    db.all(query, [start, end], (err, rows) => {
-      if (err) {
-        console.error("❌ DB error fetching EMI reports:", err.message);
-        return res.status(500).json({ error: "Failed to fetch EMI report" });
-      }
-
-      const result = rows.map((r) => {
+      // Post-process EMI next date
+      result.rows = result.rows.map((r) => {
         const total = r.total_deposit;
         const emi = r.emi;
         const count = emi > 0 ? Math.floor(total / emi) : 0;
@@ -83,7 +62,7 @@ router.get("/generate", (req, res) => {
         let nextDate = null;
         if (r.start_date) {
           nextDate = new Date(r.start_date);
-          nextDate.setMonth(nextDate.getMonth() + count); // EMI assumed monthly
+          nextDate.setMonth(nextDate.getMonth() + count);
           nextDate = nextDate.toISOString().split("T")[0];
         }
 
@@ -94,76 +73,77 @@ router.get("/generate", (req, res) => {
           next_emi_date: nextDate,
         };
       });
+    } else {
+      return res.status(400).json({ error: "Unsupported report type" });
+    }
 
-      res.json(result);
-    });
-
-  } else {
-    res.status(400).json({ error: "Unsupported report type" });
+    res.json(result.rows || result);
+  } catch (err) {
+    console.error("❌ DB error fetching reports:", err.message);
+    res.status(500).json({ error: "Failed to fetch report" });
   }
 });
 
 // 📌 Export reports as CSV (Customer / Deposit / EMI)
-router.get("/export", (req, res) => {
+router.get("/export", async (req, res) => {
   const { type, start, end } = req.query;
 
   if (!type || !start || !end) {
-    return res
-      .status(400)
-      .json({ error: "Missing required query parameters" });
+    return res.status(400).json({ error: "Missing required query parameters" });
   }
 
-  let query;
-  if (type === "customer") {
-    query = `
-      SELECT id, customer_code, name, contact_no, start_date, end_date, loan_amount, status
-      FROM customers
-      WHERE DATE(start_date) BETWEEN $1 AND $2
-      ORDER BY start_date ASC
-    `;
-  } else if (type === "deposit") {
-    query = `
-      SELECT 
-        c.customer_code, 
-        c.name AS customer_name, 
-        IFNULL(SUM(d.amount), 0) AS total_deposit,
-        MAX(d.date) AS last_deposit_date
-      FROM customers c
-      LEFT JOIN deposits d ON c.customer_code = d.customer_code
-      WHERE DATE(d.date) <= $1
-      GROUP BY c.customer_code, c.name
-      ORDER BY c.customer_code
-    `;
-  } else if (type === "emi") {
-    query = `
-      SELECT 
-        c.customer_code,
-        c.name AS customer_name,
-        c.start_date,
-        c.emi,
-        IFNULL(SUM(d.amount), 0) AS total_deposit
-      FROM customers c
-      LEFT JOIN deposits d ON c.customer_code = d.customer_code
-      WHERE c.status = 'active'
-        AND DATE(c.start_date) BETWEEN DATE($1) AND DATE($2)
-      GROUP BY c.customer_code, c.name, c.start_date, c.emi
-    `;
-  } else {
-    return res
-      .status(400)
-      .json({ error: "Unsupported report type for export" });
-  }
+  try {
+    let query, params;
 
-  db.all(query, type === "deposit" ? [end] : [start, end], (err, rows) => {
-    if (err) {
-      console.error(`❌ DB error exporting ${type} report:`, err.message);
-      return res.status(500).json({ error: `Failed to export ${type} report` });
+    if (type === "customer") {
+      query = `
+        SELECT id, customer_code, name, contact_no, start_date, end_date, loan_amount, status
+        FROM customers
+        WHERE start_date::date BETWEEN $1 AND $2
+        ORDER BY start_date ASC
+      `;
+      params = [start, end];
+    } else if (type === "deposit") {
+      query = `
+        SELECT 
+          c.customer_code, 
+          c.name AS customer_name, 
+          COALESCE(SUM(d.amount), 0) AS total_deposit,
+          MAX(d.date) AS last_deposit_date
+        FROM customers c
+        LEFT JOIN deposits d ON c.customer_code = d.customer_code
+        WHERE d.date::date <= $1
+        GROUP BY c.customer_code, c.name
+        ORDER BY c.customer_code
+      `;
+      params = [end];
+    } else if (type === "emi") {
+      query = `
+        SELECT 
+          c.customer_code,
+          c.name AS customer_name,
+          c.start_date,
+          c.emi,
+          COALESCE(SUM(d.amount), 0) AS total_deposit
+        FROM customers c
+        LEFT JOIN deposits d ON c.customer_code = d.customer_code
+        WHERE c.status = 'active'
+          AND c.start_date::date BETWEEN $1 AND $2
+        GROUP BY c.customer_code, c.name, c.start_date, c.emi
+      `;
+      params = [start, end];
+    } else {
+      return res
+        .status(400)
+        .json({ error: "Unsupported report type for export" });
     }
 
-    let result = rows;
+    const result = await db.query(query, params);
+
+    let rows = result.rows;
 
     if (type === "emi") {
-      result = rows.map((r) => {
+      rows = rows.map((r) => {
         const total = r.total_deposit;
         const emi = r.emi;
         const count = emi > 0 ? Math.floor(total / emi) : 0;
@@ -185,16 +165,19 @@ router.get("/export", (req, res) => {
     }
 
     const parser = new Parser();
-    const csv = parser.parse(result);
+    const csv = parser.parse(rows);
 
     res.header("Content-Type", "text/csv");
     res.attachment(`${type}_report.csv`);
     res.send(csv);
-  });
+  } catch (err) {
+    console.error(`❌ DB error exporting ${type} report:`, err.message);
+    res.status(500).json({ error: `Failed to export ${type} report` });
+  }
 });
 
-// 📌 New: EMI Due Notifications
-router.get("/emi/notifications", (req, res) => {
+// 📌 EMI Due Notifications
+router.get("/emi/notifications", async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
 
   const query = `
@@ -203,22 +186,19 @@ router.get("/emi/notifications", (req, res) => {
       c.name AS customer_name,
       c.start_date,
       c.emi,
-      IFNULL(SUM(d.amount), 0) AS total_deposit
+      COALESCE(SUM(d.amount), 0) AS total_deposit
     FROM customers c
     LEFT JOIN deposits d ON c.customer_code = d.customer_code
     WHERE c.status = 'active'
     GROUP BY c.customer_code, c.name, c.start_date, c.emi
   `;
 
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      console.error("❌ DB error fetching EMI notifications:", err.message);
-      return res.status(500).json({ error: "Failed to fetch EMI notifications" });
-    }
+  try {
+    const result = await db.query(query);
 
     const notifications = [];
 
-    rows.forEach((r) => {
+    result.rows.forEach((r) => {
       const emi = r.emi;
       if (!emi) return;
 
@@ -238,7 +218,10 @@ router.get("/emi/notifications", (req, res) => {
     });
 
     res.json({ notifications });
-  });
+  } catch (err) {
+    console.error("❌ DB error fetching EMI notifications:", err.message);
+    res.status(500).json({ error: "Failed to fetch EMI notifications" });
+  }
 });
 
 module.exports = router;

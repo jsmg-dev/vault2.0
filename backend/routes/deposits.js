@@ -1,16 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const db = require('../db'); // This is your PostgreSQL pool wrapper
 const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
 
-// Ensure JSON parsing middleware is applied in main server.js/app.js:
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// Helper: format date to MM/DD/YYYY
-function formatToMMDDYYYY(dateStr) {
+// Helper: format date to YYYY-MM-DD for PostgreSQL
+function formatToYYYYMMDD(dateStr) {
   if (!dateStr) return null;
   const parts = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/');
   let year, month, day;
@@ -31,179 +27,145 @@ function formatToMMDDYYYY(dateStr) {
   }
   const mm = String(month).padStart(2, '0');
   const dd = String(day).padStart(2, '0');
-  return `${mm}/${dd}/${year}`;
+  return `${year}-${mm}-${dd}`;
 }
 
-// Create deposits table if not exists
-db.run(`
-  CREATE TABLE IF NOT EXISTS deposits (
-    id SERIAL PRIMARY KEY,
-    customer_code TEXT NOT NULL,
-    customer_name TEXT NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    penalty DECIMAL(10,2) DEFAULT 0,
-    date DATE NOT NULL,
-    remark TEXT
-  )
-`);
+// Ensure deposits table exists
+(async () => {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS deposits (
+      id SERIAL PRIMARY KEY,
+      customer_code TEXT NOT NULL,
+      customer_name TEXT NOT NULL,
+      amount DECIMAL(10,2) NOT NULL,
+      penalty DECIMAL(10,2) DEFAULT 0,
+      date DATE NOT NULL,
+      remark TEXT
+    )
+  `);
+})();
 
 // POST: Save a new deposit
-router.post('/create', (req, res) => {
-  console.log('Incoming /create request body:', req.body);
+router.post('/create', async (req, res) => {
+  try {
+    let { customer_code, customer_name, amount, penalty, date, remark } = req.body;
 
-  let { customer_code, customer_name, amount, penalty, date, remark } = req.body;
-
-  if (!customer_code || !customer_name || !amount || !date) {
-    return res.status(400).json({ error: 'Required fields are missing' });
-  }
-
-  // Trim & sanitize inputs
-  customer_code = String(customer_code).trim();
-  customer_name = String(customer_name).trim();
-  amount = parseFloat(amount);
-  penalty = parseFloat(penalty) || 0;
-
-  if (isNaN(amount)) {
-    return res.status(400).json({ error: 'Invalid amount' });
-  }
-
-  const formattedDate = formatToMMDDYYYY(date);
-  if (!formattedDate) {
-    return res.status(400).json({ error: 'Invalid date format' });
-  }
-
-  const insertQuery = `
-    INSERT INTO deposits (customer_code, customer_name, amount, penalty, date, remark)
-    VALUES ($1, $2, $3, $4, $5, $6)
-  `;
-  db.run(
-    insertQuery,
-    [customer_code, customer_name, amount, penalty, formattedDate, remark],
-    function (err) {
-      if (err) {
-        console.error('Deposit insert error:', err.message, {
-          customer_code,
-          customer_name,
-          amount,
-          penalty,
-          formattedDate
-        });
-        return res.status(500).json({ error: 'Failed to save deposit' });
-      }
-      res.status(201).json({ message: 'Deposit recorded', depositId: this.lastID });
+    if (!customer_code || !customer_name || !amount || !date) {
+      return res.status(400).json({ error: 'Required fields are missing' });
     }
-  );
+
+    amount = parseFloat(amount);
+    penalty = parseFloat(penalty) || 0;
+    if (isNaN(amount)) return res.status(400).json({ error: 'Invalid amount' });
+
+    const formattedDate = formatToYYYYMMDD(date);
+    if (!formattedDate) return res.status(400).json({ error: 'Invalid date format' });
+
+    const insertQuery = `
+      INSERT INTO deposits (customer_code, customer_name, amount, penalty, date, remark)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+    `;
+    const result = await db.query(insertQuery, [customer_code, customer_name, amount, penalty, formattedDate, remark]);
+
+    res.status(201).json({ message: 'Deposit recorded', depositId: result.rows[0].id });
+  } catch (err) {
+    console.error('Deposit insert error:', err.message);
+    res.status(500).json({ error: 'Failed to save deposit' });
+  }
 });
 
 // GET: List all deposits
-router.get('/list', (req, res) => {
-  const query = `SELECT * FROM deposits ORDER BY date DESC`;
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      console.error('Error fetching deposits:', err.message);
-      return res.status(500).json({ error: 'Failed to fetch deposits' });
-    }
-    res.json(rows);
-  });
-});
-
-// PUT: Update a deposit by ID
-router.put('/update/:id', (req, res) => {
-  const id = req.params.id;
-  let { customer_code, customer_name, amount, penalty, date, remark } = req.body;
-
-  if (!customer_code || !customer_name || !amount || !date) {
-    return res.status(400).json({ error: 'Required fields are missing' });
+router.get('/list', async (req, res) => {
+  try {
+    const result = await db.query(`SELECT * FROM deposits ORDER BY date DESC`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching deposits:', err.message);
+    res.status(500).json({ error: 'Failed to fetch deposits' });
   }
+});
 
-  // Trim & sanitize inputs
-  customer_code = String(customer_code).trim();
-  customer_name = String(customer_name).trim();
-  amount = parseFloat(amount);
-  penalty = parseFloat(penalty) || 0;
+// PUT: Update a deposit
+router.put('/update/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    let { customer_code, customer_name, amount, penalty, date, remark } = req.body;
 
-  if (isNaN(amount)) {
-    return res.status(400).json({ error: 'Invalid amount' });
+    if (!customer_code || !customer_name || !amount || !date) {
+      return res.status(400).json({ error: 'Required fields are missing' });
+    }
+
+    amount = parseFloat(amount);
+    penalty = parseFloat(penalty) || 0;
+    if (isNaN(amount)) return res.status(400).json({ error: 'Invalid amount' });
+
+    const formattedDate = formatToYYYYMMDD(date);
+    if (!formattedDate) return res.status(400).json({ error: 'Invalid date format' });
+
+    const updateQuery = `
+      UPDATE deposits 
+      SET customer_code = $1, customer_name = $2, amount = $3, penalty = $4, date = $5, remark = $6
+      WHERE id = $7
+    `;
+    const result = await db.query(updateQuery, [customer_code, customer_name, amount, penalty, formattedDate, remark, id]);
+
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Deposit not found' });
+    res.json({ message: 'Deposit updated successfully' });
+  } catch (err) {
+    console.error('Deposit update error:', err.message);
+    res.status(500).json({ error: 'Failed to update deposit' });
   }
+});
 
-  const formattedDate = formatToMMDDYYYY(date);
-  if (!formattedDate) {
-    return res.status(400).json({ error: 'Invalid date format' });
+// DELETE: Single deposit
+router.delete('/delete/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await db.query(`DELETE FROM deposits WHERE id = $1`, [id]);
+    res.json({ message: `Deleted deposit ${id}`, deleted: result.rowCount });
+  } catch (err) {
+    console.error('Delete error:', err.message);
+    res.status(500).json({ error: 'Failed to delete deposit' });
   }
-
-  const updateQuery = `
-    UPDATE deposits 
-    SET customer_code = $1, customer_name = $2, amount = $3, penalty = $4, date = $5, remark = $6
-    WHERE id = $7
-  `;
-  
-  db.run(
-    updateQuery,
-    [customer_code, customer_name, amount, penalty, formattedDate, remark, id],
-    function (err) {
-      if (err) {
-        console.error('Deposit update error:', err.message);
-        return res.status(500).json({ error: 'Failed to update deposit' });
-      }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Deposit not found' });
-      }
-      res.json({ message: 'Deposit updated successfully' });
-    }
-  );
 });
 
-// DELETE: Remove a single deposit by ID
-router.delete('/delete/:id', (req, res) => {
-  const id = req.params.id;
-  db.run(`DELETE FROM deposits WHERE id = $1`, [id], function (err) {
-    if (err) {
-      console.error('Delete error:', err.message);
-      return res.status(500).json({ error: 'Failed to delete deposit' });
+// POST: Bulk delete
+router.post('/delete-multiple', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'No IDs provided for deletion.' });
     }
-    res.json({ message: `Deleted deposit ${id}`, deleted: this.changes });
-  });
-});
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+    const sql = `DELETE FROM deposits WHERE id IN (${placeholders})`;
+    const result = await db.query(sql, ids);
 
-// POST: Bulk delete multiple deposit records
-router.post('/delete-multiple', (req, res) => {
-  const { ids } = req.body;
-  if (!Array.isArray(ids) || ids.length === 0) {
-    return res.status(400).json({ error: 'No IDs provided for deletion.' });
+    res.json({ message: `Deleted ${result.rowCount} deposit(s).` });
+  } catch (err) {
+    console.error('Bulk delete failed:', err.message);
+    res.status(500).json({ error: 'Failed to delete deposits.' });
   }
-  const placeholders = ids.map((_, index) => `$${index + 1}`).join(',');
-  const sql = `DELETE FROM deposits WHERE id IN (${placeholders})`;
-  db.run(sql, ids, function (err) {
-    if (err) {
-      console.error('Bulk delete failed:', err.message);
-      return res.status(500).json({ error: 'Failed to delete deposits.' });
-    }
-    res.json({ message: `Deleted ${this.changes} deposit(s).` });
-  });
 });
 
-// GET: Active customers only for dropdown
-router.get('/dropdown/customers', (req, res) => {
-  const query = `
-    SELECT id, name, customer_code 
-    FROM customers 
-    WHERE status = 'Active' 
-    ORDER BY name ASC;
-  `;
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      console.error('Error fetching active customers:', err.message);
-      return res.status(500).json({ error: 'Failed to fetch active customers' });
-    }
-    res.json(rows);
-  });
+// GET: Active customers for dropdown
+router.get('/dropdown/customers', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT id, name, customer_code 
+      FROM customers 
+      WHERE status = 'Active' 
+      ORDER BY name ASC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching active customers:', err.message);
+    res.status(500).json({ error: 'Failed to fetch active customers' });
+  }
 });
 
-
-
-// Excel upload endpoint
+// Excel upload
 const upload = multer({ dest: 'uploads/' });
-router.post('/upload-excel', upload.single('excel'), (req, res) => {
+router.post('/upload-excel', upload.single('excel'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   try {
@@ -211,33 +173,38 @@ router.post('/upload-excel', upload.single('excel'), (req, res) => {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = xlsx.utils.sheet_to_json(sheet);
 
-    const stmt = db.prepare(`
-      INSERT INTO deposits (customer_code, customer_name, amount, penalty, date)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
 
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
       for (const row of data) {
         const cc = String(row.customer_code || '').trim();
         const cn = String(row.customer_name || '').trim();
         const amount = parseFloat(row.amount);
         const penalty = parseFloat(row.penalty) || 0;
-        const formattedDate = formatToMMDDYYYY(row.date);
+        const formattedDate = formatToYYYYMMDD(row.date);
 
         if (!cc || !cn || isNaN(amount) || !formattedDate) {
-          console.warn('Skipped row due to missing/invalid data:', row);
+          console.warn('Skipped row due to invalid data:', row);
           continue;
         }
-        stmt.run(cc, cn, amount, penalty, formattedDate);
+
+        await client.query(
+          `INSERT INTO deposits (customer_code, customer_name, amount, penalty, date) VALUES ($1, $2, $3, $4, $5)`,
+          [cc, cn, amount, penalty, formattedDate]
+        );
       }
-      db.run('COMMIT');
-    });
 
-    stmt.finalize();
-    fs.unlinkSync(req.file.path);
-    res.json({ message: 'Deposits imported successfully' });
-
+      await client.query('COMMIT');
+      res.json({ message: 'Deposits imported successfully' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Excel upload transaction error:', err.message);
+      res.status(500).json({ error: 'Failed to process Excel file' });
+    } finally {
+      client.release();
+      fs.unlinkSync(req.file.path);
+    }
   } catch (err) {
     console.error('Excel upload error:', err.message);
     res.status(500).json({ error: 'Failed to process Excel file' });

@@ -1,47 +1,41 @@
+// server.js
 const express = require('express');
 const path = require('path');
-const bodyParser = require('body-parser');
-const db = require('./db');
 const session = require('express-session');
 const cors = require('cors');
-const app = express();
-const config = require('./config');
-
 require('dotenv').config();
 
+const config = require('./config');
+const db = require('./db');
+
+const authRoutes = require('./routes/auth');     // ensure these routes use Postgres too
+const userRoutes = require('./routes/users');    // ensure Postgres
+const customerRoutes = require('./routes/customers'); // updated file above
+const depositRoutes = require('./routes/deposits');   // ensure Postgres
+const reportsRoutes = require('./routes/reports');    // ensure Postgres
+const policiesRoutes = require('./routes/policies');  // ensure Postgres
+
+const app = express();
 const port = config.server.port;
 
-// CORS configuration - simplified and working
-app.use(cors({
-  origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'https://vaultssb.netlify.app'], // Allow Angular dev server
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control']
-}));
+// CORS
+app.use(
+  cors({
+    origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'https://vaultssb.netlify.app'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control'],
+  })
+);
 
-// Session configuration
+// Sessions (for production, use a store like connect-pg-simple)
 app.use(session(config.session));
 
+// Parsers
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-
-// Expose db on app locals for legacy usage if needed
-app.locals.db = db;
-
-// === Middleware ===
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-// API-only server for Angular SPA; static assets served by Angular
-
-
-// === Import Routes ===
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const customerRoutes = require('./routes/customers');
-const depositRoutes = require('./routes/deposits');
-const reportsRoutes = require('./routes/reports');
-const policiesRoutes = require('./routes/policies');
-
-// === Mount Routes ===
+// Mount routes
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/customers', customerRoutes);
@@ -49,257 +43,266 @@ app.use('/deposits', depositRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/policies', policiesRoutes);
 
-// === Bootstrap: ensure users table and seed default admin ===
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      name TEXT,
-      username TEXT UNIQUE,
-      password TEXT,
-      role TEXT
-    )
-  `);
-  db.get(`SELECT COUNT(*) as cnt FROM users`, [], (err, row) => {
-    if (!err && row && row.cnt === 0) {
-      db.run(
-        `INSERT INTO users (name, username, password, role) VALUES ($1, $2, $3, $4)`,
+// Bootstrap users table + seed admin (Postgres)
+(async () => {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        username TEXT UNIQUE,
+        password TEXT,
+        role TEXT
+      );
+    `);
+
+    const countRes = await db.query(`SELECT COUNT(*)::int AS cnt FROM users;`);
+    if ((countRes.rows[0]?.cnt ?? 0) === 0) {
+      await db.query(
+        `INSERT INTO users (name, username, password, role) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (username) DO NOTHING;`,
         ['Administrator', 'admin', 'admin123', 'admin']
       );
       console.log('Seeded default admin user: admin/admin123');
     }
-  });
+  } catch (err) {
+    console.error('❌ Bootstrap users failed:', err);
+  }
+})();
+
+// Login (Postgres)
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const result = await db.query(
+      `SELECT id, name, username, role FROM users WHERE username = $1 AND password = $2 LIMIT 1;`,
+      [username, password]
+    );
+
+    const row = result.rows[0];
+    if (!row) return res.status(401).send('Invalid username or password');
+
+    req.session.userId = row.id;
+    req.session.userRole = row.role;
+    req.session.username = row.username;
+
+    return res.json({ success: true, user: row });
+  } catch (err) {
+    console.error('❌ Login DB error:', err);
+    return res.status(500).send('Internal server error');
+  }
 });
 
-// === Login Handler ===
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  const query = `SELECT * FROM users WHERE username = $1 AND password = $2`;
-
-  db.get(query, [username, password], (err, row) => {
-    if (err) {
-      console.error('❌ Login DB error:', err.message);
-      return res.status(500).send('Internal server error');
-    }
-
- if (row) {
-      // ✅ Store user info in session
-      req.session.userId = row.id;
-      req.session.userRole = row.role; // important for user management grid
-      req.session.username = row.username;
-
-      return res.json({ success: true, user: { id: row.id, username: row.username, role: row.role } });
-    } else {
-      return res.status(401).send('Invalid username or password');
-    }
-  });
-});
-// Get total customers
-app.get('/customers/count', (req, res) => {
-  const query = `SELECT COUNT(*) AS total FROM customers`;
-  db.get(query, [], (err, row) => {
-    if (err) {
-      console.error('❌ Failed to fetch total customers:', err.message);
-      return res.status(500).json({ total: 0 });
-    }
-    res.json({ total: row.total });
-  });
+// Total customers
+app.get('/customers/count', async (req, res) => {
+  try {
+    const result = await db.query(`SELECT COUNT(*)::int AS total FROM customers;`);
+    res.json({ total: result.rows[0].total });
+  } catch (err) {
+    console.error('❌ Failed to fetch total customers:', err);
+    res.status(500).json({ total: 0 });
+  }
 });
 
-// === API: Dashboard Metrics ===
-app.get('/api/customers/count', (req, res) => {
-  const response = {
-    totalCustomers: 0,
-    totalDeposits: 0,
-    activeLoans: 0,
-    monthlyEarnings: 140000, // Example static value
-    customersPerMonth: {},
-    loanTypes: {},
-    revenueTrend: {}
-  };
+// Dashboard metrics
+app.get('/api/customers/count', async (req, res) => {
+  try {
+    const response = {
+      totalCustomers: 0,
+      totalDeposits: 0,
+      activeLoans: 0,
+      monthlyEarnings: 140000, // static placeholder
+      customersPerMonth: {},
+      loanTypes: {},
+      revenueTrend: {},
+    };
 
-  const customersQuery = `SELECT COUNT(*) AS totalCustomers FROM customers`;
-  const depositsQuery = `SELECT SUM(amount) AS totalDeposits FROM deposits`;
-  const activeLoansQuery = `SELECT COUNT(*) AS activeLoans FROM customers WHERE status = "active"`;
-  const customerMonthQuery = `SELECT EXTRACT(MONTH FROM start_date::date) AS month, COUNT(*) AS count FROM customers GROUP BY month`;
-  const loanTypeQuery = `SELECT loan_type, COUNT(*) AS count FROM customers GROUP BY loan_type`;
-  const revenueQuery = `SELECT EXTRACT(MONTH FROM date::date) AS month, SUM(amount) AS total FROM deposits GROUP BY month`;
+    const [{ rows: cRows }, { rows: dRows }, { rows: aRows }] = await Promise.all([
+      db.query(`SELECT COUNT(*)::int AS totalCustomers FROM customers;`),
+      db.query(`SELECT COALESCE(SUM(amount),0)::numeric AS totalDeposits FROM deposits;`),
+      db.query(`SELECT COUNT(*)::int AS activeLoans FROM customers WHERE status = 'active';`),
+    ]);
 
-  db.get(customersQuery, [], (err, row) => {
-    if (!err) response.totalCustomers = row.totalCustomers;
+    response.totalCustomers = cRows[0].totalCustomers;
+    response.totalDeposits = Number(dRows[0].totalDeposits || 0);
+    response.activeLoans = aRows[0].activeLoans;
 
-    db.get(depositsQuery, [], (err, row) => {
-      if (!err) response.totalDeposits = row.totalDeposits || 0;
+    const custMonth = await db.query(`
+      SELECT EXTRACT(MONTH FROM start_date)::int AS month, COUNT(*)::int AS count
+      FROM customers
+      WHERE start_date IS NOT NULL
+      GROUP BY 1
+      ORDER BY 1;
+    `);
 
-      db.get(activeLoansQuery, [], (err, row) => {
-        if (!err) response.activeLoans = row.activeLoans;
+    for (const r of custMonth.rows) {
+      const monthName = new Date(2024, r.month - 1).toLocaleString('default', { month: 'short' });
+      response.customersPerMonth[monthName] = r.count;
+    }
 
-        db.all(customerMonthQuery, [], (err, rows) => {
-          if (!err) {
-            rows.forEach(r => {
-              const month = new Date(2024, parseInt(r.month) - 1).toLocaleString('default', { month: 'short' });
-              response.customersPerMonth[month] = r.count;
-            });
-          }
+    // If you have loan_type column; otherwise this will be empty
+    const loanType = await db.query(`
+      SELECT loan_type, COUNT(*)::int AS count
+      FROM customers
+      WHERE loan_type IS NOT NULL
+      GROUP BY loan_type;
+    `).catch(() => ({ rows: [] })); // ignore if column missing
+    for (const r of loanType.rows) {
+      response.loanTypes[r.loan_type] = r.count;
+    }
 
-          db.all(loanTypeQuery, [], (err, rows) => {
-            if (!err) {
-              rows.forEach(r => {
-                response.loanTypes[r.loan_type] = r.count;
-              });
-            }
+    const revenue = await db.query(`
+      SELECT EXTRACT(MONTH FROM date)::int AS month, SUM(amount)::numeric AS total
+      FROM deposits
+      WHERE date IS NOT NULL
+      GROUP BY 1
+      ORDER BY 1;
+    `);
+    for (const r of revenue.rows) {
+      const monthName = new Date(2024, r.month - 1).toLocaleString('default', { month: 'short' });
+      response.revenueTrend[monthName] = Number(r.total || 0);
+    }
 
-            db.all(revenueQuery, [], (err, rows) => {
-              if (!err) {
-                rows.forEach(r => {
-                  const month = new Date(2024, parseInt(r.month) - 1).toLocaleString('default', { month: 'short' });
-                  response.revenueTrend[month] = r.total;
-                });
-              }
-
-              res.json(response);
-            });
-          });
-        });
-      });
-    });
-  });
+    res.json(response);
+  } catch (err) {
+    console.error('❌ Dashboard metrics error:', err);
+    res.status(500).json({ error: 'Failed to compute metrics' });
+  }
 });
 
-// === DELETE Customer ===
-app.delete('/customers/delete/:id', (req, res) => {
-  const id = req.params.id;
-  const query = `DELETE FROM customers WHERE id = $1`;
-
-  db.run(query, [id], function (err) {
-    if (err) {
-      console.error('❌ Failed to delete customer:', err.message);
-      return res.status(500).json({ message: 'Failed to delete customer' });
-    }
+// DELETE customer
+app.delete('/customers/delete/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query(`DELETE FROM customers WHERE id = $1;`, [id]);
     res.json({ success: true, deletedId: id });
-  });
+  } catch (err) {
+    console.error('❌ Failed to delete customer:', err);
+    res.status(500).json({ message: 'Failed to delete customer' });
+  }
 });
 
-// === 404 Fallback ===
-app.use((req, res) => {
-  res.status(404).send('Page not found');
-});
-
-// === Start Server ===
-app.listen(port, () => {
-  console.log(`🚀 Server running at http://localhost:${port}`);
-});
-// === API: Get a customer's code (by id) ===
-app.get('/api/customers/:id/code', (req, res) => {
-  const { id } = req.params;
-  const q = `SELECT id, name, customer_code FROM customers WHERE id = $1 LIMIT 1`;
-
-  db.get(q, [id], (err, row) => {
-    if (err) {
-      console.error('❌ get code error:', err.message);
-      return res.status(500).json({ error: 'Failed to fetch customer code' });
-    }
+// Get a customer's code (by id)
+app.get('/api/customers/:id/code', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const row = await db.one(`SELECT id, name, customer_code FROM customers WHERE id = $1 LIMIT 1;`, [id]);
     if (!row) return res.status(404).json({ error: 'Customer not found' });
-    res.json({ id: row.id, name: row.name, customer_code: row.customer_code });
-  });
+    res.json(row);
+  } catch (err) {
+    console.error('❌ get code error:', err);
+    res.status(500).json({ error: 'Failed to fetch customer code' });
+  }
 });
+
+// Reports: EMI example
 app.get('/reports/generate', async (req, res) => {
   const { type, start, end } = req.query;
-
   try {
     if (type === 'emi') {
-      const sql = `
+      const { rows } = await db.query(
+        `
         SELECT 
-            c.customer_code,
-            c.name,
-            c.start_date,
-            c.emi,
-            COALESCE(SUM(d.amount), 0) AS total_received
+          c.customer_code,
+          c.name,
+          c.start_date,
+          c.emi,
+          COALESCE(SUM(d.amount), 0) AS total_received
         FROM customers c
-        LEFT JOIN deposits d 
-            ON c.customer_code = d.customer_code
-            AND d.date BETWEEN $1 AND $2
+        LEFT JOIN deposits d
+          ON c.customer_code = d.customer_code
+          AND d.date BETWEEN $1 AND $2
         GROUP BY c.customer_code, c.name, c.start_date, c.emi
-      `;
+        ORDER BY c.customer_code;
+        `,
+        [start, end]
+      );
 
-      const rows = await db.all(sql, [start, end]);
+      const result = rows.map((r) => {
+        const emi = Number(r.emi || 0);
+        const total = Number(r.total_received || 0);
+        const emiCount = emi > 0 ? Math.floor(total / emi) : 0;
 
-      const result = rows.map(r => {
-        const emiCount = r.emi > 0 ? Math.floor(r.total_received / r.emi) : 0;
         let nextDate = null;
-
         if (r.start_date && emiCount > 0) {
-          const baseDate = new Date(r.start_date);
-          // ✅ as per your example: treat each EMI as +1 day
-          baseDate.setDate(baseDate.getDate() + emiCount);
-          nextDate = baseDate.toISOString().split('T')[0];
+          const base = new Date(r.start_date);
+          base.setDate(base.getDate() + emiCount); // your stated rule: +1 day per EMI
+          nextDate = base.toISOString().split('T')[0];
         }
 
         return {
           CustomerCode: r.customer_code,
           Name: r.name,
           StartDate: r.start_date,
-          EMI: r.emi,
-          TotalReceived: r.total_received,
+          EMI: Number(r.emi || 0),
+          TotalReceived: total,
           EMI_Count: emiCount,
-          NextEMIDate: nextDate || 'N/A'
+          NextEMIDate: nextDate || 'N/A',
         };
       });
 
       return res.json(result);
     }
 
-    // keep your existing 'customer' and 'deposit' logic
+    // other report types go here...
+    return res.status(400).json({ error: 'Unknown report type' });
   } catch (err) {
-    console.error("Report generation failed:", err);
-    res.status(500).json({ error: "Report generation failed" });
+    console.error('Report generation failed:', err);
+    res.status(500).json({ error: 'Report generation failed' });
   }
 });
-// Check EMI notifications (till date)
-app.get('/emi/notifications', (req, res) => {
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-  const query = `
-    SELECT c.customer_code, c.name, c.start_date, c.emi, 
-           COALESCE(SUM(d.amount), 0) AS total_deposit
-    FROM customers c
-    LEFT JOIN deposits d ON c.customer_code = d.customer_code
-    GROUP BY c.customer_code
-  `;
+// EMI notifications (till date)
+app.get('/emi/notifications', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      console.error("❌ DB error fetching EMI notifications:", err.message);
-      return res.status(500).json({ error: err.message });
-    }
+    const { rows } = await db.query(`
+      SELECT 
+        c.customer_code,
+        c.name,
+        c.start_date,
+        COALESCE(c.emi, 0) AS emi,
+        COALESCE((
+          SELECT SUM(d.amount) FROM deposits d WHERE d.customer_code = c.customer_code
+        ), 0) AS total_deposit
+      FROM customers c;
+    `);
 
     const notifications = [];
+    for (const row of rows) {
+      const totalDeposits = Number(row.total_deposit || 0);
+      const emiAmount = Number(row.emi || 1);
+      const startDate = row.start_date ? new Date(row.start_date) : null;
 
-    rows.forEach(row => {
-      const totalDeposits = row.total_deposit || 0;
-      const emiAmount = row.emi || 1;
-      const startDate = new Date(row.start_date);
+      if (!startDate || emiAmount <= 0) continue;
 
-      // Number of EMIs already paid
       const emiCount = Math.floor(totalDeposits / emiAmount);
 
-      // Next EMI due date = start date + emiCount months
       const nextEmiDate = new Date(startDate);
       nextEmiDate.setMonth(startDate.getMonth() + emiCount);
+      const nextEmiDateStr = nextEmiDate.toISOString().split('T')[0];
 
-      const nextEmiDateStr = nextEmiDate.toISOString().split("T")[0];
-
-      // If EMI is due today or earlier → notify
       if (nextEmiDateStr <= today) {
         notifications.push({
           customer: row.name,
           dueDate: nextEmiDateStr,
-          status: "EMI Due"
+          status: 'EMI Due',
         });
       }
-    });
+    }
 
     res.json({ notifications });
-  });
+  } catch (err) {
+    console.error('❌ DB error fetching EMI notifications:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// 404
+app.use((req, res) => res.status(404).send('Page not found'));
+
+// Start
+app.listen(port, () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
+});

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const multer = require('multer');
 
 // =============================
 // Get all customers
@@ -18,26 +19,79 @@ router.get("/list", async (req, res) => {
 // =============================
 // Add a new customer
 // =============================
-router.post("/create", async (req, res) => {
+const upload = multer();
+
+router.post('/create', upload.none(), async (req, res) => {
   try {
-    const { name, email } = req.body;
+    let {
+      customer_code,
+      name,
+      contact_no,
+      alt_contact_no,
+      start_date,
+      end_date,
+      loan_duration,
+      loan_amount,
+      file_charge,
+      agent_fee,
+      emi,
+      advance_days,
+      amount_after_deduction,
+      agent_commission,
+      status,
+      remark
+    } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({ error: "Name and email are required" });
-    }
+    // Convert empty strings to null for numeric and date fields
+    start_date = start_date || null;
+    end_date = end_date || null;
+    loan_duration = loan_duration ? Number(loan_duration) : null;
+    loan_amount = loan_amount ? Number(loan_amount) : null;
+    file_charge = file_charge ? Number(file_charge) : null;
+    agent_fee = agent_fee ? Number(agent_fee) : null;
+    emi = emi ? Number(emi) : null;
+    advance_days = advance_days ? Number(advance_days) : null;
+    amount_after_deduction = amount_after_deduction ? Number(amount_after_deduction) : null;
+    agent_commission = agent_commission ? Number(agent_commission) : null;
 
-    const result = await pool.query(
-      "INSERT INTO customers (name, email) VALUES ($1, $2) RETURNING *",
-      [name, email]
-    );
+    const query = `
+      INSERT INTO customers (
+        customer_code, name, contact_no, alt_contact_no, start_date, end_date, loan_duration,
+        loan_amount, file_charge, agent_fee, emi, advance_days, amount_after_deduction,
+        agent_commission, status, remark
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16
+      )
+      RETURNING *;
+    `;
 
+    const values = [
+      customer_code,
+      name,
+      contact_no,
+      alt_contact_no,
+      start_date,
+      end_date,
+      loan_duration,
+      loan_amount,
+      file_charge,
+      agent_fee,
+      emi,
+      advance_days,
+      amount_after_deduction,
+      agent_commission,
+      status,
+      remark
+    ];
+
+    const result = await pool.query(query, values);
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error("Error adding customer:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error('Error adding customer:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 // =============================
 // Get single customer by ID
 // =============================

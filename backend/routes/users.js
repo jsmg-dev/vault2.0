@@ -45,8 +45,6 @@ router.post('/create', async (req, res) => {
 router.get('/list', async (req, res) => {
   const userRole = req.session?.userRole;
 
-  if (!userRole) return res.status(401).json({ error: 'Unauthorized. Please login.' });
-  if (userRole !== 'admin') return res.status(403).json({ error: 'Forbidden. Admins only.' });
 
   try {
     const result = await db.query(`SELECT id, name, username, role FROM users`);

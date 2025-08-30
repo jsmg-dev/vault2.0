@@ -13,7 +13,7 @@ const port = config.server.port;
 
 // CORS configuration - simplified and working
 app.use(cors({
-  origin: ['http://localhost:4200', 'http://127.0.0.1:4200'], // Allow Angular dev server
+  origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'https://vaultssb.netlify.app'], // Allow Angular dev server
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control']

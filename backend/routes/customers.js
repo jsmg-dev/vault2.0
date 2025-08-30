@@ -5,7 +5,7 @@ const pool = require("../db");
 // =============================
 // Get all customers
 // =============================
-router.get("/customers", async (req, res) => {
+router.get("/customers/list", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM customers");
     res.json(result.rows);
@@ -18,7 +18,7 @@ router.get("/customers", async (req, res) => {
 // =============================
 // Add a new customer
 // =============================
-router.post("/customers", async (req, res) => {
+router.post("/customers/create", async (req, res) => {
   try {
     const { name, email } = req.body;
 

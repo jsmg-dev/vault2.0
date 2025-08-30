@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -10,7 +11,7 @@ import { environment } from '../../../environments/environment';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private toastService: ToastService) {}
 
   async onSubmit(event: Event) {
     event.preventDefault();
@@ -31,7 +32,7 @@ export class LoginComponent {
       await res.json();
       this.router.navigateByUrl('/dashboard');
     } catch (e) {
-      alert('Invalid credentials');
+      this.toastService.error('Invalid credentials');
     }
   }
 }

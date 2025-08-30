@@ -99,9 +99,9 @@
             </button>
           </td>
           <td>{{ deposit.customer_code }}</td>
-          <td>{{ deposit.customer_name }}</td>
+          <td>{{ getCustomerName(deposit.customer_code) }}</td>
           <td class="amount">₹ {{ deposit.amount | number }}</td>
-          <td class="penalty">{{ deposit.penalty | number }}</td>
+          <td class="penalty">{{ deposit.penalty || 0 | number }}</td>
           <td>{{ deposit.date | date:'shortDate' }}</td>
         </tr>
       </tbody>
@@ -119,12 +119,17 @@
     <form (submit)="saveDeposit($event)" class="deposit-form">
       <div class="form-grid">
         <div class="form-group">
-          <label>Customer Code *</label>
-          <input type="text" name="customer_code" [(ngModel)]="depositForm.customer_code" required />
+          <label>Customer *</label>
+          <select name="customer_code" [(ngModel)]="depositForm.customer_code" required (change)="onCustomerChange($event)">
+            <option value="">Select Customer</option>
+            <option *ngFor="let customer of customers" [value]="customer.customer_code">
+              {{ customer.name }}
+            </option>
+          </select>
         </div>
         <div class="form-group">
-          <label>Customer Name *</label>
-          <input type="text" name="customer_name" [(ngModel)]="depositForm.customer_name" required />
+          <label>Customer Code</label>
+          <input type="text" name="customer_code_display" [value]="depositForm.customer_code" readonly />
         </div>
         <div class="form-group">
           <label>Amount *</label>
@@ -137,6 +142,10 @@
         <div class="form-group">
           <label>Date *</label>
           <input type="date" name="date" [(ngModel)]="depositForm.date" required />
+        </div>
+        <div class="form-group full-width">
+          <label>Remark</label>
+          <textarea name="remark" [(ngModel)]="depositForm.remark" rows="3" placeholder="Optional remark"></textarea>
         </div>
       </div>
       <div class="form-actions">

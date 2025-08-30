@@ -2,32 +2,25 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const db = require('./db');
-const session = require('express-session'); // <-- IMPORT HERE
+const session = require('express-session');
 const cors = require('cors');
 const app = express();
-require('dotenv').config();   // <--- load .env
+const config = require('./config');
 
-const port = process.env.PORT || 8080;   // <--- from .env
+require('dotenv').config();
 
-// CORS for Angular dev server (localhost and 127.0.0.1)
+const port = config.server.port;
+
+// CORS configuration - simplified and working
 app.use(cors({
-  origin: [
-    'http://localhost:4200',
-    'http://127.0.0.1:4200',
-    'https://vaultssb.netlify.app'
-  ],
+  origin: ['http://localhost:4200', 'http://127.0.0.1:4200'], // Allow Angular dev server
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control']
 }));
 
-// Add after bodyParser middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret',  // <--- from .env
-  resave: false,
-  saveUninitialized: false,  // only store session if modified
-  cookie: { maxAge: 60 * 60 * 1000 } // 1 hour
-}));
+// Session configuration
+app.use(session(config.session));
 
 
 
@@ -46,6 +39,7 @@ const userRoutes = require('./routes/users');
 const customerRoutes = require('./routes/customers');
 const depositRoutes = require('./routes/deposits');
 const reportsRoutes = require('./routes/reports');
+const policiesRoutes = require('./routes/policies');
 
 // === Mount Routes ===
 app.use('/auth', authRoutes);
@@ -53,12 +47,13 @@ app.use('/users', userRoutes);
 app.use('/customers', customerRoutes);
 app.use('/deposits', depositRoutes);
 app.use('/reports', reportsRoutes);
+app.use('/policies', policiesRoutes);
 
 // === Bootstrap: ensure users table and seed default admin ===
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT,
       username TEXT UNIQUE,
       password TEXT,
@@ -68,7 +63,7 @@ db.serialize(() => {
   db.get(`SELECT COUNT(*) as cnt FROM users`, [], (err, row) => {
     if (!err && row && row.cnt === 0) {
       db.run(
-        `INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)`,
+        `INSERT INTO users (name, username, password, role) VALUES ($1, $2, $3, $4)`,
         ['Administrator', 'admin', 'admin123', 'admin']
       );
       console.log('Seeded default admin user: admin/admin123');
@@ -79,7 +74,7 @@ db.serialize(() => {
 // === Login Handler ===
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  const query = `SELECT * FROM users WHERE username = ? AND password = ?`;
+  const query = `SELECT * FROM users WHERE username = $1 AND password = $2`;
 
   db.get(query, [username, password], (err, row) => {
     if (err) {
@@ -126,9 +121,9 @@ app.get('/api/customers/count', (req, res) => {
   const customersQuery = `SELECT COUNT(*) AS totalCustomers FROM customers`;
   const depositsQuery = `SELECT SUM(amount) AS totalDeposits FROM deposits`;
   const activeLoansQuery = `SELECT COUNT(*) AS activeLoans FROM customers WHERE status = "active"`;
-  const customerMonthQuery = `SELECT strftime('%m', start_date) AS month, COUNT(*) AS count FROM customers GROUP BY month`;
+  const customerMonthQuery = `SELECT EXTRACT(MONTH FROM start_date::date) AS month, COUNT(*) AS count FROM customers GROUP BY month`;
   const loanTypeQuery = `SELECT loan_type, COUNT(*) AS count FROM customers GROUP BY loan_type`;
-  const revenueQuery = `SELECT strftime('%m', date) AS month, SUM(amount) AS total FROM deposits GROUP BY month`;
+  const revenueQuery = `SELECT EXTRACT(MONTH FROM date::date) AS month, SUM(amount) AS total FROM deposits GROUP BY month`;
 
   db.get(customersQuery, [], (err, row) => {
     if (!err) response.totalCustomers = row.totalCustomers;
@@ -174,7 +169,7 @@ app.get('/api/customers/count', (req, res) => {
 // === DELETE Customer ===
 app.delete('/customers/delete/:id', (req, res) => {
   const id = req.params.id;
-  const query = `DELETE FROM customers WHERE id = ?`;
+  const query = `DELETE FROM customers WHERE id = $1`;
 
   db.run(query, [id], function (err) {
     if (err) {
@@ -197,7 +192,7 @@ app.listen(port, () => {
 // === API: Get a customer's code (by id) ===
 app.get('/api/customers/:id/code', (req, res) => {
   const { id } = req.params;
-  const q = `SELECT id, name, customer_code FROM customers WHERE id = ? LIMIT 1`;
+  const q = `SELECT id, name, customer_code FROM customers WHERE id = $1 LIMIT 1`;
 
   db.get(q, [id], (err, row) => {
     if (err) {
@@ -219,11 +214,11 @@ app.get('/reports/generate', async (req, res) => {
             c.name,
             c.start_date,
             c.emi,
-            IFNULL(SUM(d.amount), 0) AS total_received
+            COALESCE(SUM(d.amount), 0) AS total_received
         FROM customers c
         LEFT JOIN deposits d 
             ON c.customer_code = d.customer_code
-            AND d.date BETWEEN ? AND ?
+            AND d.date BETWEEN $1 AND $2
         GROUP BY c.customer_code, c.name, c.start_date, c.emi
       `;
 
@@ -266,7 +261,7 @@ app.get('/emi/notifications', (req, res) => {
 
   const query = `
     SELECT c.customer_code, c.name, c.start_date, c.emi, 
-           IFNULL(SUM(d.amount), 0) AS total_deposit
+           COALESCE(SUM(d.amount), 0) AS total_deposit
     FROM customers c
     LEFT JOIN deposits d ON c.customer_code = d.customer_code
     GROUP BY c.customer_code

@@ -86,17 +86,20 @@
 }
 
 .btn-fullscreen {
-  background: #8b5cf6;
+  background: #6b7280;
   color: white;
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-fullscreen:hover {
-  background: #7c3aed;
+  background: #4b5563;
 }
 
 .btn-danger {

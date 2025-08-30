@@ -108,17 +108,20 @@
 }
 
 .btn-fullscreen {
-  background: #8b5cf6;
+  background: #6b7280;
   color: white;
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-fullscreen:hover {
-  background: #7c3aed;
+  background: #4b5563;
 }
 
 .btn-danger {
@@ -398,6 +401,10 @@
   margin-bottom: 24px;
 }
 
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -410,7 +417,9 @@
   font-size: 14px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.form-group textarea {
   padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -418,10 +427,17 @@
   transition: border-color 0.2s;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 .form-actions {

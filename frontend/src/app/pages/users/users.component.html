@@ -70,18 +70,29 @@
           <th>
             <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
           </th>
+          <th>Actions</th>
           <th>ID</th>
           <th>Name</th>
           <th>Username</th>
           <th>Role</th>
           <th>Status</th>
-          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let user of filteredUsers" [class.selected]="selectedUsers.includes(user.id)">
           <td>
             <input type="checkbox" [checked]="selectedUsers.includes(user.id)" (change)="toggleSelection(user.id)" />
+          </td>
+          <td class="actions">
+            <!-- <button class="btn-icon btn-view" (click)="viewUser(user)" title="View">
+              <i class="fas fa-eye"></i>
+            </button> -->
+            <button class="btn-icon btn-edit" (click)="editUser(user)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteUser(user.id)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
           </td>
           <td>{{ user.id }}</td>
           <td>{{ user.name || 'N/A' }}</td>
@@ -95,17 +106,6 @@
             <span class="status-badge" [class.status-active]="user.status !== 'inactive'" [class.status-inactive]="user.status === 'inactive'">
               {{ user.status || 'active' }}
             </span>
-          </td>
-          <td class="actions">
-            <button class="btn-icon btn-view" (click)="viewUser(user)" title="View">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button class="btn-icon btn-edit" (click)="editUser(user)" title="Edit">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn-icon btn-delete" (click)="deleteUser(user.id)" title="Delete">
-              <i class="fas fa-trash"></i>
-            </button>
           </td>
         </tr>
       </tbody>

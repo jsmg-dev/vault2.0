@@ -5,6 +5,7 @@ import { CustomersComponent } from './pages/customers/customers.component';
 import { DepositsComponent } from './pages/deposits/deposits.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { UsersComponent } from './pages/users/users.component';
+import { PoliciesComponent } from './pages/policies/policies.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -14,5 +15,6 @@ export const routes: Routes = [
   { path: 'deposits', component: DepositsComponent },
   { path: 'reports', component: ReportsComponent },
   { path: 'users', component: UsersComponent },
+  { path: 'policies', component: PoliciesComponent },
   { path: '**', redirectTo: 'login' }
 ];

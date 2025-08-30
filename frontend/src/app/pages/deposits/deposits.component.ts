@@ -19,6 +19,7 @@ export class DepositsComponent implements OnInit {
   showModal = false;
   editingDeposit: any = null;
   depositForm: any = {};
+  customers: any[] = [];
   
   totalDeposits = 0;
   activeCustomers = 0;
@@ -26,6 +27,7 @@ export class DepositsComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadDeposits();
+    await this.loadCustomers();
     this.calculateStats();
   }
 
@@ -204,6 +206,31 @@ export class DepositsComponent implements OnInit {
       document.documentElement.requestFullscreen();
     } else {
       document.exitFullscreen();
+    }
+  }
+
+  async loadCustomers() {
+    try {
+      const res = await fetch(`${environment.apiUrl}/customers/list`, { credentials: 'include' });
+      this.customers = await res.json();
+    } catch (err) {
+      console.error('Failed to load customers:', err);
+    }
+  }
+
+  getCustomerName(customerCode: string): string {
+    const customer = this.customers.find(c => c.customer_code === customerCode);
+    return customer ? customer.name : 'Unknown Customer';
+  }
+
+  onCustomerChange(event: any) {
+    const customerCode = event.target.value;
+    this.depositForm.customer_code = customerCode;
+    if (customerCode) {
+      const customer = this.customers.find(c => c.customer_code === customerCode);
+      if (customer) {
+        this.depositForm.customer_name = customer.name;
+      }
     }
   }
 }

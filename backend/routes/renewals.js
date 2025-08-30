@@ -9,7 +9,7 @@ router.post('/add', (req, res) => {
 
   const query = `
     INSERT INTO renewals (customer_id, renewal_date, renewed_amount)
-    VALUES (?, ?, ?)
+    VALUES ($1, $2, $3)
   `;
 
   db.run(query, [customer_id, renewal_date, renewed_amount], function (err) {

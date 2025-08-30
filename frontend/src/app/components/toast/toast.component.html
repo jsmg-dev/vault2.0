@@ -1,0 +1,18 @@
+<div class="toast-container">
+  <div 
+    *ngFor="let toast of toasts" 
+    class="toast toast-{{ toast.type }}"
+    [@slideIn]
+  >
+    <div class="toast-icon">
+      <i [class]="getIcon(toast.type)"></i>
+    </div>
+    <div class="toast-content">
+      <div class="toast-message">{{ toast.message }}</div>
+    </div>
+    <button class="toast-close" (click)="removeToast(toast.id)">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="toast-progress" [style.animation-duration]="(toast.duration || 5000) + 'ms'"></div>
+  </div>
+</div>

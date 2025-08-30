@@ -17,7 +17,24 @@ function calculateAmountAfterDeduction(loan_amount, file_charge, agent_fee, emi,
 }
 
 // ✅ Create a new customer
-router.post('/create', express.json(), (req, res) => {
+router.post('/create', multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = path.join(__dirname, '../uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  })
+}).fields([
+  { name: 'customerphoto', maxCount: 1 },
+  { name: 'customerdocument', maxCount: 1 }
+]), (req, res) => {
   let {
     customer_code, name, contact_no, alt_contact_no,
     start_date, end_date, loan_duration, loan_amount,
@@ -26,8 +43,18 @@ router.post('/create', express.json(), (req, res) => {
   } = req.body;
 
   // Validate required fields
-  if (!customer_code || !name || !contact_no || !start_date || !loan_duration || !loan_amount) {
-    return res.status(400).json({ error: 'Required fields are missing' });
+  const missingFields = [];
+  if (!customer_code) missingFields.push('Customer Code');
+  if (!name) missingFields.push('Name');
+  if (!contact_no) missingFields.push('Contact No');
+  if (!start_date) missingFields.push('Start Date');
+  if (!loan_duration) missingFields.push('Loan Duration');
+  if (!loan_amount) missingFields.push('Loan Amount');
+  
+  if (missingFields.length > 0) {
+    return res.status(400).json({ 
+      error: `Missing required fields: ${missingFields.join(', ')}` 
+    });
   }
 
   // Parse numeric values
@@ -50,13 +77,18 @@ router.post('/create', express.json(), (req, res) => {
     );
   }
 
+  // Handle file uploads
+  const photo_path = req.files?.customerphoto ? req.files.customerphoto[0].filename : null;
+  const document_path = req.files?.customerdocument ? req.files.customerdocument[0].filename : null;
+
   const query = `
     INSERT INTO customers (
       customer_code, name, contact_no, alt_contact_no,
       start_date, end_date, loan_duration, loan_amount,
       file_charge, agent_fee, emi, advance_days,
-      amount_after_deduction, agent_commission, status, remark
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      amount_after_deduction, agent_commission, status, remark,
+      photo_path, document_path
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
   `;
 
   const params = [
@@ -64,7 +96,7 @@ router.post('/create', express.json(), (req, res) => {
     start_date, end_date, loan_duration, loan_amount,
     file_charge, agent_fee, emi, advance_days,
     amount_after_deduction, agent_commission,
-    status || 'active', remark || ''
+    status || 'active', remark || '', photo_path, document_path
   ];
 
   db.run(query, params, function (err) {
@@ -79,9 +111,11 @@ router.post('/create', express.json(), (req, res) => {
 // ✅ Get customer list for display
 router.get('/list', (req, res) => {
   db.all(`
-    SELECT id, customer_code, name, contact_no,
+    SELECT id, customer_code, name, contact_no, alt_contact_no,
            start_date, end_date, loan_duration,
-           loan_amount, amount_after_deduction, status
+           loan_amount, file_charge, agent_fee, emi, advance_days,
+           amount_after_deduction, agent_commission, status, remark,
+           photo_path, document_path, created_at
     FROM customers
     ORDER BY start_date DESC
   `, [], (err, rows) => {
@@ -117,7 +151,7 @@ router.post('/upload-excel', upload.single('excel'), (req, res) => {
         start_date, end_date, loan_duration, loan_amount,
         file_charge, agent_fee, emi, advance_days,
         amount_after_deduction, agent_commission, status, remark
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     `);
 
     db.serialize(() => {
@@ -173,7 +207,7 @@ router.post('/upload-excel', upload.single('excel'), (req, res) => {
 router.get('/:id', (req, res) => {
   const id = req.params.id;
 
-  db.get('SELECT * FROM customers WHERE id = ?', [id], (err, row) => {
+  db.get('SELECT * FROM customers WHERE id = $1', [id], (err, row) => {
     if (err) {
       console.error('Error fetching customer:', err);
       return res.status(500).json({ error: 'Database error' });
@@ -222,7 +256,7 @@ router.post('/create', upload.fields([
     const stmt = await db.prepare(`
       INSERT INTO customers 
       (customer_code, name, contact_no, customerphoto, customerdocument) 
-      VALUES (?, ?, ?, ?, ?)
+              VALUES ($1, $2, $3, $4, $5)
     `);
 
     await stmt.run(customer_code, name, contact_no, photoBuffer, docBuffer);
@@ -249,7 +283,7 @@ router.get('/list', (req, res) => {
 // === GET: View Single Customer by ID ===
 router.get('/:id', (req, res) => {
   const id = req.params.id;
-  const query = `SELECT * FROM customers WHERE id = ?`;
+  const query = `SELECT * FROM customers WHERE id = $1`;
 
   db.get(query, [id], (err, row) => {
     if (err) {
@@ -260,7 +294,7 @@ router.get('/:id', (req, res) => {
   });
 });
 // Update customer by ID
-router.post('/update/:id', async (req, res) => {
+router.put('/update/:id', async (req, res) => {
   const customerId = req.params.id;
   const {
     customer_code, name, contact_no, alt_contact_no,
@@ -272,11 +306,11 @@ router.post('/update/:id', async (req, res) => {
 
   const sql = `
     UPDATE customers SET
-      customer_code = ?, name = ?, contact_no = ?, alt_contact_no = ?,
-      start_date = ?, end_date = ?, loan_duration = ?, loan_amount = ?,
-      file_charge = ?, agent_fee = ?, emi = ?, advance_days = ?,
-      amount_after_deduction = ?, agent_commission = ?, status = ?, remark = ?
-    WHERE id = ?
+      customer_code = $1, name = $2, contact_no = $3, alt_contact_no = $4,
+      start_date = $5, end_date = $6, loan_duration = $7, loan_amount = $8,
+      file_charge = $9, agent_fee = $10, emi = $11, advance_days = $12,
+      amount_after_deduction = $13, agent_commission = $14, status = $15, remark = $16
+    WHERE id = $17
   `;
 
   const values = [
@@ -295,29 +329,14 @@ router.post('/update/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to update customer' });
   }
 });
+
 // Get customer by ID
 router.get('/get/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+    const result = await db.get('SELECT * FROM customers WHERE id = $1', [id]);
     if (!result) return res.status(404).json({ error: 'Customer not found' });
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update customer
-router.put('/update/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, father_name, village, phone, email, aadhar_no, pan_no } = req.body;
-
-  try {
-    await db.run(
-      `UPDATE customers SET name = ?, father_name = ?, village = ?, phone = ?, email = ?, aadhar_no = ?, pan_no = ? WHERE id = ?`,
-      [name, father_name, village, phone, email, aadhar_no, pan_no, id]
-    );
-    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

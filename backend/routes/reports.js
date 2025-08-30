@@ -18,7 +18,7 @@ router.get("/generate", (req, res) => {
     const query = `
       SELECT id, customer_code, name, contact_no, start_date, end_date, loan_amount, status
       FROM customers
-      WHERE DATE(start_date) BETWEEN ? AND ?
+      WHERE DATE(start_date) BETWEEN $1 AND $2
       ORDER BY start_date ASC
     `;
 
@@ -40,7 +40,7 @@ router.get("/generate", (req, res) => {
         MAX(d.date) AS last_deposit_date
       FROM customers c
       LEFT JOIN deposits d ON c.customer_code = d.customer_code
-      WHERE DATE(d.date) <= ?
+      WHERE DATE(d.date) <= $1
       GROUP BY c.customer_code, c.name
       ORDER BY c.customer_code
     `;
@@ -65,7 +65,7 @@ router.get("/generate", (req, res) => {
       FROM customers c
       LEFT JOIN deposits d ON c.customer_code = d.customer_code
       WHERE c.status = 'active'
-        AND DATE(c.start_date) BETWEEN DATE(?) AND DATE(?)
+        AND DATE(c.start_date) BETWEEN DATE($1) AND DATE($2)
       GROUP BY c.customer_code, c.name, c.start_date, c.emi
     `;
 
@@ -118,7 +118,7 @@ router.get("/export", (req, res) => {
     query = `
       SELECT id, customer_code, name, contact_no, start_date, end_date, loan_amount, status
       FROM customers
-      WHERE DATE(start_date) BETWEEN ? AND ?
+      WHERE DATE(start_date) BETWEEN $1 AND $2
       ORDER BY start_date ASC
     `;
   } else if (type === "deposit") {
@@ -130,7 +130,7 @@ router.get("/export", (req, res) => {
         MAX(d.date) AS last_deposit_date
       FROM customers c
       LEFT JOIN deposits d ON c.customer_code = d.customer_code
-      WHERE DATE(d.date) <= ?
+      WHERE DATE(d.date) <= $1
       GROUP BY c.customer_code, c.name
       ORDER BY c.customer_code
     `;
@@ -145,7 +145,7 @@ router.get("/export", (req, res) => {
       FROM customers c
       LEFT JOIN deposits d ON c.customer_code = d.customer_code
       WHERE c.status = 'active'
-        AND DATE(c.start_date) BETWEEN DATE(?) AND DATE(?)
+        AND DATE(c.start_date) BETWEEN DATE($1) AND DATE($2)
       GROUP BY c.customer_code, c.name, c.start_date, c.emi
     `;
   } else {

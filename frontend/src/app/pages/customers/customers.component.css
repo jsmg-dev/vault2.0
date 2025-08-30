@@ -108,17 +108,20 @@
 }
 
 .btn-fullscreen {
-  background: #8b5cf6;
+  background: #6b7280;
   color: white;
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-fullscreen:hover {
-  background: #7c3aed;
+  background: #4b5563;
 }
 
 .btn-danger {
@@ -463,6 +466,46 @@
 .form-group textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+/* File Upload Styles */
+.form-group input[type="file"] {
+  padding: 8px;
+  border: 2px dashed #d1d5db;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.form-group input[type="file"]:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.photo-preview {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.photo-preview img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.document-preview {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.document-preview span {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .form-actions {

@@ -12,7 +12,7 @@ router.post('/create', (req, res) => {
   }
 
   // Check for duplicate username
-  db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
+  db.get(`SELECT * FROM users WHERE username = $1`, [username], (err, row) => {
     if (err) {
       return res.status(500).json({ error: 'Database error: ' + err.message });
     }
@@ -22,7 +22,7 @@ router.post('/create', (req, res) => {
     }
 
     // Insert the new user
-    const query = `INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)`;
+    const query = `INSERT INTO users (name, username, password, role) VALUES ($1, $2, $3, $4)`;
     db.run(query, [name, username, password, role], function (err) {
       if (err) return res.status(500).json({ error: err.message });
 
@@ -63,7 +63,7 @@ module.exports = router;
 router.delete('/delete/:id', (req, res) => {
   const userId = req.params.id;
 
-  db.run(`DELETE FROM users WHERE id = ?`, [userId], function (err) {
+  db.run(`DELETE FROM users WHERE id = $1`, [userId], function (err) {
     if (err) {
       return res.status(500).json({ error: 'Failed to delete user: ' + err.message });
     }

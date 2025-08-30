@@ -37,12 +37,13 @@ function formatToMMDDYYYY(dateStr) {
 // Create deposits table if not exists
 db.run(`
   CREATE TABLE IF NOT EXISTS deposits (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     customer_code TEXT NOT NULL,
     customer_name TEXT NOT NULL,
-    amount REAL NOT NULL,
-    penalty REAL DEFAULT 0,
-    date TEXT NOT NULL
+    amount DECIMAL(10,2) NOT NULL,
+    penalty DECIMAL(10,2) DEFAULT 0,
+    date DATE NOT NULL,
+    remark TEXT
   )
 `);
 
@@ -50,7 +51,7 @@ db.run(`
 router.post('/create', (req, res) => {
   console.log('Incoming /create request body:', req.body);
 
-  let { customer_code, customer_name, amount, penalty, date } = req.body;
+  let { customer_code, customer_name, amount, penalty, date, remark } = req.body;
 
   if (!customer_code || !customer_name || !amount || !date) {
     return res.status(400).json({ error: 'Required fields are missing' });
@@ -72,12 +73,12 @@ router.post('/create', (req, res) => {
   }
 
   const insertQuery = `
-    INSERT INTO deposits (customer_code, customer_name, amount, penalty, date)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO deposits (customer_code, customer_name, amount, penalty, date, remark)
+    VALUES ($1, $2, $3, $4, $5, $6)
   `;
   db.run(
     insertQuery,
-    [customer_code, customer_name, amount, penalty, formattedDate],
+    [customer_code, customer_name, amount, penalty, formattedDate, remark],
     function (err) {
       if (err) {
         console.error('Deposit insert error:', err.message, {
@@ -106,10 +107,56 @@ router.get('/list', (req, res) => {
   });
 });
 
+// PUT: Update a deposit by ID
+router.put('/update/:id', (req, res) => {
+  const id = req.params.id;
+  let { customer_code, customer_name, amount, penalty, date, remark } = req.body;
+
+  if (!customer_code || !customer_name || !amount || !date) {
+    return res.status(400).json({ error: 'Required fields are missing' });
+  }
+
+  // Trim & sanitize inputs
+  customer_code = String(customer_code).trim();
+  customer_name = String(customer_name).trim();
+  amount = parseFloat(amount);
+  penalty = parseFloat(penalty) || 0;
+
+  if (isNaN(amount)) {
+    return res.status(400).json({ error: 'Invalid amount' });
+  }
+
+  const formattedDate = formatToMMDDYYYY(date);
+  if (!formattedDate) {
+    return res.status(400).json({ error: 'Invalid date format' });
+  }
+
+  const updateQuery = `
+    UPDATE deposits 
+    SET customer_code = $1, customer_name = $2, amount = $3, penalty = $4, date = $5, remark = $6
+    WHERE id = $7
+  `;
+  
+  db.run(
+    updateQuery,
+    [customer_code, customer_name, amount, penalty, formattedDate, remark, id],
+    function (err) {
+      if (err) {
+        console.error('Deposit update error:', err.message);
+        return res.status(500).json({ error: 'Failed to update deposit' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Deposit not found' });
+      }
+      res.json({ message: 'Deposit updated successfully' });
+    }
+  );
+});
+
 // DELETE: Remove a single deposit by ID
 router.delete('/delete/:id', (req, res) => {
   const id = req.params.id;
-  db.run(`DELETE FROM deposits WHERE id = ?`, [id], function (err) {
+  db.run(`DELETE FROM deposits WHERE id = $1`, [id], function (err) {
     if (err) {
       console.error('Delete error:', err.message);
       return res.status(500).json({ error: 'Failed to delete deposit' });
@@ -124,7 +171,7 @@ router.post('/delete-multiple', (req, res) => {
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ error: 'No IDs provided for deletion.' });
   }
-  const placeholders = ids.map(() => '?').join(',');
+  const placeholders = ids.map((_, index) => `$${index + 1}`).join(',');
   const sql = `DELETE FROM deposits WHERE id IN (${placeholders})`;
   db.run(sql, ids, function (err) {
     if (err) {

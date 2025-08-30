@@ -148,35 +148,35 @@
       <div class="form-grid">
         <div class="form-group">
           <label>Customer Code *</label>
-          <input type="text" name="customer_code" required />
+          <input type="text" name="customer_code" [(ngModel)]="customerForm.customer_code" required />
         </div>
         <div class="form-group">
           <label>Name *</label>
-          <input type="text" name="name" required />
+          <input type="text" name="name" [(ngModel)]="customerForm.name" required />
         </div>
         <div class="form-group">
           <label>Contact No *</label>
-          <input type="text" name="contact_no" required />
+          <input type="text" name="contact_no" [(ngModel)]="customerForm.contact_no" required />
         </div>
         <div class="form-group">
           <label>Alt Contact</label>
-          <input type="text" name="alt_contact_no" />
+          <input type="text" name="alt_contact_no" [(ngModel)]="customerForm.alt_contact_no" />
         </div>
         <div class="form-group">
           <label>Start Date *</label>
-          <input type="date" name="start_date" required />
+          <input type="date" name="start_date" [(ngModel)]="customerForm.start_date" required />
         </div>
         <div class="form-group">
           <label>End Date</label>
-          <input type="date" name="end_date" />
+          <input type="date" name="end_date" [(ngModel)]="customerForm.end_date" readonly />
         </div>
         <div class="form-group">
-          <label>Loan Duration</label>
-          <input type="number" name="loan_duration" />
+          <label>Loan Duration (months) *</label>
+          <input type="number" name="loan_duration" [(ngModel)]="customerForm.loan_duration" required />
         </div>
         <div class="form-group">
           <label>Loan Amount *</label>
-          <input type="number" name="loan_amount" step="0.01" required />
+          <input type="number" name="loan_amount" step="0.01" [(ngModel)]="customerForm.loan_amount" required />
         </div>
         <div class="form-group">
           <label>File Charge</label>
@@ -212,6 +212,23 @@
         <div class="form-group full-width">
           <label>Remark</label>
           <textarea name="remark" rows="3"></textarea>
+        </div>
+        
+        <!-- File Upload Section -->
+        <div class="form-group full-width">
+          <label>Customer Photo</label>
+          <input type="file" name="customerphoto" accept="image/*" (change)="onPhotoUpload($event)" />
+          <div class="photo-preview" *ngIf="photoPreview">
+            <img [src]="photoPreview" alt="Photo Preview" />
+          </div>
+        </div>
+        
+        <div class="form-group full-width">
+          <label>Customer Document</label>
+          <input type="file" name="customerdocument" (change)="onDocumentUpload($event)" />
+          <div class="document-preview" *ngIf="documentName">
+            <span>{{ documentName }}</span>
+          </div>
         </div>
       </div>
       <div class="form-actions">
@@ -297,6 +314,23 @@
         <div class="form-group full-width">
           <label>Remark</label>
           <textarea name="remark" rows="3" [(ngModel)]="editForm.remark"></textarea>
+        </div>
+        
+        <!-- File Upload Section -->
+        <div class="form-group full-width">
+          <label>Customer Photo</label>
+          <input type="file" name="customerphoto" accept="image/*" (change)="onPhotoUpload($event)" />
+          <div class="photo-preview" *ngIf="photoPreview">
+            <img [src]="photoPreview" alt="Photo Preview" />
+          </div>
+        </div>
+        
+        <div class="form-group full-width">
+          <label>Customer Document</label>
+          <input type="file" name="customerdocument" (change)="onDocumentUpload($event)" />
+          <div class="document-preview" *ngIf="documentName">
+            <span>{{ documentName }}</span>
+          </div>
         </div>
       </div>
       <div class="form-actions">

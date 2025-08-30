@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-customers',
@@ -19,11 +20,16 @@ export class CustomersComponent implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   editForm: any = {};
+  customerForm: any = {};
+  photoPreview: string | null = null;
+  documentName: string | null = null;
   
   // Stats properties
   totalCustomers = 0;
   activeCustomers = 0;
   monthlyCustomers = 0;
+
+  constructor(private toastService: ToastService) {}
 
   async ngOnInit() {
     await this.loadCustomers();
@@ -71,10 +77,12 @@ export class CustomersComponent implements OnInit {
 
   openCreateCustomerModal() {
     this.showCreateModal = true;
+    this.customerForm = {};
   }
 
   closeCreateCustomerModal() {
     this.showCreateModal = false;
+    this.resetFileUploads();
   }
 
   openEditCustomerModal(id: number) {
@@ -97,44 +105,60 @@ export class CustomersComponent implements OnInit {
         if (res.ok) {
           await this.loadCustomers();
         } else {
-          alert("Failed to delete customer.");
+          this.toastService.error("Failed to delete customer.");
         }
       } catch (err) {
-        alert("Failed to delete customer.");
+        this.toastService.error("Failed to delete customer.");
       }
     }
   }
 
   async createCustomer(event: Event) {
     event.preventDefault();
-    const form = event.target as HTMLFormElement;
-    const data: any = {};
     
-    // Extract form data manually to avoid TypeScript compatibility issues
-    for (let i = 0; i < form.elements.length; i++) {
-      const element = form.elements[i] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-      if (element.name && element.value !== undefined) {
-        data[element.name] = element.value;
-      }
+    // Create FormData with customerForm values
+    const formData = new FormData();
+    formData.append('customer_code', this.customerForm.customer_code || '');
+    formData.append('name', this.customerForm.name || '');
+    formData.append('contact_no', this.customerForm.contact_no || '');
+    formData.append('alt_contact_no', this.customerForm.alt_contact_no || '');
+    formData.append('start_date', this.customerForm.start_date || '');
+    formData.append('end_date', this.customerForm.end_date || '');
+    formData.append('loan_duration', this.customerForm.loan_duration || '');
+    formData.append('loan_amount', this.customerForm.loan_amount || '');
+    formData.append('file_charge', this.customerForm.file_charge || '');
+    formData.append('agent_fee', this.customerForm.agent_fee || '');
+    formData.append('emi', this.customerForm.emi || '');
+    formData.append('advance_days', this.customerForm.advance_days || '');
+    formData.append('amount_after_deduction', this.customerForm.amount_after_deduction || '');
+    formData.append('agent_commission', this.customerForm.agent_commission || '');
+    formData.append('status', this.customerForm.status || 'active');
+    formData.append('remark', this.customerForm.remark || '');
+    
+    // Add files if they exist
+    if (this.photoPreview) {
+      // Convert base64 to blob for photo
+      const photoBlob = await fetch(this.photoPreview).then(r => r.blob());
+      formData.append('customerphoto', photoBlob, 'photo.jpg');
     }
     
     try {
       const res = await fetch(`${environment.apiUrl}/customers/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: formData,
         credentials: 'include'
       });
       if (res.ok) {
-        alert('Customer created successfully!');
+        this.toastService.success('Customer created successfully!');
         this.closeCreateCustomerModal();
+        this.resetFileUploads();
         await this.loadCustomers();
       } else {
         const result = await res.json();
-        alert(result.error || 'Error occurred.');
+        this.toastService.error(result.error || 'Error occurred.');
       }
     } catch (err) {
-      alert('Error occurred.');
+      this.toastService.error('Error occurred.');
     }
   }
 
@@ -148,14 +172,14 @@ export class CustomersComponent implements OnInit {
         credentials: 'include'
       });
       if (res.ok) {
-        alert('Customer updated successfully');
+        this.toastService.success('Customer updated successfully');
         this.closeEditCustomerModal();
         await this.loadCustomers();
       } else {
-        alert('Update failed');
+        this.toastService.error('Update failed');
       }
     } catch (err) {
-      alert('Update failed');
+      this.toastService.error('Update failed');
     }
   }
 
@@ -172,16 +196,16 @@ export class CustomersComponent implements OnInit {
         body: formData,
         credentials: 'include'
       });
-      if (res.ok) {
-        alert('Excel uploaded and data imported successfully!');
-        await this.loadCustomers();
-      } else {
-        const result = await res.json();
-        alert(result.error || 'Upload failed.');
+              if (res.ok) {
+          this.toastService.success('Excel uploaded and data imported successfully!');
+          await this.loadCustomers();
+        } else {
+          const result = await res.json();
+          this.toastService.error(result.error || 'Upload failed.');
+        }
+      } catch (err) {
+        this.toastService.error('Upload failed');
       }
-    } catch (err) {
-      alert('Upload failed');
-    }
   }
 
   downloadTemplate() {
@@ -228,7 +252,7 @@ export class CustomersComponent implements OnInit {
           await this.loadCustomers();
         }
       } catch (err) {
-        alert('Delete failed');
+        this.toastService.error('Delete failed');
       }
     }
   }
@@ -239,5 +263,28 @@ export class CustomersComponent implements OnInit {
     } else {
       document.exitFullscreen();
     }
+  }
+
+  onPhotoUpload(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.photoPreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onDocumentUpload(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.documentName = file.name;
+    }
+  }
+
+  resetFileUploads() {
+    this.photoPreview = null;
+    this.documentName = null;
   }
 }

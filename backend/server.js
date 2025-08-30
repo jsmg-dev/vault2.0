@@ -55,28 +55,6 @@ app.use('/policies', policiesRoutes);
         role TEXT
       );
     `);
-    await db.query(`CREATE TABLE customers (
-      id SERIAL PRIMARY KEY,
-      customer_code TEXT UNIQUE,
-      name TEXT,
-      contact_no TEXT,
-      alt_contact_no TEXT,
-      start_date DATE,
-      end_date DATE,
-      loan_duration INTEGER,
-      loan_amount DECIMAL(15,2),
-      file_charge DECIMAL(10,2),
-      agent_fee DECIMAL(10,2),
-      emi DECIMAL(10,2),
-      advance_days INTEGER,
-      amount_after_deduction DECIMAL(15,2),
-      agent_commission DECIMAL(10,2),
-      status TEXT DEFAULT 'active',
-      remark TEXT,
-      photo_path TEXT,
-      document_path TEXT,
-      created_at TIMESTAMP DEFAULT NOW()
-    );`)
 
     const countRes = await db.query(`SELECT COUNT(*)::int AS cnt FROM users;`);
     if ((countRes.rows[0]?.cnt ?? 0) === 0) {

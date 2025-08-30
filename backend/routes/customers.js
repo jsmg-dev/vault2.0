@@ -5,7 +5,7 @@ const pool = require("../db");
 // =============================
 // Get all customers
 // =============================
-router.get("/customers/list", async (req, res) => {
+router.get("/list", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM customers");
     res.json(result.rows);
@@ -18,7 +18,7 @@ router.get("/customers/list", async (req, res) => {
 // =============================
 // Add a new customer
 // =============================
-router.post("/customers/create", async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const { name, email } = req.body;
 
@@ -41,7 +41,7 @@ router.post("/customers/create", async (req, res) => {
 // =============================
 // Get single customer by ID
 // =============================
-router.get("/customers/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
@@ -63,7 +63,7 @@ router.get("/customers/:id", async (req, res) => {
 // =============================
 // Update customer
 // =============================
-router.put("/customers/:id", async (req, res) => {
+router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email } = req.body;
@@ -87,7 +87,7 @@ router.put("/customers/:id", async (req, res) => {
 // =============================
 // Delete customer
 // =============================
-router.delete("/customers/:id", async (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
 

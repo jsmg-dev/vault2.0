@@ -90,6 +90,7 @@ module.exports = (db) => {
         amount_after_deduction, agent_commission, status, remark,
         photo_path, document_path
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      RETURNING id;
     `;
 
     const params = [

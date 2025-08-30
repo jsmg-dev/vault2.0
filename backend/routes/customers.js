@@ -1,168 +1,180 @@
-// routes/customers.js
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const db = require('../db');
-
 const router = express.Router();
+const db = require('../db');
+const multer = require('multer');
 
-// Helpers
-function calculateEndDate(startDate, days = 100) {
-  const d = new Date(startDate);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
-}
-function calculateAmountAfterDeduction(loan_amount, file_charge, agent_fee, emi, advance_days) {
-  return loan_amount - file_charge - agent_fee - (emi * advance_days);
-}
-
-// Multer
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = path.join(__dirname, '../uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    },
-  }),
+// Multer setup for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 });
+const upload = multer({ storage });
 
-// Create customer
+// CREATE CUSTOMER
 router.post(
   '/create',
-  upload.fields([
-    { name: 'customerphoto', maxCount: 1 },
-    { name: 'customerdocument', maxCount: 1 },
-  ]),
+  upload.fields([{ name: 'photo' }, { name: 'document' }]),
   async (req, res) => {
     try {
-      let {
-        customer_code,
+      const {
         name,
-        contact_no,
-        alt_contact_no,
+        email,
+        phone,
         start_date,
         end_date,
-        loan_duration,
-        loan_amount,
-        file_charge,
-        agent_fee,
-        emi,
-        advance_days,
+        amount,
+        deduction,
         amount_after_deduction,
-        agent_commission,
-        status,
-        remark,
       } = req.body;
 
-      const missing = [];
-      if (!customer_code) missing.push('Customer Code');
-      if (!name) missing.push('Name');
-      if (!contact_no) missing.push('Contact No');
-      if (!start_date) missing.push('Start Date');
-      if (!loan_duration) missing.push('Loan Duration');
-      if (!loan_amount) missing.push('Loan Amount');
-      if (missing.length) {
-        return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+      if (!name || !email || !phone || !start_date || !amount) {
+        return res
+          .status(400)
+          .json({ error: 'Required fields are missing' });
       }
 
-      loan_amount = parseFloat(loan_amount) || 0;
-      file_charge = parseFloat(file_charge) || 0;
-      agent_fee = parseFloat(agent_fee) || 0;
-      emi = parseFloat(emi) || 0;
-      advance_days = parseInt(advance_days) || 0;
-      amount_after_deduction = parseFloat(amount_after_deduction) || 0;
-      agent_commission = parseFloat(agent_commission) || 0;
-      loan_duration = parseInt(loan_duration) || 0;
+      // Auto-calc end_date if missing
+      const finalEndDate =
+        end_date ||
+        new Date(new Date(start_date).setFullYear(new Date(start_date).getFullYear() + 1));
 
-      if (!end_date) end_date = calculateEndDate(start_date);
+      // Auto-calc deduction if not provided
+      const finalAmountAfterDeduction =
+        amount_after_deduction || (amount - (deduction || 0));
 
-      if (!amount_after_deduction || amount_after_deduction === 0) {
-        amount_after_deduction = calculateAmountAfterDeduction(
-          loan_amount,
-          file_charge,
-          agent_fee,
-          emi,
-          advance_days
-        );
-      }
+      const photo = req.files['photo']
+        ? req.files['photo'][0].filename
+        : null;
+      const document = req.files['document']
+        ? req.files['document'][0].filename
+        : null;
 
-      const photo_path = req.files?.customerphoto ? req.files.customerphoto[0].filename : null;
-      const document_path = req.files?.customerdocument ? req.files.customerdocument[0].filename : null;
+      const query = `
+        INSERT INTO customers 
+        (name, email, phone, start_date, end_date, amount, deduction, amount_after_deduction, photo, document) 
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        RETURNING *`;
 
-      const sql = `
-        INSERT INTO customers (
-          customer_code, name, contact_no, alt_contact_no,
-          start_date, end_date, loan_duration, loan_amount,
-          file_charge, agent_fee, emi, advance_days,
-          amount_after_deduction, agent_commission, status, remark,
-          photo_path, document_path
-        )
-        VALUES (
-          $1,$2,$3,$4,
-          $5,$6,$7,$8,
-          $9,$10,$11,$12,
-          $13,$14,$15,$16,
-          $17,$18
-        )
-        RETURNING id;
-      `;
-
-      const params = [
-        customer_code,
+      const values = [
         name,
-        contact_no,
-        alt_contact_no || '',
+        email,
+        phone,
         start_date,
-        end_date,
-        loan_duration,
-        loan_amount,
-        file_charge,
-        agent_fee,
-        emi,
-        advance_days,
-        amount_after_deduction,
-        agent_commission,
-        status || 'active',
-        remark || '',
-        photo_path,
-        document_path,
+        finalEndDate,
+        amount,
+        deduction || 0,
+        finalAmountAfterDeduction,
+        photo,
+        document,
       ];
 
-      const result = await db.query(sql, params);
-      return res.status(201).json({ message: 'Customer created successfully', customerId: result.rows[0].id });
+      const result = await db.query(query, values);
+      res.status(201).json(result.rows[0]);
     } catch (err) {
-      console.error('❌ Error creating customer:', err);
-      return res.status(500).json({ error: 'Failed to create customer', details: err.message });
+      console.error('Error creating customer:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 );
 
-// List customers
+// LIST CUSTOMERS
 router.get('/list', async (req, res) => {
   try {
-    const result = await db.query(
-      `
-      SELECT id, customer_code, name, contact_no, alt_contact_no,
-             start_date, end_date, loan_duration,
-             loan_amount, file_charge, agent_fee, emi, advance_days,
-             amount_after_deduction, agent_commission, status, remark,
-             photo_path, document_path, created_at
-      FROM customers
-      ORDER BY start_date DESC, id DESC
-      `
-    );
+    const result = await db.query('SELECT * FROM customers ORDER BY id DESC');
     res.json(result.rows);
   } catch (err) {
-    console.error('❌ Error fetching customers:', err);
-    res.status(500).json({ error: 'Failed to fetch customers', details: err.message });
+    console.error('Error fetching customers:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// UPDATE CUSTOMER
+router.put(
+  '/update/:id',
+  upload.fields([{ name: 'photo' }, { name: 'document' }]),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        name,
+        email,
+        phone,
+        start_date,
+        end_date,
+        amount,
+        deduction,
+        amount_after_deduction,
+      } = req.body;
+
+      const photo = req.files['photo']
+        ? req.files['photo'][0].filename
+        : null;
+      const document = req.files['document']
+        ? req.files['document'][0].filename
+        : null;
+
+      // Update query dynamically
+      const query = `
+        UPDATE customers SET
+          name = COALESCE($1, name),
+          email = COALESCE($2, email),
+          phone = COALESCE($3, phone),
+          start_date = COALESCE($4, start_date),
+          end_date = COALESCE($5, end_date),
+          amount = COALESCE($6, amount),
+          deduction = COALESCE($7, deduction),
+          amount_after_deduction = COALESCE($8, amount_after_deduction),
+          photo = COALESCE($9, photo),
+          document = COALESCE($10, document)
+        WHERE id = $11
+        RETURNING *`;
+
+      const values = [
+        name || null,
+        email || null,
+        phone || null,
+        start_date || null,
+        end_date || null,
+        amount || null,
+        deduction || null,
+        amount_after_deduction || null,
+        photo,
+        document,
+        id,
+      ];
+
+      const result = await db.query(query, values);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      res.json(result.rows[0]);
+    } catch (err) {
+      console.error('Error updating customer:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+);
+
+// DELETE CUSTOMER
+router.delete('/delete/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await db.query(
+      'DELETE FROM customers WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    res.json({ message: 'Customer deleted successfully', customer: result.rows[0] });
+  } catch (err) {
+    console.error('Error deleting customer:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

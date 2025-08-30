@@ -8,6 +8,8 @@ router.post('/login', (req, res) => {
 
   // Dummy login logic (optional, actual login is in app.js)
   if (username === 'admin' && password === 'admin123') {
+    req.session.userRole = 'admin';
+    req.session.username = username;
     res.status(200).json({ message: 'Login successful', role: 'admin' });
   } else {
     res.status(401).json({ message: 'Invalid credentials' });

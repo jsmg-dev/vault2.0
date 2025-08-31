@@ -1,0 +1,102 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to right, #ffffff);
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+/* Navbar */
+.navbar {
+  background-color: #1f2a44;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.navbar-title {
+  font-size: 20px;
+  color: white;
+  font-weight: 600;
+}
+.navbar-right {
+  display: flex;
+  gap: 10px;
+}
+.back-btn, .logout-btn {
+  background: #f44336;
+  padding: 8px 14px;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 500;
+}
+.back-btn:hover { background-color: #b71c1c; }
+.logout-btn:hover { background-color: #d32f2f; }
+
+/* EMI Form */
+h1 {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.form-container {
+  background: #fff;
+  border-radius: 10px;
+  padding: 30px;
+  margin: 30px auto;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #004aad;
+  color: white;
+  border: none;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+button:hover {
+  background: #00307a;
+}
+
+/* Result Box */
+.result-box {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 16px;
+}
+.result-row strong {
+  font-weight: 600;
+}

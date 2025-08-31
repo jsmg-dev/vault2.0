@@ -9,8 +9,7 @@ export class EmiCalculatorComponent {
   amount: number = 0;
   rate: number = 0;
   months: number = 0;
-  mode: string = 'monthly';
-
+  mode: string = 'monthly';  // monthly, yearly, daily
   result: any = null;
 
   calculateEMI() {

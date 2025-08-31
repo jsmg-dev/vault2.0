@@ -6,7 +6,7 @@ import { DepositsComponent } from './pages/deposits/deposits.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { UsersComponent } from './pages/users/users.component';
 import { PoliciesComponent } from './pages/policies/policies.component';
-import { CalculatorComponent } from './pages/calculator/calculator.component';
+import { EmiCalculatorComponent } from './pages/calculator/emi-calculator.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -17,6 +17,7 @@ export const routes: Routes = [
   { path: 'reports', component: ReportsComponent },
   { path: 'users', component: UsersComponent },
   { path: 'policies', component: PoliciesComponent },
-  { path: 'calculator', component: CalculatorComponent },
+  { path: 'calculator', component: EmiCalculatorComponent },
+
   { path: '**', redirectTo: 'login' }
 ];

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { trigger, style, animate, transition } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { ToastService } from '../../services/toast.service';
 
@@ -7,7 +8,18 @@ import { ToastService } from '../../services/toast.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './toast.component.html',
-  styleUrl: './toast.component.css'
+  styleUrl: './toast.component.css',
+  animations: [
+    trigger('slideIn', [
+      transition(':enter', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate('200ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 }))
+      ])
+    ])
+  ]
 })
 export class ToastComponent implements OnInit {
   toasts: any[] = [];

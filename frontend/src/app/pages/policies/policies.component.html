@@ -25,12 +25,37 @@
             <th>
               <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
             </th>
-            <th>Actions</th>
+            <th class="col-actions">Actions</th>
             <th>Policy No</th>
             <th>Name</th>
+            <th>DOB</th>
+            <th>Gender</th>
+            <th>Marital Status</th>
+            <th>Aadhaar/PAN</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Address</th>
             <th>Plan</th>
-            <th>Status</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Payment Mode</th>
+            <th>Next Premium Date</th>
+            <th>Sum Assured</th>
+            <th>Policy Term</th>
+            <th>Premium Term</th>
             <th>Premium</th>
+            <th>Maturity Value</th>
+            <th>Nominee Name</th>
+            <th>Nominee Relation</th>
+            <th>Height (cm)</th>
+            <th>Weight (kg)</th>
+            <th>Health & Lifestyle</th>
+            <th>Bank Account</th>
+            <th>IFSC</th>
+            <th>Bank Name</th>
+            <th>Agent Code</th>
+            <th>Branch Code</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -48,13 +73,38 @@
             </td>
             <td>{{ policy.policy_no || 'Auto' }}</td>
             <td>{{ policy.fullname }}</td>
+            <td>{{ policy.dob | date:'shortDate' }}</td>
+            <td>{{ policy.gender }}</td>
+            <td>{{ policy.marital_status }}</td>
+            <td>{{ policy.aadhaar_pan }}</td>
+            <td>{{ policy.email }}</td>
+            <td>{{ policy.mobile }}</td>
+            <td>{{ policy.address }}</td>
             <td>{{ policy.plan_name }}</td>
+            <td>{{ policy.start_date | date:'shortDate' }}</td>
+            <td>{{ policy.end_date | date:'shortDate' }}</td>
+            <td>{{ policy.mode_of_payment }}</td>
+            <td>{{ policy.next_premium_date | date:'shortDate' }}</td>
+            <td class="amount">₹ {{ policy.sum_assured | number }}</td>
+            <td>{{ policy.policy_term }}</td>
+            <td>{{ policy.premium_term }}</td>
+            <td class="amount">₹ {{ policy.premium | number }}</td>
+            <td class="amount">₹ {{ policy.maturity_value | number }}</td>
+            <td>{{ policy.nominee_name }}</td>
+            <td>{{ policy.nominee_relation }}</td>
+            <td>{{ policy.height_cm }}</td>
+            <td>{{ policy.weight_kg }}</td>
+            <td>{{ policy.health_lifestyle }}</td>
+            <td>{{ policy.bank_account }}</td>
+            <td>{{ policy.ifsc_code }}</td>
+            <td>{{ policy.bank_name }}</td>
+            <td>{{ policy.agent_code }}</td>
+            <td>{{ policy.branch_code }}</td>
             <td>
-              <span class="status-badge" [class]="'status-' + policy.status.toLowerCase()">
-                {{ policy.status }}
+              <span class="status-badge" [class]="'status-' + (policy.status ? policy.status.toLowerCase() : 'active')">
+                {{ policy.status || 'Active' }}
               </span>
             </td>
-            <td>{{ policy.premium | currency:'INR' }}</td>
           </tr>
         </tbody>
       </table>
@@ -70,7 +120,7 @@
       </button>
     </div>
 
-    <form (ngSubmit)="savePolicy()" #policyFormRef="ngForm">
+    <form (submit)="onSubmit($event)">
       <!-- Policy Information -->
       <div class="form-section">
         <h3><i class="fa fa-hashtag"></i> Policy Information</h3>
@@ -79,11 +129,12 @@
             <label for="policy_no">Policy No</label>
             <input type="text" id="policy_no" name="policy_no" [(ngModel)]="policyForm.policy_no" placeholder="Leave blank for auto-generation">
           </div>
-          <div class="form-group">
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['plan_name']">
             <label for="plan_name">Plan Name</label>
             <input type="text" id="plan_name" name="plan_name" [(ngModel)]="policyForm.plan_name" required>
+            <small class="error" *ngIf="isSubmitted && validationErrors['plan_name']">{{ validationErrors['plan_name'] }}</small>
           </div>
-          <div class="form-group">
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['status']">
             <label for="status">Status</label>
             <select id="status" name="status" [(ngModel)]="policyForm.status" required>
               <option value="Active">Active</option>
@@ -91,6 +142,7 @@
               <option value="Matured">Matured</option>
               <option value="Surrendered">Surrendered</option>
             </select>
+            <small class="error" *ngIf="isSubmitted && validationErrors['status']">{{ validationErrors['status'] }}</small>
           </div>
         </div>
       </div>
@@ -99,13 +151,15 @@
       <div class="form-section">
         <h3><i class="fa fa-user"></i> Personal Information</h3>
         <div class="form-grid">
-          <div class="form-group">
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['fullname']">
             <label for="fullname">Full Name *</label>
             <input type="text" id="fullname" name="fullname" [(ngModel)]="policyForm.fullname" required>
+            <small class="error" *ngIf="isSubmitted && validationErrors['fullname']">{{ validationErrors['fullname'] }}</small>
           </div>
-          <div class="form-group">
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['dob']">
             <label for="dob">Date of Birth *</label>
             <input type="date" id="dob" name="dob" [(ngModel)]="policyForm.dob" required>
+            <small class="error" *ngIf="isSubmitted && validationErrors['dob']">{{ validationErrors['dob'] }}</small>
           </div>
           <div class="form-group">
             <label for="gender">Gender</label>
@@ -265,10 +319,27 @@
       <!-- Form Actions -->
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
-        <button type="submit" class="btn btn-primary">
-          <i class="fa fa-save"></i> {{ editingPolicy ? 'Update' : 'Save' }} Policy
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+          <i class="fa fa-save"></i> {{ editingPolicy ? (saveMode === 'add' ? 'Save as New' : 'Update') : 'Save' }} Policy
         </button>
       </div>
     </form>
+
+    <!-- Decision Modal -->
+    <div class="modal" [class.show]="showDecisionModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>How would you like to save?</h3>
+          <button class="modal-close" (click)="showDecisionModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <p>Do you want to create a new policy record or update the existing one?</p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="decideSaveMode('update')">No, Update Existing</button>
+          <button class="btn btn-primary" (click)="decideSaveMode('add')">Yes, Create New</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

@@ -166,7 +166,7 @@ export class CustomersComponent implements OnInit {
     event.preventDefault();
     try {
       const res = await fetch(`${environment.apiUrl}/customers/update/${this.editForm.id}`, {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(this.editForm),
         credentials: 'include'

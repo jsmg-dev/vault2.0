@@ -173,6 +173,27 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.policies-table th.col-actions,
+.policies-table td.actions {
+  width: 120px;
+  white-space: nowrap;
+}
+
+.policies-table td.actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .policies-table th.col-actions,
+  .policies-table td.actions { width: 100px; }
+}
+
+@media (max-width: 768px) {
+  .policies-table th.col-actions,
+  .policies-table td.actions { width: 80px; }
+}
+
 .policies-table th {
   background: #DDA0DD;
   font-weight: 600;
@@ -296,6 +317,19 @@
   background: white;
 }
 
+.form-group.has-error input,
+.form-group.has-error select,
+.form-group.has-error textarea {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-group .error {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
@@ -316,6 +350,48 @@
   margin-top: 30px;
   padding-top: 20px;
   border-top: 2px solid #e5e7eb;
+}
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal.show { display: flex; }
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.modal-header h3 { margin: 0; }
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+.modal-body { padding: 20px; }
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
 }
 
 /* Responsive Design */

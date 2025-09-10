@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-policies',
   standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule, RouterModule],
   templateUrl: './policies.component.html',
-  styleUrl: './policies.component.css'
+  styleUrls: ['./policies.component.css']
 })
 export class PoliciesComponent implements OnInit {
   policies: any[] = [];
@@ -18,6 +19,11 @@ export class PoliciesComponent implements OnInit {
   editingPolicy: any = null;
   selectedPolicies: number[] = [];
   selectAllChecked = false;
+  isSubmitting = false;
+  isSubmitted = false;
+  validationErrors: Record<string, string> = {};
+  saveMode: 'add' | 'update' = 'add';
+  showDecisionModal = false;
 
   policyForm = {
     policy_no: '',
@@ -63,7 +69,7 @@ export class PoliciesComponent implements OnInit {
   }
 
   loadPolicies() {
-    this.http.get<any[]>('http://localhost:8080/policies/list').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/policies/list`).subscribe({
       next: (data) => {
         this.policies = data;
       },
@@ -77,9 +83,11 @@ export class PoliciesComponent implements OnInit {
     if (policy) {
       this.editingPolicy = policy;
       this.policyForm = { ...policy };
+      this.saveMode = 'update';
     } else {
       this.editingPolicy = null;
       this.resetForm();
+      this.saveMode = 'add';
     }
     this.showForm = true;
   }
@@ -119,32 +127,73 @@ export class PoliciesComponent implements OnInit {
     };
   }
 
+  onSubmit(event: Event) {
+    event.preventDefault();
+    this.isSubmitted = true;
+    this.validationErrors = this.validateForm(this.policyForm);
+    if (Object.keys(this.validationErrors).length > 0) {
+      this.toastService.error('Please fix the highlighted fields');
+      return;
+    }
+    // If we are editing, ask user whether to create new or update using a modal
+    if (this.editingPolicy) {
+      this.showDecisionModal = true;
+      return;
+    }
+    this.savePolicy();
+  }
+
+  decideSaveMode(choice: 'add' | 'update') {
+    this.saveMode = choice;
+    this.showDecisionModal = false;
+    this.savePolicy();
+  }
+
+  validateForm(form: any): Record<string, string> {
+    const errors: Record<string, string> = {};
+    const requiredFields: Array<{ key: string; label: string }> = [
+      { key: 'fullname', label: 'Full Name' },
+      { key: 'dob', label: 'Date of Birth' },
+      { key: 'plan_name', label: 'Plan Name' },
+      { key: 'status', label: 'Status' }
+    ];
+    for (const field of requiredFields) {
+      const value = (form[field.key] ?? '').toString().trim();
+      if (!value) errors[field.key] = `${field.label} is required`;
+    }
+    return errors;
+  }
+
   savePolicy() {
-    const url = this.editingPolicy 
-      ? `http://localhost:8080/policies/update/${this.editingPolicy.id}`
-      : 'http://localhost:8080/policies/add';
-    
-    const method = this.editingPolicy ? 'put' : 'post';
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+    const useAdd = this.saveMode === 'add' || !this.editingPolicy;
+    const url = useAdd
+      ? `${environment.apiUrl}/policies/add`
+      : `${environment.apiUrl}/policies/update/${this.editingPolicy.id}`;
+    const method = useAdd ? 'post' : 'put';
     
     this.http[method](url, this.policyForm).subscribe({
       next: (response: any) => {
-        if (response.success) {
+        if (response && (response.success || response.policy_id)) {
           this.toastService.success(this.editingPolicy ? 'Policy updated successfully' : 'Policy created successfully');
           this.loadPolicies();
           this.showForm = false;
           this.resetForm();
         }
+        this.isSubmitting = false;
       },
       error: (error) => {
         console.error('Error saving policy:', error);
-        this.toastService.error('Failed to save policy');
+        this.toastService.error(error?.error?.error || 'Failed to save policy');
+        this.isSubmitting = false;
       }
     });
   }
 
   deletePolicy(id: number) {
     if (confirm('Are you sure you want to delete this policy?')) {
-      this.http.delete(`http://localhost:8080/policies/delete/${id}`).subscribe({
+      this.http.delete(`${environment.apiUrl}/policies/delete/${id}`).subscribe({
         next: (response: any) => {
           if (response.success) {
             this.toastService.success('Policy deleted successfully');

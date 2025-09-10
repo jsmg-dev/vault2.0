@@ -120,12 +120,85 @@ router.get("/:id", async (req, res) => {
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email } = req.body;
 
-    const result = await pool.query(
-      "UPDATE customers SET name = $1, email = $2 WHERE id = $3 RETURNING *",
-      [name, email, id]
-    );
+    // Extract all supported fields
+    let {
+      customer_code,
+      name,
+      contact_no,
+      alt_contact_no,
+      start_date,
+      end_date,
+      loan_duration,
+      loan_amount,
+      file_charge,
+      agent_fee,
+      emi,
+      advance_days,
+      amount_after_deduction,
+      agent_commission,
+      status,
+      remark
+    } = req.body;
+
+    // Normalize types / blanks to null
+    const toNull = (v) => (v === undefined || v === null || v === '' ? null : v);
+    const toNum = (v) => (v === undefined || v === null || v === '' ? null : Number(v));
+
+    start_date = toNull(start_date);
+    end_date = toNull(end_date);
+    loan_duration = toNum(loan_duration);
+    loan_amount = toNum(loan_amount);
+    file_charge = toNum(file_charge);
+    agent_fee = toNum(agent_fee);
+    emi = toNum(emi);
+    advance_days = toNum(advance_days);
+    amount_after_deduction = toNum(amount_after_deduction);
+    agent_commission = toNum(agent_commission);
+
+    const query = `
+      UPDATE customers SET
+        customer_code = $1,
+        name = $2,
+        contact_no = $3,
+        alt_contact_no = $4,
+        start_date = $5,
+        end_date = $6,
+        loan_duration = $7,
+        loan_amount = $8,
+        file_charge = $9,
+        agent_fee = $10,
+        emi = $11,
+        advance_days = $12,
+        amount_after_deduction = $13,
+        agent_commission = $14,
+        status = $15,
+        remark = $16
+      WHERE id = $17
+      RETURNING *;
+    `;
+
+    const values = [
+      toNull(customer_code),
+      toNull(name),
+      toNull(contact_no),
+      toNull(alt_contact_no),
+      start_date,
+      end_date,
+      loan_duration,
+      loan_amount,
+      file_charge,
+      agent_fee,
+      emi,
+      advance_days,
+      amount_after_deduction,
+      agent_commission,
+      toNull(status),
+      toNull(remark),
+      id
+    ];
+
+    const result = await pool.query(query, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Customer not found" });

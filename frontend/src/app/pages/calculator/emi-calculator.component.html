@@ -1,40 +1,69 @@
-<!-- Navbar -->
-<div class="navbar">
-  <span class="navbar-title">EMI Calculator</span>
-  <div class="navbar-right">
-    <a routerLink="/dashboard" class="back-btn">⬅ Back</a>
-    <a routerLink="/logout" class="logout-btn">Logout</a>
+<div class="header-section">
+  <div class="breadcrumb">
+    <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">EMI Calculator</span>
+  </div>
+  <div class="header-actions">
+    <a routerLink="/dashboard" class="btn btn-secondary">Back</a>
   </div>
 </div>
 
-<h1>Loan EMI Calculator</h1>
+<div class="emi-container">
+  <div class="card">
+    <h2>Loan EMI Calculator</h2>
+    <form (submit)="calculateEMI()" novalidate>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="amount">Loan Amount (₹)</label>
+          <input type="number" id="amount" [(ngModel)]="amount" name="amount" required placeholder="Enter loan amount" />
+        </div>
 
-<div class="form-container">
-  <form (ngSubmit)="calculateEMI()" #emiForm="ngForm">
-    <label for="amount">Loan Amount (₹)</label>
-    <input type="number" id="amount" [(ngModel)]="amount" name="amount" required placeholder="Enter loan amount" />
+        <div class="form-group">
+          <label for="rate">Interest Rate (%)</label>
+          <input type="number" id="rate" [(ngModel)]="rate" name="rate" step="0.01" required placeholder="Annual interest rate" />
+        </div>
 
-    <label for="rate">Interest Rate (%)</label>
-    <input type="number" id="rate" [(ngModel)]="rate" name="rate" step="0.01" required placeholder="Enter annual interest rate" />
+        <div class="form-group">
+          <label for="months">Loan Duration (months)</label>
+          <input type="number" id="months" [(ngModel)]="months" name="months" required placeholder="e.g. 12" />
+        </div>
 
-    <label for="months">Loan Duration</label>
-    <input type="number" id="months" [(ngModel)]="months" name="months" required placeholder="Enter duration in months" />
+        <div class="form-group">
+          <label for="mode">Calculation Mode</label>
+          <select id="mode" [(ngModel)]="mode" name="mode">
+            <option value="daily">Daily EMI</option>
+            <option value="monthly">Monthly EMI</option>
+            <option value="yearly">Yearly EMI</option>
+          </select>
+        </div>
+      </div>
 
-    <label for="mode">Calculation Mode</label>
-    <select id="mode" [(ngModel)]="mode" name="mode">
-      <option value="daily">Daily EMI</option>
-      <option value="monthly" selected>Monthly EMI</option>
-      <option value="yearly">Yearly EMI</option>
-    </select>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Calculate</button>
+      </div>
+    </form>
+  </div>
 
-    <button type="submit">Calculate</button>
-  </form>
-
-  <!-- Results -->
-  <div class="result-box" *ngIf="result">
-    <div class="result-row"><strong>{{ mode | titlecase }} EMI:</strong> <span>₹{{ result.emi }}</span></div>
-    <div class="result-row"><strong>Principal Amount:</strong> <span>₹{{ amount | number }}</span></div>
-    <div class="result-row"><strong>Total Interest:</strong> <span>₹{{ result.totalInterest | number }}</span></div>
-    <div class="result-row"><strong>Total Amount:</strong> <span>₹{{ result.totalPayment | number }}</span></div>
+  <div class="card" *ngIf="result">
+    <h3>Results</h3>
+    <div class="result-grid">
+      <div class="result-item">
+        <span class="label">{{ mode | titlecase }} EMI</span>
+        <span class="value">₹{{ result.emi }}</span>
+      </div>
+      <div class="result-item">
+        <span class="label">Principal Amount</span>
+        <span class="value">₹{{ amount }}</span>
+      </div>
+      <div class="result-item">
+        <span class="label">Total Interest</span>
+        <span class="value">₹{{ result.totalInterest }}</span>
+      </div>
+      <div class="result-item">
+        <span class="label">Total Amount</span>
+        <span class="value">₹{{ result.totalPayment }}</span>
+      </div>
+    </div>
   </div>
 </div>

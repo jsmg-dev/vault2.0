@@ -29,7 +29,10 @@ export class LoginComponent {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Login failed');
-      await res.json();
+      const data = await res.json();
+      console.log(data);
+      const role = data?.user?.role || data?.role || 'user';
+      sessionStorage.setItem('role', role);
       this.router.navigateByUrl('/dashboard');
     } catch (e) {
       this.toastService.error('Invalid credentials');

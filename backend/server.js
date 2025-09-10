@@ -61,7 +61,9 @@ app.use('/policies', policiesRoutes);
       await db.query(
         `INSERT INTO users (name, username, password, role) VALUES ($1, $2, $3, $4)
          ON CONFLICT (username) DO NOTHING;`,
-        ['Administrator', 'admin', 'admin123', 'admin']
+        ['Administrator', 'admin', 'admin123', 'admin'],
+        ['Akshar', 'aks', 'qwerty', 'lic']
+
       );
       console.log('Seeded default admin user: admin/admin123');
     }
@@ -159,15 +161,18 @@ app.post('/login', async (req, res) => {
       `SELECT id, name, username, role FROM users WHERE username = $1 AND password = $2 LIMIT 1;`,
       [username, password]
     );
-
+    console.log(result);
     const row = result.rows[0];
     if (!row) return res.status(401).send('Invalid username or password');
 
+    const role = (row.role || "").toLowerCase();
     req.session.userId = row.id;
-    req.session.userRole = row.role;
+    req.session.userRole = role;
     req.session.username = row.username;
+    const user = { ...row, role: req.session.userRole }
+    console.log(user);
 
-    return res.json({ success: true, user: row });
+    return res.json({ success: true, user: { ...row, role: req.session.userRole } });
   } catch (err) {
     console.error('❌ Login DB error:', err);
     return res.status(500).send('Internal server error');

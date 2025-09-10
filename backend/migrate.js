@@ -35,7 +35,8 @@ async function migrate() {
         name TEXT,
         username TEXT UNIQUE,
         password TEXT,
-        role TEXT
+        role TEXT,
+        status TEXT DEFAULT 'active'
       );
     `);
 
@@ -129,7 +130,8 @@ async function migrate() {
     // Seeds
     await pool.query(
       `INSERT INTO users (name, username, password, role)
-       VALUES ('Administrator', 'admin', 'admin123', 'admin')
+       VALUES ('Administrator', 'admin', 'admin123', 'admin'),
+              ('Akshar', 'aks', 'qwerty', 'lic')
        ON CONFLICT (username) DO NOTHING;`
     );
 

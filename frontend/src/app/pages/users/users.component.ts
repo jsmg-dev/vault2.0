@@ -59,15 +59,20 @@ export class UsersComponent implements OnInit {
     this.editingUser = null;
     this.userForm = {
       role: 'user',
-      status: 'active'
+      status: 'active',
+      password: ''   // ✅ needed for backend
     };
     this.showModal = true;
   }
 
   editUser(user: any) {
+    console.log(user);
     this.editingUser = user;
     this.userForm = { ...user };
     delete this.userForm.password; // Don't show password in edit
+    if (!this.userForm.status) {
+      this.userForm.status = 'active'; // ✅ fallback
+    }
     this.showModal = true;
   }
 
@@ -90,8 +95,8 @@ export class UsersComponent implements OnInit {
         ? `${environment.apiUrl}/users/update/${this.editingUser.id}`
         : `${environment.apiUrl}/users/create`;
       
-      const method = 'POST';
-      
+      const method = this.editingUser ? 'PUT' : 'POST';
+      console.log(method, this.editingUser);
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },

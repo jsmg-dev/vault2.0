@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { MainLayoutComponent } from '../../components/layout/main-layout.component';
+import { NavItem } from '../../components/sidenav/sidenav.component';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, MainLayoutComponent],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css'
 })
@@ -24,7 +26,14 @@ export class ReportsComponent implements OnInit {
   emiNotifications: any[] = [];
   hasSearched = false;
 
+
+  userRole: string = '';
+  sidenavCollapsed = false;
+
+  constructor(private router: Router) {}
+
   ngOnInit() {
+    this.userRole = sessionStorage.getItem('role') || '';
     this.loadCustomers();
     this.checkEmiNotifications();
     this.setDefaultDates();
@@ -123,11 +132,20 @@ export class ReportsComponent implements OnInit {
     document.body.removeChild(link);
   }
 
+  onSidenavToggle(collapsed: boolean) {
+    this.sidenavCollapsed = collapsed;
+  }
+
   toggleFullscreen() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
     } else {
       document.exitFullscreen();
     }
+  }
+
+  logout() {
+    sessionStorage.clear();
+    this.router.navigate(['/login']);
   }
 }

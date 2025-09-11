@@ -1,45 +1,23 @@
 .customers-container {
-  padding: 24px;
-  background: #f8fafc;
-  min-height: 100vh;
+  padding: 20px;
 }
 
-/* Header Section */
-.header-section {
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   padding: 20px;
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.breadcrumb-item {
-  color: #3b82f6;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.breadcrumb-item:hover {
-  color: #1d4ed8;
-}
-
-.breadcrumb-separator {
-  color: #9ca3af;
-}
-
-.breadcrumb-current {
-  color: #374151;
-  font-weight: 500;
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2a44;
 }
 
 .header-actions {
@@ -47,6 +25,8 @@
   gap: 12px;
   align-items: center;
 }
+
+/* Header styles are now handled by the header component */
 
 /* Buttons */
 .btn-primary {
@@ -213,9 +193,16 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;   /* 👈 enable horizontal scrolling */
-  overflow-y: hidden; /* optional: prevents vertical scrollbar */
-  -webkit-overflow-scrolling: touch; /* smoother scrolling on mobile */
+  overflow-x: auto; /* Horizontal scroll for wide tables */
+  height: calc(100vh - 200px); /* Fill remaining page height */
+  display: flex;
+  flex-direction: column;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto; /* Make table content scrollable */
+  overflow-x: hidden;
 }
 
 .table-header {
@@ -258,7 +245,9 @@
 .customers-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1800px; /* keep this so all columns are visible */
+  overflow-y: auto; /* Make table content scrollable */
+  table-layout: auto; /* Keep natural row heights */
+  height: auto; /* Let table size naturally */
 }
 
 .customers-table th,
@@ -481,12 +470,14 @@
   background: #f0f9ff;
 }
 
-.photo-preview {
+/* Photo preview now uses document-preview styles */
+
+.document-preview {
   margin-top: 10px;
   text-align: center;
 }
 
-.photo-preview img {
+.document-preview img {
   max-width: 200px;
   max-height: 150px;
   border-radius: 8px;
@@ -494,18 +485,62 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.document-preview {
+.document-preview .document-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
   margin-top: 10px;
-  padding: 8px 12px;
-  background: #f3f4f6;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
 }
 
-.document-preview span {
-  color: #374151;
-  font-size: 14px;
-  font-weight: 500;
+.document-preview .document-item {
+  position: relative;
+  text-align: center;
+}
+
+.document-preview .document-item img {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.document-preview .document-item .remove-btn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table image styles */
+.file-preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.table-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.table-image:hover {
+  transform: scale(1.1);
 }
 
 .form-actions {
@@ -552,4 +587,9 @@
   .form-group.full-width {
     grid-column: span 1;
   }
+}
+
+.logout-button {
+  background-color: #f44336; color: white; padding: 6px 14px; border: none;
+  border-radius: 5px; font-weight: bold; cursor: pointer;
 }

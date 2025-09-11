@@ -1,20 +1,32 @@
 .users-container {
-  padding: 24px;
-  background: #f8fafc;
-  min-height: 100vh;
+  padding: 20px;
 }
 
-/* Header Section */
-.header-section {
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   padding: 20px;
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2a44;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Header styles are now handled by the header component */
 
 .breadcrumb {
   display: flex;
@@ -192,7 +204,16 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow-x: auto; /* Horizontal scroll for wide tables */
+  height: calc(100vh - 200px); /* Fill remaining page height */
+  display: flex;
+  flex-direction: column;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto; /* Make table content scrollable */
+  overflow-x: hidden;
 }
 
 .table-header {
@@ -235,6 +256,9 @@
 .users-table {
   width: 100%;
   border-collapse: collapse;
+  overflow-y: auto; /* Make table content scrollable */
+  table-layout: auto; /* Keep natural row heights */
+  height: auto; /* Let table size naturally */
 }
 
 .users-table th,
@@ -281,6 +305,11 @@
 .role-user {
   background: #dbeafe;
   color: #1e40af;
+}
+
+.role-lic {
+  background: #dc6a0e;
+  color: #dbeafe;
 }
 
 .status-active {

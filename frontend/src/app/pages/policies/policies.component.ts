@@ -5,11 +5,13 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { MainLayoutComponent } from '../../components/layout/main-layout.component';
+import { NavItem } from '../../components/sidenav/sidenav.component';
 
 @Component({
   selector: 'app-policies',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, RouterModule],
+  imports: [CommonModule, FormsModule, HttpClientModule, RouterModule, MainLayoutComponent],
   templateUrl: './policies.component.html',
   styleUrls: ['./policies.component.css']
 })
@@ -24,6 +26,10 @@ export class PoliciesComponent implements OnInit {
   validationErrors: Record<string, string> = {};
   saveMode: 'add' | 'update' = 'add';
   showDecisionModal = false;
+
+
+  userRole: string = '';
+  sidenavCollapsed = false;
 
   policyForm = {
     policy_no: '',
@@ -65,6 +71,7 @@ export class PoliciesComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.userRole = sessionStorage.getItem('role') || '';
     this.loadPolicies();
   }
 
@@ -239,5 +246,14 @@ export class PoliciesComponent implements OnInit {
     } else {
       document.exitFullscreen();
     }
+  }
+
+  logout() {
+    sessionStorage.clear();
+    window.location.href = '/login';
+  }
+
+  onSidenavToggle(collapsed: boolean) {
+    this.sidenavCollapsed = collapsed;
   }
 }

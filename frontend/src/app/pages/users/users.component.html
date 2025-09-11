@@ -1,56 +1,24 @@
-<div class="users-container">
-  <!-- Header with breadcrumb -->
-  <div class="header-section">
-    <div class="breadcrumb">
-      <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-current">User Management</span>
-    </div>
-    <div class="header-actions">
-      <button class="btn-primary" (click)="openCreateModal()">
-        <i class="fas fa-plus"></i> Create New User
-      </button>
-      <button class="btn-fullscreen" (click)="toggleFullscreen()" title="Toggle Fullscreen">
-        <i class="fas fa-expand"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- Stats Cards -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">
-        <i class="fas fa-users"></i>
-      </div>
-      <div class="stat-content">
-        <h3>Total Users</h3>
-        <p class="stat-value">{{ totalUsers | number }}</p>
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="users-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>User Management</h1>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i> Create New User
+        </button>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">
-        <i class="fas fa-user-shield"></i>
-      </div>
-      <div class="stat-content">
-        <h3>Admin Users</h3>
-        <p class="stat-value">{{ adminUsers | number }}</p>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">
-        <i class="fas fa-user-check"></i>
-      </div>
-      <div class="stat-content">
-        <h3>Active Users</h3>
-        <p class="stat-value">{{ activeUsers | number }}</p>
-      </div>
-    </div>
-  </div>
 
   <!-- Users Table -->
   <div class="table-container">
     <div class="table-header">
-      <h2>Users List</h2>
       <div class="table-actions">
         <input 
           type="text" 
@@ -64,7 +32,8 @@
       </div>
     </div>
 
-    <table class="users-table">
+    <div class="table-wrapper">
+      <table class="users-table">
       <thead>
         <tr>
           <th>
@@ -98,7 +67,7 @@
           <td>{{ user.name || 'N/A' }}</td>
           <td>{{ user.username }}</td>
           <td>
-            <span class="role-badge" [class.role-admin]="user.role === 'admin'" [class.role-user]="user.role === 'user'">
+            <span class="role-badge" [class.role-admin]="user.role === 'admin'" [class.role-user]="user.role === 'user'" [class.role-lic]="user.role === 'lic'">
               {{ user.role || 'user' }}
             </span>
           </td>
@@ -110,6 +79,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -160,3 +130,4 @@
     </form>
   </div>
 </div>
+</app-main-layout>

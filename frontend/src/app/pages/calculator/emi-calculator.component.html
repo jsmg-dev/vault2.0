@@ -1,15 +1,10 @@
-<div class="header-section">
-  <div class="breadcrumb">
-    <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
-    <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">EMI Calculator</span>
-  </div>
-  <div class="header-actions">
-    <a routerLink="/dashboard" class="btn btn-secondary">Back</a>
-  </div>
-</div>
-
-<div class="emi-container">
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (logoutEvent)="logout()"
+>
+  <div class="emi-container">
   <div class="card">
     <h2>Loan EMI Calculator</h2>
     <form (submit)="calculateEMI()" novalidate>
@@ -66,4 +61,5 @@
       </div>
     </div>
   </div>
-</div>
+  </div>
+</app-main-layout>

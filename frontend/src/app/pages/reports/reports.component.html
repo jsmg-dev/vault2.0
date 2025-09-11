@@ -1,17 +1,11 @@
-<div class="reports-container">
-  <!-- Header with breadcrumb -->
-  <div class="header-section">
-    <div class="breadcrumb">
-      <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-current">Reports</span>
-    </div>
-    <div class="header-actions">
-      <button class="btn-fullscreen" (click)="toggleFullscreen()" title="Toggle Fullscreen">
-        <i class="fas fa-expand"></i>
-      </button>
-    </div>
-  </div>
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="reports-container">
 
   <!-- EMI Notifications -->
   <div class="notifications-container" *ngIf="emiNotifications.length > 0">
@@ -154,3 +148,4 @@
     <p>No data found for the selected criteria. Try adjusting your date range or filters.</p>
   </div>
 </div>
+</app-main-layout>

@@ -1,45 +1,24 @@
 .policies-container {
-  padding: 24px;
-  background: #f8fafc;
-  min-height: 100vh;
+  padding: 20px;
 }
 
-/* Header Section */
-.header-section {
+/* Page Header */
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   padding: 20px;
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.breadcrumb-item {
-  color: #3b82f6;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.breadcrumb-item:hover {
-  color: #1d4ed8;
-}
-
-.breadcrumb-separator {
-  color: #9ca3af;
-}
-
-.breadcrumb-current {
-  color: #374151;
-  font-weight: 500;
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2a44;
 }
 
 .header-actions {
@@ -47,6 +26,27 @@
   gap: 12px;
   align-items: center;
 }
+
+.header-actions .btn-primary {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.header-actions .btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Header styles are now handled by the header component */
 
 .header-section h1 {
   margin: 0;
@@ -159,11 +159,23 @@
 
 .table-container {
   overflow-x: auto;
+  height: calc(100vh - 200px); /* Fill remaining page height */
+  display: flex;
+  flex-direction: column;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto; /* Make table content scrollable */
+  overflow-x: hidden;
 }
 
 .policies-table {
   width: 100%;
   border-collapse: collapse;
+  overflow-y: auto; /* Make table content scrollable */
+  table-layout: auto; /* Keep natural row heights */
+  height: auto; /* Let table size naturally */
 }
 
 .policies-table th,

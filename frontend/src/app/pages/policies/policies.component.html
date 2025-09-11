@@ -1,25 +1,26 @@
-<div class="policies-container">
-  <!-- Header with breadcrumb -->
-  <div class="header-section">
-    <div class="breadcrumb">
-      <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-current">LIC Policies</span>
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="policies-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>LIC Policy Management</h1>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="openForm()">
+          <i class="fas fa-plus"></i> Add New Policy
+        </button>
+      </div>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" (click)="openForm()">
-        <i class="fa fa-plus"></i> Add New Policy
-      </button>
-      <button class="btn-fullscreen" (click)="toggleFullscreen()" title="Toggle Fullscreen">
-        <i class="fas fa-expand"></i>
-      </button>
-    </div>
-  </div>
 
   <!-- Policies List -->
   <div class="policies-list" *ngIf="!showForm">
     <div class="table-container">
-      <table class="policies-table">
+      <div class="table-wrapper">
+        <table class="policies-table">
         <thead>
           <tr>
             <th>
@@ -108,6 +109,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 
@@ -342,4 +344,5 @@
       </div>
     </div>
   </div>
-</div>
+  </div>
+</app-main-layout>

@@ -1,14 +1,16 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { MainLayoutComponent } from '../../components/layout/main-layout.component';
+import { NavItem } from '../../components/sidenav/sidenav.component';
 
 declare var Chart: any;
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MainLayoutComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -16,14 +18,19 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('barChart') barChartRef!: ElementRef;
   @ViewChild('pieChart') pieChartRef!: ElementRef;
   @ViewChild('lineChart') lineChartRef!: ElementRef;
-
+   router = inject(Router);
   totalCustomers = 0;
   totalDeposits = 0;
   activeLoans = 0;
   customersPerMonth: Array<{ month: string; count: number }> = [];
   isFullscreen = false;
+  userRole: string = '';
+  sidenavCollapsed = false;
+  
+
 
   async ngOnInit() {
+    this.userRole = sessionStorage.getItem('role') || '';
     try {
       const res = await fetch(`${environment.apiUrl}/api/customers/count`, { credentials: 'include' });
       if (res.ok) {
@@ -106,5 +113,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       document.exitFullscreen();
       this.isFullscreen = false;
     }
+  }
+
+  logout(){
+    this.router.navigateByUrl('/login');
+    sessionStorage.clear();
+  }
+
+  onSidenavToggle(collapsed: boolean) {
+    this.sidenavCollapsed = collapsed;
   }
 }

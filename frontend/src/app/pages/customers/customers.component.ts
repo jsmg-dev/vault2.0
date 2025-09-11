@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../services/toast.service';
+import { MainLayoutComponent } from '../../components/layout/main-layout.component';
+import { NavItem } from '../../components/sidenav/sidenav.component';
 
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, MainLayoutComponent],
   templateUrl: './customers.component.html',
   styleUrl: './customers.component.css'
 })
@@ -21,17 +23,27 @@ export class CustomersComponent implements OnInit {
   showEditModal = false;
   editForm: any = {};
   customerForm: any = {};
-  photoPreview: string | null = null;
-  documentName: string | null = null;
+  photoPreviews: string[] = [];
+  documentPreviews: string[] = [];
+  photoFiles: File[] = [];
+  documentFiles: File[] = [];
+  existingPhotoPaths: string[] = [];
+  existingDocumentPaths: string[] = [];
   
   // Stats properties
   totalCustomers = 0;
   activeCustomers = 0;
   monthlyCustomers = 0;
 
+
+
+  userRole: string = '';
+  sidenavCollapsed = false;
+
   constructor(private toastService: ToastService) {}
 
   async ngOnInit() {
+    this.userRole = sessionStorage.getItem('role') || '';
     await this.loadCustomers();
     this.calculateStats();
   }
@@ -87,12 +99,45 @@ export class CustomersComponent implements OnInit {
 
   openEditCustomerModal(id: number) {
     this.editForm = this.customers.find(c => c.id === id) || {};
+    
+    // Load existing files for preview
+    this.loadExistingFiles(this.editForm);
+    
     this.showEditModal = true;
+  }
+
+  loadExistingFiles(customer: any) {
+    // Clear existing previews and files
+    this.photoPreviews = [];
+    this.documentPreviews = [];
+    this.photoFiles = [];
+    this.documentFiles = [];
+    this.existingPhotoPaths = [];
+    this.existingDocumentPaths = [];
+
+    // Load existing photos
+    if (customer.photo_path) {
+      const photoPaths = customer.photo_path.split(',').filter((path: string) => path.trim());
+      photoPaths.forEach((path: string) => {
+        this.existingPhotoPaths.push(path.trim());
+        this.photoPreviews.push(this.getFileUrl(path.trim()));
+      });
+    }
+
+    // Load existing documents
+    if (customer.document_path) {
+      const documentPaths = customer.document_path.split(',').filter((path: string) => path.trim());
+      documentPaths.forEach((path: string) => {
+        this.existingDocumentPaths.push(path.trim());
+        this.documentPreviews.push(this.getFileUrl(path.trim()));
+      });
+    }
   }
 
   closeEditCustomerModal() {
     this.showEditModal = false;
     this.editForm = {};
+    this.resetFileUploads();
   }
 
   async deleteCustomer(id: number) {
@@ -136,10 +181,18 @@ export class CustomersComponent implements OnInit {
     formData.append('remark', this.customerForm.remark || '');
     
     // Add files if they exist
-    if (this.photoPreview) {
-      // Convert base64 to blob for photo
-      const photoBlob = await fetch(this.photoPreview).then(r => r.blob());
-      formData.append('customerphoto', photoBlob, 'photo.jpg');
+    if (this.photoFiles && this.photoFiles.length > 0) {
+      // Add all photos
+      for (let i = 0; i < this.photoFiles.length; i++) {
+        formData.append('customerphoto', this.photoFiles[i], this.photoFiles[i].name);
+      }
+    }
+    
+    if (this.documentFiles && this.documentFiles.length > 0) {
+      // Add all documents
+      for (let i = 0; i < this.documentFiles.length; i++) {
+        formData.append('customerdocument', this.documentFiles[i], this.documentFiles[i].name);
+      }
     }
     
     try {
@@ -164,11 +217,46 @@ export class CustomersComponent implements OnInit {
 
   async updateCustomer(event: Event) {
     event.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('customer_code', this.editForm.customer_code || '');
+    formData.append('name', this.editForm.name || '');
+    formData.append('contact_no', this.editForm.contact_no || '');
+    formData.append('alt_contact_no', this.editForm.alt_contact_no || '');
+    formData.append('start_date', this.editForm.start_date || '');
+    formData.append('end_date', this.editForm.end_date || '');
+    formData.append('loan_duration', this.editForm.loan_duration || '');
+    formData.append('loan_amount', this.editForm.loan_amount || '');
+    formData.append('file_charge', this.editForm.file_charge || '');
+    formData.append('agent_fee', this.editForm.agent_fee || '');
+    formData.append('emi', this.editForm.emi || '');
+    formData.append('advance_days', this.editForm.advance_days || '');
+    formData.append('amount_after_deduction', this.editForm.amount_after_deduction || '');
+    formData.append('agent_commission', this.editForm.agent_commission || '');
+    formData.append('status', this.editForm.status || 'active');
+    formData.append('remark', this.editForm.remark || '');
+    
+    // Add existing file paths
+    formData.append('existing_photo_paths', this.existingPhotoPaths.join(','));
+    formData.append('existing_document_paths', this.existingDocumentPaths.join(','));
+    
+    // Add files if they exist
+    if (this.photoFiles && this.photoFiles.length > 0) {
+      for (let i = 0; i < this.photoFiles.length; i++) {
+        formData.append('customerphoto', this.photoFiles[i], this.photoFiles[i].name);
+      }
+    }
+    
+    if (this.documentFiles && this.documentFiles.length > 0) {
+      for (let i = 0; i < this.documentFiles.length; i++) {
+        formData.append('customerdocument', this.documentFiles[i], this.documentFiles[i].name);
+      }
+    }
+    
     try {
       const res = await fetch(`${environment.apiUrl}/customers/update/${this.editForm.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.editForm),
+        body: formData,
         credentials: 'include'
       });
       if (res.ok) {
@@ -266,25 +354,101 @@ export class CustomersComponent implements OnInit {
   }
 
   onPhotoUpload(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.photoPreview = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    const files = event.target.files;
+    console.log('Photo upload - Files selected:', files.length);
+
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        console.log(`Processing photo ${i + 1}:`, file.name);
+        
+        // Store the actual file
+        this.photoFiles.push(file);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.photoPreviews.push(e.target.result);
+          console.log('Photos array length:', this.photoPreviews.length);
+        };
+        reader.readAsDataURL(file);
+      }
     }
+  }
+
+  removePhoto(index: number) {
+    // If removing an existing file (before new files), remove from existing paths
+    if (index < this.existingPhotoPaths.length) {
+      this.existingPhotoPaths.splice(index, 1);
+    } else {
+      // If removing a new file, adjust the index and remove from new files
+      const newFileIndex = index - this.existingPhotoPaths.length;
+      this.photoFiles.splice(newFileIndex, 1);
+    }
+    this.photoPreviews.splice(index, 1);
   }
 
   onDocumentUpload(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.documentName = file.name;
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Store the actual file
+        this.documentFiles.push(file);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.documentPreviews.push(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   }
 
+  removeDocument(index: number) {
+    // If removing an existing file (before new files), remove from existing paths
+    if (index < this.existingDocumentPaths.length) {
+      this.existingDocumentPaths.splice(index, 1);
+    } else {
+      // If removing a new file, adjust the index and remove from new files
+      const newFileIndex = index - this.existingDocumentPaths.length;
+      this.documentFiles.splice(newFileIndex, 1);
+    }
+    this.documentPreviews.splice(index, 1);
+  }
+
   resetFileUploads() {
-    this.photoPreview = null;
-    this.documentName = null;
+    this.photoPreviews = [];
+    this.documentPreviews = [];
+    this.photoFiles = [];
+    this.documentFiles = [];
+    this.existingPhotoPaths = [];
+    this.existingDocumentPaths = [];
+  }
+
+  // Helper methods for displaying files in table
+  getPhotoPaths(photoPath: string): string[] {
+    if (!photoPath) return [];
+    return photoPath.split(',').filter(path => path.trim());
+  }
+
+  getDocumentPaths(documentPath: string): string[] {
+    if (!documentPath) return [];
+    return documentPath.split(',').filter(path => path.trim());
+  }
+
+  getFileUrl(filename: string): string {
+    return `${environment.apiUrl}/customers/files/${filename}`;
+  }
+
+  logout() {
+    sessionStorage.clear();
+    window.location.href = '/login';
+  }
+
+  onSidenavToggle(collapsed: boolean) {
+    this.sidenavCollapsed = collapsed;
   }
 }

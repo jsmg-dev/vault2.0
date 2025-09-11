@@ -1,20 +1,8 @@
 .reports-container {
-  padding: 24px;
-  background: #f8fafc;
-  min-height: 100vh;
+  padding: 20px;
 }
 
-/* Header Section */
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+/* Header styles are now handled by the header component */
 
 .breadcrumb {
   display: flex;
@@ -179,8 +167,9 @@
 }
 
 .form-group {
-  flex: 1;
-  min-width: 200px;
+  flex: 0 0 auto; /* Don't grow or shrink */
+  width: 250px; /* Fixed width for date fields */
+  margin-right: 20px;
 }
 
 .form-group label {
@@ -365,6 +354,13 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .form-group {
+    width: 200px; /* Smaller fixed width on medium screens */
+    margin-right: 15px;
+  }
+}
+
 @media (max-width: 768px) {
   .reports-container {
     padding: 16px;
@@ -391,6 +387,7 @@
   
   .form-group {
     width: 100%;
+    margin-right: 0; /* Remove margin on mobile */
   }
   
   .button-row {

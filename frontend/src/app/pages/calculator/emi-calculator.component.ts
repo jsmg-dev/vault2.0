@@ -2,11 +2,13 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { MainLayoutComponent } from '../../components/layout/main-layout.component';
+import { NavItem } from '../../components/sidenav/sidenav.component';
 
 @Component({
   selector: 'app-emi-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, MainLayoutComponent],
   templateUrl: './emi-calculator.component.html',
   styleUrls: ['./emi-calculator.component.css']
 })
@@ -16,6 +18,10 @@ export class EmiCalculatorComponent {
   months: number = 0;
   mode: string = 'monthly';  // monthly, yearly, daily
   result: any = null;
+
+
+  userRole: string = '';
+  sidenavCollapsed = false;
 
   calculateEMI() {
     let emi = 0, n = 0, r = 0;
@@ -40,5 +46,14 @@ export class EmiCalculatorComponent {
       totalPayment: totalPayment.toFixed(2),
       totalInterest: totalInterest.toFixed(2)
     };
+  }
+
+  logout() {
+    sessionStorage.clear();
+    window.location.href = '/login';
+  }
+
+  onSidenavToggle(collapsed: boolean) {
+    this.sidenavCollapsed = collapsed;
   }
 }

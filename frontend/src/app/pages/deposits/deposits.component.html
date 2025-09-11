@@ -1,63 +1,31 @@
-<div class="deposits-container">
-  <!-- Header with breadcrumb -->
-  <div class="header-section">
-    <div class="breadcrumb">
-      <a routerLink="/dashboard" class="breadcrumb-item">Dashboard</a>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-current">Deposits</span>
-    </div>
-    <div class="header-actions">
-      <button class="btn-primary" (click)="openCreateModal()">
-        <i class="fas fa-plus"></i> New Deposit
-      </button>
-      <button class="btn-secondary" (click)="downloadTemplate()">
-        <i class="fas fa-download"></i> Template
-      </button>
-      <label class="btn-upload">
-        <i class="fas fa-upload"></i> Import Excel
-        <input type="file" #excelFile accept=".xlsx,.xls" (change)="uploadExcel($event)" />
-      </label>
-      <button class="btn-fullscreen" (click)="toggleFullscreen()" title="Toggle Fullscreen">
-        <i class="fas fa-expand"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- Stats Cards -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">
-        <i class="fas fa-wallet"></i>
-      </div>
-      <div class="stat-content">
-        <h3>Total Deposits</h3>
-        <p class="stat-value">₹ {{ totalDeposits | number }}</p>
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="deposits-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Deposit Management</h1>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i> New Deposit
+        </button>
+        <button class="btn-secondary" (click)="downloadTemplate()">
+          <i class="fas fa-download"></i> Template
+        </button>
+        <label class="btn-upload">
+          <i class="fas fa-upload"></i> Import Excel
+          <input type="file" #excelFile accept=".xlsx,.xls" (change)="uploadExcel($event)" />
+        </label>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">
-        <i class="fas fa-users"></i>
-      </div>
-      <div class="stat-content">
-        <h3>Active Customers</h3>
-        <p class="stat-value">{{ activeCustomers | number }}</p>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">
-        <i class="fas fa-calendar"></i>
-      </div>
-      <div class="stat-content">
-        <h3>This Month</h3>
-        <p class="stat-value">₹ {{ monthlyDeposits | number }}</p>
-      </div>
-    </div>
-  </div>
 
   <!-- Deposits Table -->
   <div class="table-container">
     <div class="table-header">
-      <h2>Deposits List</h2>
       <div class="table-actions">
         <input 
           type="text" 
@@ -71,7 +39,8 @@
       </div>
     </div>
 
-    <table class="deposits-table">
+    <div class="table-wrapper">
+      <table class="deposits-table">
       <thead>
         <tr>
           <th>
@@ -106,6 +75,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -157,3 +127,4 @@
     </form>
   </div>
 </div>
+</app-main-layout>

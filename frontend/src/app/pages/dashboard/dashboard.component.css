@@ -1,60 +1,10 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #1f2a44;
-  color: #333;
-  height: 100vh;
-  overflow: hidden;
-}
-header {
-  background: #1f2a44;
-  padding: 1px 20px;
-  color: white;
-  font-size: 20px;
-  font-weight: bold;
-   height: 70px; 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-.header-left, .header-right { display: flex; gap: 10px; align-items: center; }
-.dashboard-button {
-  background-color: #ffffff; color: #004aad; font-weight: bold; border: none;
-  padding: 6px 16px; border-radius: 5px; cursor: pointer; font-size: 16px;
-  transition: background-color 0.3s ease;
-}
-.dashboard-button:hover { background-color: #e0e0e0; }
-.fullscreen-btn {
-  background-color: #2196f3; color: white; padding: 6px 12px; border: none;
-  border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s ease;
-}
-.fullscreen-btn:hover { background-color: #1976d2; }
-.logout-button {
-  background-color: #f44336; color: white; padding: 6px 14px; border: none;
-  border-radius: 5px; font-weight: bold; cursor: pointer;
-}
-.dashboard-container { display: flex; height: calc(100vh - 60px); overflow: hidden; }
-.left-panel {
-  display: flex; flex-direction: column; gap: 20px; width: 200px; padding: 20px;
-  background: #3a4a75;
-}
-.left-panel a { text-decoration: none; }
-.card-left {
-  color: white; text-align: center; padding: 20px; border-radius: 10px;
-  font-weight: 600; font-size: 16px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.2); transition: transform 0.3s, box-shadow 0.3s;
-}
-.card-left i { font-size: 24px; margin-top: 8px; }
-.card-left:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,0.25); }
-.user      { background: #1f2a44; }
-.customer  { background: #1f2a44; }
-.deposit   { background: #1f2a44; color: #ffffff; }
-.policies  { background: #1f2a44; }
-.reports   { background: #1f2a44; }
-.right-panel {
-  flex: 1; background: #f5f7fa; padding: 20px; overflow-y: auto;
+/* Layout styles are now handled by main-layout component */
+
+.dashboard-content {
+  padding: 20px;
+  overflow: visible; /* Ensure no extra scrollbars */
+  height: 100%; /* Fill available height */
+  box-sizing: border-box; /* Include padding in height calculation */
 }
 .card-container {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -78,11 +28,25 @@ header {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 30px;
 }
-.chart-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.chart-box { 
+  background: white; 
+  padding: 20px; 
+  border-radius: 12px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: visible; /* Ensure no extra scrollbars */
+}
 .chart-box h4 { margin-bottom: 10px; font-size: 18px; font-weight: 600; text-align: center; }
 canvas { width: 100% !important; max-height: 300px; }
 @media (max-width: 1000px) {
   .dashboard-container { flex-direction: column; }
   .left-panel { flex-direction: row; overflow-x: auto; width: 100%; }
   .card-left { flex: 1; min-width: 180px; }
+  
+  .dashboard-content {
+    padding: 15px; /* Reduce padding on smaller screens */
+  }
+  
+  .card-container {
+    gap: 15px; /* Reduce gap on smaller screens */
+  }
 }

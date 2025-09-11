@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { MainLayoutComponent } from '../../components/layout/main-layout.component';
+import { NavItem } from '../../components/sidenav/sidenav.component';
 
 @Component({
   selector: 'app-deposits',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, MainLayoutComponent],
   templateUrl: './deposits.component.html',
   styleUrl: './deposits.component.css'
 })
@@ -25,7 +27,14 @@ export class DepositsComponent implements OnInit {
   activeCustomers = 0;
   monthlyDeposits = 0;
 
+
+  userRole: string = '';
+  sidenavCollapsed = false;
+
+  constructor(private router: Router) {}
+
   async ngOnInit() {
+    this.userRole = sessionStorage.getItem('role') || '';
     await this.loadDeposits();
     await this.loadCustomers();
     this.calculateStats();
@@ -201,12 +210,21 @@ export class DepositsComponent implements OnInit {
     window.location.href = '/deposits/template';
   }
 
+  onSidenavToggle(collapsed: boolean) {
+    this.sidenavCollapsed = collapsed;
+  }
+
   toggleFullscreen() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
     } else {
       document.exitFullscreen();
     }
+  }
+
+  logout() {
+    sessionStorage.clear();
+    this.router.navigate(['/login']);
   }
 
   async loadCustomers() {

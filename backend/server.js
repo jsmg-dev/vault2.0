@@ -14,6 +14,7 @@ const customerRoutes = require('./routes/customers'); // updated file above
 const depositRoutes = require('./routes/deposits');   // ensure Postgres
 const reportsRoutes = require('./routes/reports');    // ensure Postgres
 const policiesRoutes = require('./routes/policies');  // ensure Postgres
+const dashboardRoutes = require('./routes/dashboard'); // new dashboard routes
 
 const app = express();
 const port = config.server.port;
@@ -42,6 +43,7 @@ app.use('/customers', customerRoutes);
 app.use('/deposits', depositRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/policies', policiesRoutes);
+app.use('/dashboard', dashboardRoutes);
 
 // Bootstrap users table + seed admin (Postgres)
 (async () => {
@@ -86,11 +88,18 @@ app.use('/policies', policiesRoutes);
         amount_after_deduction DECIMAL(15,2),
         agent_commission DECIMAL(10,2),
         status TEXT DEFAULT 'active',
+        loan_type TEXT DEFAULT 'Personal Loan',
         remark TEXT,
         photo_path TEXT,
         document_path TEXT,
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    // Add loan_type column if it doesn't exist (for existing tables)
+    await db.query(`
+      ALTER TABLE customers 
+      ADD COLUMN IF NOT EXISTS loan_type TEXT DEFAULT 'Personal Loan';
     `);
 
     await db.query(`

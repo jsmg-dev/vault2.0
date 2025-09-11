@@ -167,11 +167,32 @@
 .table-wrapper {
   flex: 1;
   overflow-y: auto; /* Make table content scrollable */
-  overflow-x: hidden;
+  overflow-x: auto; /* Enable horizontal scroll for wide tables */
+}
+
+/* Custom scrollbar styling for better visibility */
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .policies-table {
   width: 100%;
+  min-width: 1200px; /* Ensure all columns are visible with horizontal scroll */
   border-collapse: collapse;
   overflow-y: auto; /* Make table content scrollable */
   table-layout: auto; /* Keep natural row heights */

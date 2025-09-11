@@ -88,6 +88,7 @@ router.post('/create', upload.fields([
       amount_after_deduction,
       agent_commission,
       status,
+      loan_type,
       remark
     } = req.body;
 
@@ -123,10 +124,10 @@ router.post('/create', upload.fields([
       INSERT INTO customers (
         customer_code, name, contact_no, alt_contact_no, start_date, end_date, loan_duration,
         loan_amount, file_charge, agent_fee, emi, advance_days, amount_after_deduction,
-        agent_commission, status, remark, photo_path, document_path
+        agent_commission, status, loan_type, remark, photo_path, document_path
       )
       VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19
       )
       RETURNING *;
     `;
@@ -147,6 +148,7 @@ router.post('/create', upload.fields([
       amount_after_deduction,
       agent_commission,
       status,
+      loan_type || 'Personal Loan',
       remark,
       photoPaths,
       documentPaths
@@ -208,6 +210,7 @@ router.put("/update/:id", upload.fields([
       amount_after_deduction,
       agent_commission,
       status,
+      loan_type,
       remark
     } = req.body;
 
@@ -281,10 +284,11 @@ router.put("/update/:id", upload.fields([
           amount_after_deduction = $13,
           agent_commission = $14,
           status = $15,
-          remark = $16,
-          photo_path = COALESCE($17, photo_path),
-          document_path = COALESCE($18, document_path)
-        WHERE id = $19
+          loan_type = $16,
+          remark = $17,
+          photo_path = COALESCE($18, photo_path),
+          document_path = COALESCE($19, document_path)
+        WHERE id = $20
         RETURNING *;
       `;
       
@@ -304,6 +308,7 @@ router.put("/update/:id", upload.fields([
         amount_after_deduction,
         agent_commission,
         toNull(status),
+        toNull(loan_type) || 'Personal Loan',
         toNull(remark),
         photoPaths,
         documentPaths,
@@ -328,8 +333,9 @@ router.put("/update/:id", upload.fields([
           amount_after_deduction = $13,
           agent_commission = $14,
           status = $15,
-          remark = $16
-        WHERE id = $17
+          loan_type = $16,
+          remark = $17
+        WHERE id = $18
         RETURNING *;
       `;
       
@@ -349,6 +355,7 @@ router.put("/update/:id", upload.fields([
         amount_after_deduction,
         agent_commission,
         toNull(status),
+        toNull(loan_type) || 'Personal Loan',
         toNull(remark),
         id
       ];

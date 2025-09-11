@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { NavItem } from '../../components/sidenav/sidenav.component';
+import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 
 declare var Chart: any;
 
@@ -22,42 +23,69 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   totalCustomers = 0;
   totalDeposits = 0;
   activeLoans = 0;
+  monthlyEarnings = 0;
   customersPerMonth: Array<{ month: string; count: number }> = [];
+  loanTypeDistribution: { [key: string]: number } = {};
   isFullscreen = false;
   userRole: string = '';
   sidenavCollapsed = false;
+  breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Dashboard', active: true }
+  ];
   
 
 
   async ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';
+    await this.loadDashboardStats();
+  }
+
+  async loadDashboardStats() {
     try {
-      const res = await fetch(`${environment.apiUrl}/api/customers/count`, { credentials: 'include' });
+      const res = await fetch(`${environment.apiUrl}/dashboard/stats`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         this.totalCustomers = Number(data.totalCustomers || 0);
         this.totalDeposits = Number(data.totalDeposits || 0);
         this.activeLoans = Number(data.activeLoans || 0);
+        this.monthlyEarnings = Number(data.monthlyEarnings || 0);
         if (data.customersPerMonth) {
           this.customersPerMonth = Object.keys(data.customersPerMonth).map(m => ({ month: m, count: data.customersPerMonth[m] }));
         }
+        this.loanTypeDistribution = data.loanTypeDistribution || {};
+        
+        // Refresh charts with new data
+        setTimeout(() => {
+          this.initCharts();
+        }, 50);
+      } else {
+        console.error('Failed to load dashboard stats:', res.status);
       }
-    } catch {}
+    } catch (err) {
+      console.error('Error loading dashboard stats:', err);
+    }
   }
 
   ngAfterViewInit() {
-    this.initCharts();
+    // Wait for data to load before initializing charts
+    setTimeout(() => {
+      this.initCharts();
+    }, 100);
   }
 
   initCharts() {
-    // Bar Chart
+    // Prepare data for charts
+    const monthLabels = this.customersPerMonth.map(item => item.month);
+    const monthCounts = this.customersPerMonth.map(item => item.count);
+    
+    // Bar Chart - Customers Per Month
     new Chart(this.barChartRef.nativeElement, {
       type: 'bar',
       data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        labels: monthLabels.length > 0 ? monthLabels : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
         datasets: [{
           label: 'Customers',
-          data: [120, 190, 300, 250, 400, 320],
+          data: monthCounts.length > 0 ? monthCounts : [0, 0, 0, 0, 0, 0],
           backgroundColor: '#004aad'
         }]
       },
@@ -69,17 +97,29 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       }
     });
 
-    // Pie Chart
+    // Pie Chart - Loan Type Distribution
+    const loanTypeLabels = Object.keys(this.loanTypeDistribution);
+    const loanTypeCounts = Object.values(this.loanTypeDistribution);
+    const colors = ['#004aad', '#43a047', '#f9a825', '#e53935', '#8e24aa'];
+    
     new Chart(this.pieChartRef.nativeElement, {
       type: 'pie',
       data: {
-        labels: ['Personal Loan', 'Business Loan', 'Home Loan', 'Education Loan'],
+        labels: loanTypeLabels.length > 0 ? loanTypeLabels : ['No Data'],
         datasets: [{
-          data: [300, 200, 150, 100],
-          backgroundColor: ['#004aad', '#43a047', '#f9a825', '#e53935']
+          data: loanTypeCounts.length > 0 ? loanTypeCounts : [1],
+          backgroundColor: loanTypeCounts.length > 0 ? colors.slice(0, loanTypeCounts.length) : ['#cccccc']
         }]
       },
-      options: { responsive: true }
+      options: { 
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Loan Type Distribution'
+          }
+        }
+      }
     });
 
     // Line Chart

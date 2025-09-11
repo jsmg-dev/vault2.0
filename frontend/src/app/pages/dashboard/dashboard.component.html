@@ -1,6 +1,7 @@
 <app-main-layout
   [userRole]="userRole"
   [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
   (sidenavToggle)="onSidenavToggle($event)"
   (fullscreenToggle)="toggleFullscreen()"
   (logoutEvent)="logout()"
@@ -24,7 +25,7 @@
       </div>
       <div class="card earnings">
         <h3>Monthly Earnings</h3>
-        <p>₹ 1,40,000</p>
+        <p>₹ {{ monthlyEarnings | number }}</p>
         <i class="fas fa-chart-line"></i>
       </div>
     </div>

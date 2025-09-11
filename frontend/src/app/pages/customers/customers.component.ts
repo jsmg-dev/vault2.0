@@ -89,7 +89,10 @@ export class CustomersComponent implements OnInit {
 
   openCreateCustomerModal() {
     this.showCreateModal = true;
-    this.customerForm = {};
+    this.customerForm = {
+      status: 'active',
+      loan_type: 'Personal Loan'
+    };
   }
 
   closeCreateCustomerModal() {
@@ -178,6 +181,7 @@ export class CustomersComponent implements OnInit {
     formData.append('amount_after_deduction', this.customerForm.amount_after_deduction || '');
     formData.append('agent_commission', this.customerForm.agent_commission || '');
     formData.append('status', this.customerForm.status || 'active');
+    formData.append('loan_type', this.customerForm.loan_type || 'Personal Loan');
     formData.append('remark', this.customerForm.remark || '');
     
     // Add files if they exist
@@ -234,6 +238,7 @@ export class CustomersComponent implements OnInit {
     formData.append('amount_after_deduction', this.editForm.amount_after_deduction || '');
     formData.append('agent_commission', this.editForm.agent_commission || '');
     formData.append('status', this.editForm.status || 'active');
+    formData.append('loan_type', this.editForm.loan_type || 'Personal Loan');
     formData.append('remark', this.editForm.remark || '');
     
     // Add existing file paths

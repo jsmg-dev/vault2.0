@@ -63,9 +63,8 @@
           <th>Given Amount</th>
           <th>Agent Commission</th>
           <th>Status</th>
+          <th>Loan Type</th>
           <th>Remark</th>
-          <th>Photos</th>
-          <th>Documents</th>
         </tr>
       </thead>
       <tbody>
@@ -101,25 +100,9 @@
               {{ customer.status || 'active' }}
             </span>
           </td>
+          <td>{{ customer.loan_type || 'Personal Loan' }}</td>
           <td>{{ customer.remark || 'N/A' }}</td>
-          <td>
-            <div *ngIf="customer.photo_path" class="file-preview-grid">
-              <img *ngFor="let photo of getPhotoPaths(customer.photo_path)" 
-                   [src]="getFileUrl(photo)" 
-                   alt="Customer Photo" 
-                   class="table-image" />
-            </div>
-            <span *ngIf="!customer.photo_path">No photos</span>
-          </td>
-          <td>
-            <div *ngIf="customer.document_path" class="file-preview-grid">
-              <img *ngFor="let doc of getDocumentPaths(customer.document_path)" 
-                   [src]="getFileUrl(doc)" 
-                   alt="Customer Document" 
-                   class="table-image" />
-            </div>
-            <span *ngIf="!customer.document_path">No documents</span>
-          </td>
+
         </tr>
       </tbody>
     </table>
@@ -194,14 +177,24 @@
         </div>
         <div class="form-group">
           <label>Status</label>
-          <select name="status">
+          <select name="status" [(ngModel)]="customerForm.status">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Loan Type</label>
+          <select name="loan_type" [(ngModel)]="customerForm.loan_type">
+            <option value="Personal Loan">Personal Loan</option>
+            <option value="Gold Loan">Gold Loan</option>
+            <option value="Business Loan">Business Loan</option>
+            <option value="Home Loan">Home Loan</option>
+            <option value="Education Loan">Education Loan</option>
+          </select>
+        </div>
         <div class="form-group full-width">
           <label>Remark</label>
-          <textarea name="remark" rows="3"></textarea>
+          <textarea name="remark" rows="3" [(ngModel)]="customerForm.remark"></textarea>
         </div>
         
         <!-- File Upload Section -->
@@ -309,6 +302,16 @@
           <select name="status" [(ngModel)]="editForm.status">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Loan Type</label>
+          <select name="loan_type" [(ngModel)]="editForm.loan_type">
+            <option value="Personal Loan">Personal Loan</option>
+            <option value="Gold Loan">Gold Loan</option>
+            <option value="Business Loan">Business Loan</option>
+            <option value="Home Loan">Home Loan</option>
+            <option value="Education Loan">Education Loan</option>
           </select>
         </div>
         <div class="form-group full-width">

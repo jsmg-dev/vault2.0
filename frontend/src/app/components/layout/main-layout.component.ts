@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidenavComponent, NavItem } from '../sidenav/sidenav.component';
 import { HeaderComponent } from '../header/header.component';
+import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-main-layout',
@@ -19,6 +20,7 @@ import { HeaderComponent } from '../header/header.component';
 
       <div class="content-area" [class.sidenav-collapsed]="sidenavCollapsed">
         <app-header 
+          [breadcrumbItems]="breadcrumbItems"
           (fullscreenToggle)="onFullscreenToggle()"
           (logoutEvent)="onLogout()"
         ></app-header>
@@ -64,6 +66,7 @@ import { HeaderComponent } from '../header/header.component';
 export class MainLayoutComponent {
   @Input() userRole: string = '';
   @Input() sidenavCollapsed: boolean = false;
+  @Input() breadcrumbItems: BreadcrumbItem[] = [];
   
   @Output() sidenavToggle = new EventEmitter<boolean>();
   @Output() fullscreenToggle = new EventEmitter<void>();

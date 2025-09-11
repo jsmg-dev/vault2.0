@@ -193,7 +193,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow-x: auto; /* Horizontal scroll for wide tables */
+  overflow: hidden; /* Let table-wrapper handle scrolling */
   height: calc(100vh - 200px); /* Fill remaining page height */
   display: flex;
   flex-direction: column;
@@ -202,7 +202,27 @@
 .table-wrapper {
   flex: 1;
   overflow-y: auto; /* Make table content scrollable */
-  overflow-x: hidden;
+  overflow-x: auto; /* Enable horizontal scroll for wide tables */
+}
+
+/* Custom scrollbar styling for better visibility */
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .table-header {
@@ -244,6 +264,7 @@
 /* Table */
 .customers-table {
   width: 100%;
+  min-width: 1200px; /* Ensure all columns are visible with horizontal scroll */
   border-collapse: collapse;
   overflow-y: auto; /* Make table content scrollable */
   table-layout: auto; /* Keep natural row heights */

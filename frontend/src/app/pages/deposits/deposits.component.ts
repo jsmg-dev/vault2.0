@@ -5,6 +5,7 @@ import { RouterModule, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { NavItem } from '../../components/sidenav/sidenav.component';
+import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-deposits',
@@ -30,6 +31,9 @@ export class DepositsComponent implements OnInit {
 
   userRole: string = '';
   sidenavCollapsed = false;
+  breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Deposit Management', route: '/deposits' }
+  ];
 
   constructor(private router: Router) {}
 

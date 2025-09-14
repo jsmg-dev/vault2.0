@@ -5,6 +5,7 @@ import { RouterModule, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { NavItem } from '../../components/sidenav/sidenav.component';
+import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-reports',
@@ -29,6 +30,9 @@ export class ReportsComponent implements OnInit {
 
   userRole: string = '';
   sidenavCollapsed = false;
+  breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Generate Report', route: '/reports' }
+  ];
 
   constructor(private router: Router) {}
 

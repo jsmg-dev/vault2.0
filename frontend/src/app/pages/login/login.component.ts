@@ -32,8 +32,16 @@ export class LoginComponent {
       const data = await res.json();
       console.log(data);
       const role = data?.user?.role || data?.role || 'user';
+      const userId = data?.user?.id || data?.id;
       sessionStorage.setItem('role', role);
-      this.router.navigateByUrl('/dashboard');
+      sessionStorage.setItem('userId', userId);
+      
+      // Redirect based on user role
+      if (role === 'lic') {
+        this.router.navigateByUrl('/lic-dashboard');
+      } else {
+        this.router.navigateByUrl('/dashboard');
+      }
     } catch (e) {
       this.toastService.error('Invalid credentials');
     }

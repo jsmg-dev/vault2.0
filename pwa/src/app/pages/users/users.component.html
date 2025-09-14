@@ -1,0 +1,133 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="users-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>User Management</h1>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i> Create New User
+        </button>
+      </div>
+    </div>
+
+  <!-- Users Table -->
+  <div class="table-container">
+    <div class="table-header">
+      <div class="table-actions">
+        <input 
+          type="text" 
+          placeholder="Search users..." 
+          class="search-input"
+          (input)="filterUsers($event)"
+        />
+        <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedUsers.length === 0">
+          <i class="fas fa-trash"></i> Delete Selected
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="users-table">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
+          </th>
+          <th>Actions</th>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of filteredUsers" [class.selected]="selectedUsers.includes(user.id)">
+          <td>
+            <input type="checkbox" [checked]="selectedUsers.includes(user.id)" (change)="toggleSelection(user.id)" />
+          </td>
+          <td class="actions">
+            <!-- <button class="btn-icon btn-view" (click)="viewUser(user)" title="View">
+              <i class="fas fa-eye"></i>
+            </button> -->
+            <button class="btn-icon btn-edit" (click)="editUser(user)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteUser(user.id)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+          <td>{{ user.id }}</td>
+          <td>{{ user.name || 'N/A' }}</td>
+          <td>{{ user.username }}</td>
+          <td>
+            <span class="role-badge" [class.role-admin]="user.role === 'admin'" [class.role-user]="user.role === 'user'" [class.role-lic]="user.role === 'lic'">
+              {{ user.role || 'user' }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class.status-active]="user.status !== 'inactive'" [class.status-inactive]="user.status === 'inactive'">
+              {{ user.status || 'active' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal" [class.show]="showModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>{{ editingUser ? 'Edit' : 'Create' }} User</h3>
+      <button class="modal-close" (click)="closeModal()">×</button>
+    </div>
+    <form (submit)="saveUser($event)" class="user-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" name="name" [(ngModel)]="userForm.name" required />
+        </div>
+        <div class="form-group">
+          <label>Username *</label>
+          <input type="text" name="username" [(ngModel)]="userForm.username" required />
+        </div>
+        <div class="form-group">
+          <label>Password {{ editingUser ? '' : '*' }}</label>
+          <input type="password" name="password" [(ngModel)]="userForm.password" [required]="!editingUser" />
+          <small *ngIf="editingUser">Leave blank to keep current password</small>
+        </div>
+        <div class="form-group">
+          <label>Role *</label>
+          <select name="role" [(ngModel)]="userForm.role" required>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+            <option value="lic">LIC</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status" [(ngModel)]="userForm.status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">
+          {{ editingUser ? 'Update' : 'Create' }} User
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</app-main-layout>

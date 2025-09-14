@@ -7,6 +7,8 @@ require('dotenv').config();
 
 const config = require('./config');
 const db = require('./db');
+const whatsappService = require('./services/whatsapp.service');
+const cron = require('node-cron');
 
 const authRoutes = require('./routes/auth');     // ensure these routes use Postgres too
 const userRoutes = require('./routes/users');    // ensure Postgres
@@ -22,7 +24,7 @@ const port = config.server.port;
 // CORS
 app.use(
   cors({
-    origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'https://vaultssb.netlify.app'],
+    origin: ['http://localhost:4200', 'http://localhost:4201', 'http://127.0.0.1:4200', 'https://vaultssb.netlify.app', /^http:\/\/192\.168\.\d+\.\d+:4200$/, /^http:\/\/10\.\d+\.\d+\.\d+:4200$/],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control'],
@@ -61,11 +63,9 @@ app.use('/dashboard', dashboardRoutes);
     const countRes = await db.query(`SELECT COUNT(*)::int AS cnt FROM users;`);
     if ((countRes.rows[0]?.cnt ?? 0) === 0) {
       await db.query(
-        `INSERT INTO users (name, username, password, role) VALUES ($1, $2, $3, $4)
+        `INSERT INTO users (name, username, password, role) VALUES ($1, $2, $3, $4), ($5, $6, $7, $8)
          ON CONFLICT (username) DO NOTHING;`,
-        ['Administrator', 'admin', 'admin123', 'admin'],
-        ['Akshar', 'aks', 'qwerty', 'lic']
-
+        ['Administrator', 'admin', 'admin123', 'admin', 'Akshar', 'aks', 'qwerty', 'lic']
       );
       console.log('Seeded default admin user: admin/admin123');
     }
@@ -156,6 +156,18 @@ app.use('/dashboard', dashboardRoutes);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_policies_policy_no ON lic_policy_details(policy_no);`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_policies_status ON lic_policy_details(status);`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_policies_created_at ON lic_policy_details(created_at);`);
+
+    // Add payment_status column if it doesn't exist
+    await db.query(`
+      ALTER TABLE lic_policy_details 
+      ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'due';
+    `);
+
+    // Add last_payment_date column if it doesn't exist
+    await db.query(`
+      ALTER TABLE lic_policy_details 
+      ADD COLUMN IF NOT EXISTS last_payment_date DATE;
+    `);
 
   } catch (err) {
     console.error('❌ Bootstrap users failed:', err);
@@ -394,10 +406,315 @@ app.get('/emi/notifications', async (req, res) => {
   }
 });
 
+// Update payment status and calculate next premium date
+app.put('/api/policies/:id/payment-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_status } = req.body;
+
+    if (!payment_status || !['due', 'paid'].includes(payment_status)) {
+      return res.status(400).json({ error: 'Invalid payment status. Must be "due" or "paid"' });
+    }
+
+    // Get the policy details
+    const policy = await db.one(`
+      SELECT id, policy_no, start_date, mode_of_payment, next_premium_date, payment_status
+      FROM lic_policy_details 
+      WHERE id = $1
+    `, [id]);
+
+    if (!policy) {
+      return res.status(404).json({ error: 'Policy not found' });
+    }
+
+    let nextPremiumDate = policy.next_premium_date;
+    let lastPaymentDate = null;
+
+    // If payment status is being set to 'paid', calculate next premium date
+    if (payment_status === 'paid') {
+      const today = new Date();
+      lastPaymentDate = today.toISOString().split('T')[0];
+
+      // Calculate next premium date based on payment mode
+      const paymentMode = (policy.mode_of_payment || '').toLowerCase();
+      let baseDate = policy.next_premium_date ? new Date(policy.next_premium_date) : today;
+
+      if (paymentMode.includes('monthly') || paymentMode.includes('month')) {
+        // Add 1 month
+        baseDate.setMonth(baseDate.getMonth() + 1);
+      } else if (paymentMode.includes('quarterly') || paymentMode.includes('quarter')) {
+        // Add 3 months
+        baseDate.setMonth(baseDate.getMonth() + 3);
+      } else if (paymentMode.includes('yearly') || paymentMode.includes('year') || paymentMode.includes('annual')) {
+        // Add 1 year
+        baseDate.setFullYear(baseDate.getFullYear() + 1);
+      } else if (paymentMode.includes('half yearly') || paymentMode.includes('half-yearly')) {
+        // Add 6 months
+        baseDate.setMonth(baseDate.getMonth() + 6);
+      } else {
+        // Default to monthly if mode is unclear
+        baseDate.setMonth(baseDate.getMonth() + 1);
+      }
+
+      nextPremiumDate = baseDate.toISOString().split('T')[0];
+    }
+
+    // Update the policy with new payment status and dates
+    const result = await db.query(`
+      UPDATE lic_policy_details 
+      SET payment_status = $1, next_premium_date = $2, last_payment_date = $3
+      WHERE id = $4
+    `, [payment_status, nextPremiumDate, lastPaymentDate, id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Policy not found' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Payment status updated to ${payment_status}`,
+      next_premium_date: nextPremiumDate,
+      last_payment_date: lastPaymentDate
+    });
+
+  } catch (err) {
+    console.error('❌ Failed to update payment status:', err);
+    res.status(500).json({ error: 'Failed to update payment status' });
+  }
+});
+
+// Get policy payment details
+app.get('/api/policies/:id/payment-details', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const policy = await db.one(`
+      SELECT 
+        id, policy_no, fullname, start_date, mode_of_payment, 
+        next_premium_date, payment_status, last_payment_date,
+        premium, status
+      FROM lic_policy_details 
+      WHERE id = $1
+    `, [id]);
+
+    if (!policy) {
+      return res.status(404).json({ error: 'Policy not found' });
+    }
+
+    res.json(policy);
+  } catch (err) {
+    console.error('❌ Failed to fetch payment details:', err);
+    res.status(500).json({ error: 'Failed to fetch payment details' });
+  }
+});
+
+// Check policies with premium due today and send WhatsApp messages
+app.post('/api/whatsapp/send-premium-due-notifications', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get all policies with premium due today
+    const policies = await db.query(`
+      SELECT 
+        id, policy_no, fullname, mobile, plan_name, 
+        premium, mode_of_payment, next_premium_date, status
+      FROM lic_policy_details 
+      WHERE next_premium_date = $1 
+      AND status = 'Active'
+      AND mobile IS NOT NULL 
+      AND mobile != ''
+    `, [today]);
+
+    if (policies.rows.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No policies with premium due today',
+        count: 0,
+        notifications: []
+      });
+    }
+
+    const results = [];
+    
+    for (const policy of policies.rows) {
+      try {
+        const message = whatsappService.generatePremiumDueMessage(policy);
+        const result = await whatsappService.sendMessage(policy.mobile, message);
+        
+        results.push({
+          policy_id: policy.id,
+          policy_no: policy.policy_no,
+          customer_name: policy.fullname,
+          mobile: policy.mobile,
+          success: result.success,
+          messageId: result.messageId,
+          error: result.error || null,
+          url: result.url || null
+        });
+        
+        // Add small delay between messages to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (error) {
+        console.error(`❌ Failed to send WhatsApp to ${policy.fullname}:`, error);
+        results.push({
+          policy_id: policy.id,
+          policy_no: policy.policy_no,
+          customer_name: policy.fullname,
+          mobile: policy.mobile,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    
+    res.json({
+      success: true,
+      message: `WhatsApp notifications sent: ${successCount}/${results.length} successful`,
+      count: results.length,
+      successCount: successCount,
+      notifications: results
+    });
+
+  } catch (err) {
+    console.error('❌ Failed to send premium due notifications:', err);
+    res.status(500).json({ error: 'Failed to send notifications' });
+  }
+});
+
+// Get policies with premium due today (without sending messages)
+app.get('/api/policies/premium-due-today', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const policies = await db.query(`
+      SELECT 
+        id, policy_no, fullname, mobile, plan_name, 
+        premium, mode_of_payment, next_premium_date, status
+      FROM lic_policy_details 
+      WHERE next_premium_date = $1 
+      AND status = 'Active'
+      AND mobile IS NOT NULL 
+      AND mobile != ''
+      ORDER BY fullname ASC
+    `, [today]);
+
+    res.json({
+      date: today,
+      count: policies.rows.length,
+      policies: policies.rows
+    });
+
+  } catch (err) {
+    console.error('❌ Failed to fetch premium due policies:', err);
+    res.status(500).json({ error: 'Failed to fetch policies' });
+  }
+});
+
+// Send WhatsApp message to specific policy
+app.post('/api/whatsapp/send-to-policy/:policyId', async (req, res) => {
+  try {
+    const { policyId } = req.params;
+    const { customMessage } = req.body;
+
+    // Get policy details
+    const policy = await db.one(`
+      SELECT 
+        id, policy_no, fullname, mobile, plan_name, 
+        premium, mode_of_payment, next_premium_date, status
+      FROM lic_policy_details 
+      WHERE id = $1 AND mobile IS NOT NULL AND mobile != ''
+    `, [policyId]);
+
+    if (!policy) {
+      return res.status(404).json({ error: 'Policy not found or no mobile number' });
+    }
+
+    const message = customMessage || whatsappService.generatePremiumDueMessage(policy);
+    const result = await whatsappService.sendMessage(policy.mobile, message);
+
+    res.json({
+      success: result.success,
+      policy: {
+        id: policy.id,
+        policy_no: policy.policy_no,
+        customer_name: policy.fullname,
+        mobile: policy.mobile
+      },
+      messageId: result.messageId,
+      url: result.url,
+      error: result.error || null
+    });
+
+  } catch (err) {
+    console.error('❌ Failed to send WhatsApp to policy:', err);
+    res.status(500).json({ error: 'Failed to send WhatsApp message' });
+  }
+});
+
 // 404
 app.use((req, res) => res.status(404).send('Page not found'));
+
+// Scheduled job to check for premium due policies daily at 9 AM
+cron.schedule('0 9 * * *', async () => {
+  try {
+    console.log('🔄 Running daily premium due check...');
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get policies with premium due today
+    const policies = await db.query(`
+      SELECT 
+        id, policy_no, fullname, mobile, plan_name, 
+        premium, mode_of_payment, next_premium_date, status
+      FROM lic_policy_details 
+      WHERE next_premium_date = $1 
+      AND status = 'Active'
+      AND mobile IS NOT NULL 
+      AND mobile != ''
+    `, [today]);
+
+    if (policies.rows.length === 0) {
+      console.log('✅ No policies with premium due today');
+      return;
+    }
+
+    console.log(`📱 Found ${policies.rows.length} policies with premium due today`);
+    
+    let successCount = 0;
+    for (const policy of policies.rows) {
+      try {
+        const message = whatsappService.generatePremiumDueMessage(policy);
+        const result = await whatsappService.sendMessage(policy.mobile, message);
+        
+        if (result.success) {
+          successCount++;
+          console.log(`✅ WhatsApp sent to ${policy.fullname} (${policy.policy_no})`);
+        } else {
+          console.log(`❌ Failed to send WhatsApp to ${policy.fullname}: ${result.error}`);
+        }
+        
+        // Add delay between messages
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+      } catch (error) {
+        console.error(`❌ Error sending WhatsApp to ${policy.fullname}:`, error.message);
+      }
+    }
+    
+    console.log(`📊 Daily WhatsApp notifications: ${successCount}/${policies.rows.length} successful`);
+    
+  } catch (error) {
+    console.error('❌ Daily premium due check failed:', error);
+  }
+}, {
+  timezone: "Asia/Kolkata"
+});
 
 // Start
 app.listen(port, () => {
   console.log(`🚀 Server running at http://localhost:${port}`);
+  console.log(`📅 Scheduled WhatsApp notifications: Daily at 9:00 AM IST`);
 });

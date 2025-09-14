@@ -1,23 +1,51 @@
 <app-main-layout
   [userRole]="userRole"
   [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
   (sidenavToggle)="onSidenavToggle($event)"
   (fullscreenToggle)="toggleFullscreen()"
   (logoutEvent)="logout()"
 >
   <div class="policies-container">
-    <!-- Page Header -->
-    <div class="page-header">
-      <h1>LIC Policy Management</h1>
-      <div class="header-actions">
-        <button class="btn-primary" (click)="openForm()">
-          <i class="fas fa-plus"></i> Add New Policy
-        </button>
-      </div>
+    <!-- Page Actions -->
+    <div class="page-actions">
+      <button class="btn-primary" (click)="openForm()">
+        <i class="fas fa-plus"></i> Add New Policy
+      </button>
     </div>
 
   <!-- Policies List -->
   <div class="policies-list" *ngIf="!showForm">
+    
+    <!-- Global Search Section -->
+    <div class="global-search-section">
+      <div class="search-container">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="globalSearchTerm"
+            (input)="onGlobalSearch()"
+            placeholder="Search across all policies..." 
+            class="search-input"
+          >
+          <button 
+            *ngIf="globalSearchTerm" 
+            class="clear-search-btn" 
+            (click)="clearGlobalSearch()"
+            title="Clear search"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="search-results-info" *ngIf="globalSearchTerm">
+          <span class="results-count">
+            {{ filteredPolicies.length }} of {{ policies.length }} policies found
+          </span>
+        </div>
+      </div>
+    </div>
+
     <div class="table-container">
       <div class="table-wrapper">
         <table class="policies-table">
@@ -27,6 +55,7 @@
               <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
             </th>
             <th class="col-actions">Actions</th>
+            <th>Payment Status</th>
             <th>Policy No</th>
             <th>Name</th>
             <th>DOB</th>
@@ -60,7 +89,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let policy of policies" [class.selected]="selectedPolicies.includes(policy.id)">
+          <tr *ngFor="let policy of filteredPolicies" [class.selected]="selectedPolicies.includes(policy.id)">
             <td>
               <input type="checkbox" [checked]="selectedPolicies.includes(policy.id)" (change)="toggleSelection(policy.id)" />
             </td>
@@ -71,6 +100,18 @@
               <button class="btn-icon btn-delete" (click)="deletePolicy(policy.id)" title="Delete">
                 <i class="fas fa-trash"></i>
               </button>
+            </td>
+            <td class="payment-status">
+              <label class="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  [checked]="policy.payment_status === 'paid'"
+                  (change)="togglePaymentStatus(policy)"
+                  [disabled]="isUpdatingPayment"
+                />
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">{{ policy.payment_status === 'paid' ? 'Paid' : 'Due' }}</span>
+              </label>
             </td>
             <td>{{ policy.policy_no || 'Auto' }}</td>
             <td>{{ policy.fullname }}</td>
@@ -109,6 +150,18 @@
           </tr>
         </tbody>
       </table>
+      </div>
+      
+      <!-- No Results Message -->
+      <div *ngIf="globalSearchTerm && filteredPolicies.length === 0" class="no-results">
+        <div class="no-results-content">
+          <i class="fas fa-search"></i>
+          <h3>No policies found</h3>
+          <p>No policies match your search criteria: "{{ globalSearchTerm }}"</p>
+          <button class="btn btn-primary" (click)="clearGlobalSearch()">
+            Clear Search
+          </button>
+        </div>
       </div>
     </div>
   </div>

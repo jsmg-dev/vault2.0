@@ -1,0 +1,89 @@
+<div 
+  *ngIf="showChatbot"
+  class="floating-chatbot-container" 
+  [class.minimized]="isMinimized"
+  [style.left.px]="position.x" 
+  [style.top.px]="position.y"
+  [class.dragging]="isDragging"
+  (mousedown)="onMouseDown($event)">
+  
+  <div class="chatbot-header" [class.draggable]="!isMinimized">
+    <div class="agent-info">
+      <div class="agent-avatar">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div class="agent-details" *ngIf="!isMinimized">
+        <h3>Agent JS</h3>
+      </div>
+      <div class="agent-details-minimized" *ngIf="isMinimized">
+        <h3>Agent JS</h3>
+        <div class="minimized-indicator">
+          <span class="status-dot"></span>
+          <span class="status-text">Click + to chat</span>
+        </div>
+      </div>
+    </div>
+    <div class="chatbot-controls">
+      <button class="control-btn" (click)="clearChat()" title="Clear Chat" *ngIf="!isMinimized">
+        <i class="fas fa-trash"></i>
+      </button>
+      <button class="control-btn minimize-btn" (click)="toggleMinimize()" [title]="isMinimized ? 'Maximize' : 'Minimize'">
+        <i class="fas" [class.fa-minus]="!isMinimized" [class.fa-plus]="isMinimized"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="chatbot-body" [class.minimized]="isMinimized">
+    <div class="chat-messages" #chatMessages>
+      <div 
+        *ngFor="let message of messages" 
+        class="message" 
+        [class.user-message]="message.isUser"
+        [class.bot-message]="!message.isUser"
+        [class.typing]="message.isTyping">
+        
+        <div class="message-avatar" *ngIf="!message.isUser">
+          <i class="fas fa-robot"></i>
+        </div>
+        
+        <div class="message-content">
+          <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+          <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+        </div>
+        
+        <div class="message-avatar user-avatar" *ngIf="message.isUser">
+          <i class="fas fa-user"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-container">
+      <div class="quick-actions">
+        <button class="quick-action-btn" (click)="userInput = 'List all policies'; sendMessage()">
+          📋 List Policies
+        </button>
+        <button class="quick-action-btn" (click)="userInput = 'Help'; sendMessage()">
+          ❓ Help
+        </button>
+        <button class="quick-action-btn" (click)="userInput = 'Compare policies'; sendMessage()">
+          🔄 Compare
+        </button>
+      </div>
+      
+      <div class="input-group">
+        <input 
+          type="text" 
+          [(ngModel)]="userInput" 
+          placeholder="Ask Agent JS about LIC policies..."
+          (keyup.enter)="sendMessage()"
+          class="chat-input">
+        <button 
+          class="send-btn" 
+          (click)="sendMessage()" 
+          [disabled]="!userInput.trim()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -9,6 +9,26 @@
   overflow: hidden;
 }
 
+/* Logo at top left corner */
+.top-logo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+}
+
+.corner-logo {
+  height: 100px;
+  width: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
+}
+
+.corner-logo:hover {
+  transform: scale(1.05);
+}
+
 .login-card {
   background: white;
   border-radius: 20px;

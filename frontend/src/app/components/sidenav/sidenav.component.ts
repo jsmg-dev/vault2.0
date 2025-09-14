@@ -53,7 +53,7 @@ export interface NavItem {
     .sidenav {
       width: 250px;
       height: 100vh;
-      background: #1f2a44;
+      background: #374151;
       color: white;
       display: flex;
       flex-direction: column;
@@ -117,12 +117,12 @@ export interface NavItem {
 
     .nav-item:hover {
       background: rgba(255, 255, 255, 0.1);
-      border-left-color: #3b82f6;
+      border-left-color: #ef4444;
     }
 
     .nav-item.active {
-      background: rgba(59, 130, 246, 0.2);
-      border-left-color: #3b82f6;
+      background: rgba(239, 68, 68, 0.2);
+      border-left-color: #ef4444;
     }
 
     .nav-item.collapsed {

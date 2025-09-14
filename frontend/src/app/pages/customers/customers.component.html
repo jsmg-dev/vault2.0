@@ -1,6 +1,7 @@
 <app-main-layout
   [userRole]="userRole"
   [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
   (sidenavToggle)="onSidenavToggle($event)"
   (fullscreenToggle)="toggleFullscreen()"
   (logoutEvent)="logout()"
@@ -8,7 +9,6 @@
   <div class="customers-container">
     <!-- Page Header -->
     <div class="page-header">
-      <h1>Customer Management</h1>
       <div class="header-actions">
         <button class="btn-primary" (click)="openCreateCustomerModal()">
           <i class="fas fa-plus"></i> Create Customer

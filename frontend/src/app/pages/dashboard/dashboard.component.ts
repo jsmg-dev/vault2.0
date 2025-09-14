@@ -86,13 +86,65 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         datasets: [{
           label: 'Customers',
           data: monthCounts.length > 0 ? monthCounts : [0, 0, 0, 0, 0, 0],
-          backgroundColor: '#004aad'
+          backgroundColor: [
+            'rgba(59, 130, 246, 0.8)',
+            'rgba(16, 185, 129, 0.8)',
+            'rgba(245, 158, 11, 0.8)',
+            'rgba(139, 92, 246, 0.8)',
+            'rgba(239, 68, 68, 0.8)',
+            'rgba(236, 72, 153, 0.8)'
+          ],
+          borderColor: [
+            'rgba(59, 130, 246, 1)',
+            'rgba(16, 185, 129, 1)',
+            'rgba(245, 158, 11, 1)',
+            'rgba(139, 92, 246, 1)',
+            'rgba(239, 68, 68, 1)',
+            'rgba(236, 72, 153, 1)'
+          ],
+          borderWidth: 2
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#374151',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            }
+          }
+        },
         scales: {
-          y: { beginAtZero: true }
+          x: {
+            ticks: {
+              color: '#374151',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#374151',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
         }
       }
     });
@@ -100,7 +152,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Pie Chart - Loan Type Distribution
     const loanTypeLabels = Object.keys(this.loanTypeDistribution);
     const loanTypeCounts = Object.values(this.loanTypeDistribution);
-    const colors = ['#004aad', '#43a047', '#f9a825', '#e53935', '#8e24aa'];
+    const colors = [
+      'rgba(59, 130, 246, 0.8)',
+      'rgba(16, 185, 129, 0.8)', 
+      'rgba(245, 158, 11, 0.8)',
+      'rgba(139, 92, 246, 0.8)',
+      'rgba(239, 68, 68, 0.8)',
+      'rgba(236, 72, 153, 0.8)'
+    ];
     
     new Chart(this.pieChartRef.nativeElement, {
       type: 'pie',
@@ -108,15 +167,23 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         labels: loanTypeLabels.length > 0 ? loanTypeLabels : ['No Data'],
         datasets: [{
           data: loanTypeCounts.length > 0 ? loanTypeCounts : [1],
-          backgroundColor: loanTypeCounts.length > 0 ? colors.slice(0, loanTypeCounts.length) : ['#cccccc']
+          backgroundColor: loanTypeCounts.length > 0 ? colors.slice(0, loanTypeCounts.length) : ['rgba(156, 163, 175, 0.3)'],
+          borderColor: loanTypeCounts.length > 0 ? colors.map(color => color.replace('0.8', '1')) : ['rgba(156, 163, 175, 0.5)'],
+          borderWidth: 2
         }]
       },
       options: { 
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          title: {
-            display: true,
-            text: 'Loan Type Distribution'
+          legend: {
+            labels: {
+              color: '#374151',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            }
           }
         }
       }
@@ -130,16 +197,57 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         datasets: [{
           label: 'Revenue (in ₹)',
           data: [20000, 25000, 27000, 30000, 28000, 35000],
-          borderColor: '#004aad',
-          backgroundColor: 'rgba(0,74,173,0.1)',
+          borderColor: 'rgba(139, 92, 246, 1)',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
           fill: true,
-          tension: 0.4
+          tension: 0.4,
+          borderWidth: 3,
+          pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointRadius: 6
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#374151',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            }
+          }
+        },
         scales: {
-          y: { beginAtZero: true }
+          x: {
+            ticks: {
+              color: '#374151',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#374151',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
         }
       }
     });
@@ -163,4 +271,5 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   onSidenavToggle(collapsed: boolean) {
     this.sidenavCollapsed = collapsed;
   }
+
 }

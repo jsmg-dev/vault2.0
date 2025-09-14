@@ -21,7 +21,7 @@
   padding: 24px;
   margin-bottom: 20px;
 }
-.card h2, .card h3 { margin: 0 0 16px 0; color: #374151; }
+.card h3 { margin: 0 0 16px 0; color: #374151; }
 
 /* Form */
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PWA Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .icon-item { text-align: center; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>This will generate PWA icons from the Vault logo. Right-click each icon and save it to the assets/images/ folder.</p>
+    
+    <div class="icon-container" id="iconContainer"></div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const container = document.getElementById('iconContainer');
+        
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Create a blue background
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Add white text
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.3}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('V', size/2, size/2);
+            
+            // Create container for this icon
+            const item = document.createElement('div');
+            item.className = 'icon-item';
+            item.innerHTML = `
+                <canvas width="${size}" height="${size}"></canvas>
+                <div>${size}x${size}</div>
+            `;
+            
+            // Copy the canvas content
+            const itemCanvas = item.querySelector('canvas');
+            const itemCtx = itemCanvas.getContext('2d');
+            itemCtx.drawImage(canvas, 0, 0);
+            
+            container.appendChild(item);
+        });
+    </script>
+</body>
+</html>
+

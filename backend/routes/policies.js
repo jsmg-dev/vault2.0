@@ -35,7 +35,8 @@ router.post('/add', async (req, res) => {
     bank_name,
     agent_code,
     branch_code,
-    status
+    status,
+    payment_status
   } = req.body;
 
   // Normalize inputs: convert empty strings to NULL and coerce numbers
@@ -72,7 +73,8 @@ router.post('/add', async (req, res) => {
     bank_name: toNull(bank_name),
     agent_code: toNull(agent_code),
     branch_code: toNull(branch_code),
-    status: toNull(status)
+    status: toNull(status),
+    payment_status: toNull(payment_status) || 'due'
   };
 
   const sql = `
@@ -81,11 +83,11 @@ router.post('/add', async (req, res) => {
       plan_name, start_date, end_date, mode_of_payment, next_premium_date, sum_assured,
       policy_term, premium_term, premium, maturity_value, nominee_name, nominee_relation,
       height_cm, weight_kg, health_lifestyle, bank_account, ifsc_code, bank_name,
-      agent_code, branch_code, status, created_at
+      agent_code, branch_code, status, payment_status, created_at
     ) VALUES (
       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
       $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-      $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,NOW()
+      $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,NOW()
     )
     RETURNING id;
   `;
@@ -96,7 +98,7 @@ router.post('/add', async (req, res) => {
       payload.plan_name, payload.start_date, payload.end_date, payload.mode_of_payment, payload.next_premium_date, payload.sum_assured,
       payload.policy_term, payload.premium_term, payload.premium, payload.maturity_value, payload.nominee_name, payload.nominee_relation,
       payload.height_cm, payload.weight_kg, payload.health_lifestyle, payload.bank_account, payload.ifsc_code, payload.bank_name,
-      payload.agent_code, payload.branch_code, payload.status
+      payload.agent_code, payload.branch_code, payload.status, payload.payment_status
     ]);
     res.json({ success: true, policy_id: result.rows[0].id });
   } catch (err) {
@@ -151,7 +153,8 @@ router.put('/update/:id', async (req, res) => {
     bank_name,
     agent_code,
     branch_code,
-    status
+    status,
+    payment_status
   } = req.body;
 
   const toNull = (v) => (v === undefined || v === null || v === '' ? null : v);
@@ -186,7 +189,8 @@ router.put('/update/:id', async (req, res) => {
     bank_name: toNull(bank_name),
     agent_code: toNull(agent_code),
     branch_code: toNull(branch_code),
-    status: toNull(status)
+    status: toNull(status),
+    payment_status: toNull(payment_status) || 'due'
   };
 
   const sql = `
@@ -197,8 +201,8 @@ router.put('/update/:id', async (req, res) => {
       sum_assured=$15, policy_term=$16, premium_term=$17, premium=$18,
       maturity_value=$19, nominee_name=$20, nominee_relation=$21, height_cm=$22,
       weight_kg=$23, health_lifestyle=$24, bank_account=$25, ifsc_code=$26,
-      bank_name=$27, agent_code=$28, branch_code=$29, status=$30
-    WHERE id=$31
+      bank_name=$27, agent_code=$28, branch_code=$29, status=$30, payment_status=$31
+    WHERE id=$32
   `;
 
   try {
@@ -207,7 +211,7 @@ router.put('/update/:id', async (req, res) => {
       payload.plan_name, payload.start_date, payload.end_date, payload.mode_of_payment, payload.next_premium_date, payload.sum_assured,
       payload.policy_term, payload.premium_term, payload.premium, payload.maturity_value, payload.nominee_name, payload.nominee_relation,
       payload.height_cm, payload.weight_kg, payload.health_lifestyle, payload.bank_account, payload.ifsc_code, payload.bank_name,
-      payload.agent_code, payload.branch_code, payload.status, id
+      payload.agent_code, payload.branch_code, payload.status, payload.payment_status, id
     ]);
 
     if (result.rowCount === 0) {

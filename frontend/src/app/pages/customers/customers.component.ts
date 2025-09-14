@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { ToastService } from '../../services/toast.service';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { NavItem } from '../../components/sidenav/sidenav.component';
+import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-customers',
@@ -18,6 +19,7 @@ export class CustomersComponent implements OnInit {
   customers: any[] = [];
   filteredCustomers: any[] = [];
   selectedCustomers: number[] = [];
+  
   selectAllChecked = false;
   showCreateModal = false;
   showEditModal = false;
@@ -35,10 +37,11 @@ export class CustomersComponent implements OnInit {
   activeCustomers = 0;
   monthlyCustomers = 0;
 
-
-
   userRole: string = '';
   sidenavCollapsed = false;
+  breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Customer Management', route: '/customers' }
+  ];
 
   constructor(private toastService: ToastService) {}
 

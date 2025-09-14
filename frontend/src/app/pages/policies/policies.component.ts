@@ -7,6 +7,7 @@ import { Router, RouterModule } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { NavItem } from '../../components/sidenav/sidenav.component';
+import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-policies',
@@ -17,6 +18,8 @@ import { NavItem } from '../../components/sidenav/sidenav.component';
 })
 export class PoliciesComponent implements OnInit {
   policies: any[] = [];
+  filteredPolicies: any[] = [];
+  globalSearchTerm: string = '';
   showForm = false;
   editingPolicy: any = null;
   selectedPolicies: number[] = [];
@@ -26,10 +29,13 @@ export class PoliciesComponent implements OnInit {
   validationErrors: Record<string, string> = {};
   saveMode: 'add' | 'update' = 'add';
   showDecisionModal = false;
-
+  isUpdatingPayment = false;
 
   userRole: string = '';
   sidenavCollapsed = false;
+  breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'LIC Policy Management', route: '/policies' }
+  ];
 
   policyForm = {
     policy_no: '',
@@ -61,7 +67,8 @@ export class PoliciesComponent implements OnInit {
     bank_name: '',
     agent_code: '',
     branch_code: '',
-    status: 'Active'
+    status: 'Active',
+    payment_status: 'due'
   };
 
   constructor(
@@ -78,7 +85,13 @@ export class PoliciesComponent implements OnInit {
   loadPolicies() {
     this.http.get<any[]>(`${environment.apiUrl}/policies/list`).subscribe({
       next: (data) => {
-        this.policies = data;
+        // Ensure each policy has a payment_status field
+        this.policies = data.map(policy => ({
+          ...policy,
+          payment_status: policy.payment_status || 'due'
+        }));
+        // Initialize filtered policies with all policies
+        this.filteredPolicies = [...this.policies];
       },
       error: (error) => {
         console.error('Error loading policies:', error);
@@ -86,16 +99,67 @@ export class PoliciesComponent implements OnInit {
     });
   }
 
+  togglePaymentStatus(policy: any) {
+    this.isUpdatingPayment = true;
+    const newStatus = policy.payment_status === 'paid' ? 'due' : 'paid';
+    
+    this.http.put(`${environment.apiUrl}/api/policies/${policy.id}/payment-status`, {
+      payment_status: newStatus
+    }).subscribe({
+      next: (response: any) => {
+        // Update the policy in the local array
+        policy.payment_status = newStatus;
+        policy.next_premium_date = response.next_premium_date;
+        policy.last_payment_date = response.last_payment_date;
+        
+        this.toastService.success(
+          `Payment status updated to ${newStatus} for Policy ${policy.policy_no}`
+        );
+        this.isUpdatingPayment = false;
+      },
+      error: (error) => {
+        console.error('Error updating payment status:', error);
+        this.toastService.error(
+          'Failed to update payment status. Please try again.'
+        );
+        this.isUpdatingPayment = false;
+      }
+    });
+  }
+
   openForm(policy?: any) {
     if (policy) {
       this.editingPolicy = policy;
-      this.policyForm = { ...policy };
+      
+      // Format dates for HTML date inputs (YYYY-MM-DD format)
+      const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toISOString().split('T')[0];
+      };
+
+      this.policyForm = { 
+        ...policy,
+        payment_status: policy.payment_status || 'due',
+        dob: formatDate(policy.dob),
+        start_date: formatDate(policy.start_date),
+        end_date: formatDate(policy.end_date),
+        next_premium_date: formatDate(policy.next_premium_date)
+      };
+      
+      console.log('Policy data being loaded:', policy);
+      console.log('Form data after processing:', this.policyForm);
+      
       this.saveMode = 'update';
     } else {
       this.editingPolicy = null;
       this.resetForm();
       this.saveMode = 'add';
     }
+    
+    // Reset validation state
+    this.isSubmitted = false;
+    this.validationErrors = {};
     this.showForm = true;
   }
 
@@ -130,7 +194,8 @@ export class PoliciesComponent implements OnInit {
       bank_name: '',
       agent_code: '',
       branch_code: '',
-      status: 'Active'
+      status: 'Active',
+      payment_status: 'due'
     };
   }
 
@@ -255,5 +320,59 @@ export class PoliciesComponent implements OnInit {
 
   onSidenavToggle(collapsed: boolean) {
     this.sidenavCollapsed = collapsed;
+  }
+
+  // Global Search Methods
+  onGlobalSearch() {
+    if (!this.globalSearchTerm || this.globalSearchTerm.trim() === '') {
+      this.filteredPolicies = [...this.policies];
+      return;
+    }
+
+    const searchTerm = this.globalSearchTerm.toLowerCase().trim();
+    
+    this.filteredPolicies = this.policies.filter(policy => {
+      // Search across all relevant fields
+      return (
+        this.searchInField(policy.policy_no, searchTerm) ||
+        this.searchInField(policy.fullname, searchTerm) ||
+        this.searchInField(policy.email, searchTerm) ||
+        this.searchInField(policy.mobile, searchTerm) ||
+        this.searchInField(policy.plan_name, searchTerm) ||
+        this.searchInField(policy.address, searchTerm) ||
+        this.searchInField(policy.aadhaar_pan, searchTerm) ||
+        this.searchInField(policy.nominee_name, searchTerm) ||
+        this.searchInField(policy.payment_status, searchTerm) ||
+        this.searchInField(policy.gender, searchTerm) ||
+        this.searchInField(policy.marital_status, searchTerm) ||
+        this.searchInField(policy.bank_name, searchTerm) ||
+        this.searchInField(policy.agent_code, searchTerm) ||
+        this.searchInField(policy.branch_code, searchTerm) ||
+        this.searchInField(policy.status, searchTerm) ||
+        this.searchInDate(policy.dob, searchTerm) ||
+        this.searchInDate(policy.start_date, searchTerm) ||
+        this.searchInDate(policy.end_date, searchTerm) ||
+        this.searchInDate(policy.next_premium_date, searchTerm)
+      );
+    });
+  }
+
+  private searchInField(field: any, searchTerm: string): boolean {
+    if (!field) return false;
+    return field.toString().toLowerCase().includes(searchTerm);
+  }
+
+  private searchInDate(dateField: any, searchTerm: string): boolean {
+    if (!dateField) return false;
+    
+    // Convert date to string and search
+    const dateStr = new Date(dateField).toLocaleDateString();
+    return dateStr.toLowerCase().includes(searchTerm) || 
+           dateField.toString().toLowerCase().includes(searchTerm);
+  }
+
+  clearGlobalSearch() {
+    this.globalSearchTerm = '';
+    this.filteredPolicies = [...this.policies];
   }
 }

@@ -1,0 +1,65 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (logoutEvent)="logout()"
+>
+  <div class="emi-container">
+  <div class="card">
+    <h2>Loan EMI Calculator</h2>
+    <form (submit)="calculateEMI()" novalidate>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="amount">Loan Amount (₹)</label>
+          <input type="number" id="amount" [(ngModel)]="amount" name="amount" required placeholder="Enter loan amount" />
+        </div>
+
+        <div class="form-group">
+          <label for="rate">Interest Rate (%)</label>
+          <input type="number" id="rate" [(ngModel)]="rate" name="rate" step="0.01" required placeholder="Annual interest rate" />
+        </div>
+
+        <div class="form-group">
+          <label for="months">Loan Duration (months)</label>
+          <input type="number" id="months" [(ngModel)]="months" name="months" required placeholder="e.g. 12" />
+        </div>
+
+        <div class="form-group">
+          <label for="mode">Calculation Mode</label>
+          <select id="mode" [(ngModel)]="mode" name="mode">
+            <option value="daily">Daily EMI</option>
+            <option value="monthly">Monthly EMI</option>
+            <option value="yearly">Yearly EMI</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Calculate</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" *ngIf="result">
+    <h3>Results</h3>
+    <div class="result-grid">
+      <div class="result-item">
+        <span class="label">{{ mode | titlecase }} EMI</span>
+        <span class="value">₹{{ result.emi }}</span>
+      </div>
+      <div class="result-item">
+        <span class="label">Principal Amount</span>
+        <span class="value">₹{{ amount }}</span>
+      </div>
+      <div class="result-item">
+        <span class="label">Total Interest</span>
+        <span class="value">₹{{ result.totalInterest }}</span>
+      </div>
+      <div class="result-item">
+        <span class="label">Total Amount</span>
+        <span class="value">₹{{ result.totalPayment }}</span>
+      </div>
+    </div>
+  </div>
+  </div>
+</app-main-layout>

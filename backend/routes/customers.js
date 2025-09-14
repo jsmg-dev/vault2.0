@@ -41,7 +41,7 @@ const upload = multer({
 // =============================
 router.get("/list", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM customers");
+    const result = await pool.query("SELECT * FROM customers ORDER BY created_at DESC");
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching customers:", err);

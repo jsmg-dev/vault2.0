@@ -1,6 +1,7 @@
 <app-main-layout
   [userRole]="userRole"
   [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
   (sidenavToggle)="onSidenavToggle($event)"
   (fullscreenToggle)="toggleFullscreen()"
   (logoutEvent)="logout()"
@@ -23,7 +24,6 @@
   <!-- Report Form Container -->
   <div class="form-container">
     <div class="form-header">
-      <h2>Generate Report</h2>
       <p>Select report type and date range to generate detailed reports</p>
     </div>
 

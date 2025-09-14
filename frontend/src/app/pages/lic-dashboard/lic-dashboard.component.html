@@ -1,0 +1,231 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div slot="actions" class="header-actions">
+    <button class="btn btn-primary" (click)="sendAllDueNotifications()" 
+            [disabled]="dashboardData.policiesDueToday === 0">
+      <i class="fab fa-whatsapp"></i> Send Due Notifications
+    </button>
+  </div>
+
+  <div class="lic-dashboard-container">
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="isLoading">
+      <div class="loading-spinner"></div>
+      <p>Loading dashboard data...</p>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-content" *ngIf="!isLoading">
+      
+      <!-- Key Metrics Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card total-policies">
+          <div class="metric-icon">
+            <i class="fas fa-file-contract"></i>
+          </div>
+          <div class="metric-content">
+            <h3>{{ dashboardData.totalPolicies }}</h3>
+            <p>Total Policies</p>
+          </div>
+        </div>
+
+        <div class="metric-card active-policies">
+          <div class="metric-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="metric-content">
+            <h3>{{ dashboardData.activePolicies }}</h3>
+            <p>Active Policies</p>
+          </div>
+        </div>
+
+        <div class="metric-card due-today">
+          <div class="metric-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="metric-content">
+            <h3>{{ dashboardData.policiesDueToday }}</h3>
+            <p>Due Today</p>
+          </div>
+        </div>
+
+        <div class="metric-card total-premium">
+          <div class="metric-icon">
+            <i class="fas fa-rupee-sign"></i>
+          </div>
+          <div class="metric-content">
+            <h3>{{ formatCurrency(dashboardData.totalPremiumCollected) }}</h3>
+            <p>Premium Collected</p>
+          </div>
+        </div>
+
+
+        <div class="metric-card due-month">
+          <div class="metric-icon">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <div class="metric-content">
+            <h3>{{ dashboardData.policiesDueThisMonth }}</h3>
+            <p>Due This Month</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts and Tables Row -->
+      <div class="dashboard-row">
+        
+        <!-- Policy Status Chart -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3><i class="fas fa-chart-pie"></i> Policy Status Distribution</h3>
+          </div>
+          <div class="chart-content">
+            <div class="status-chart">
+              <div class="status-item" *ngFor="let status of chartData.policyStatus">
+                <div class="status-color" [style.background-color]="status.color"></div>
+                <div class="status-info">
+                  <span class="status-label">{{ status.label }}</span>
+                  <span class="status-value">{{ status.value }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Policy Types Chart -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3><i class="fas fa-chart-bar"></i> Policy Types</h3>
+          </div>
+          <div class="chart-content">
+            <div class="types-chart">
+              <div class="type-item" *ngFor="let type of chartData.policyTypes">
+                <div class="type-bar">
+                  <div class="type-fill" 
+                       [style.width.%]="(type.value / dashboardData.totalPolicies) * 100"></div>
+                </div>
+                <div class="type-info">
+                  <span class="type-label">{{ type.label }}</span>
+                  <span class="type-value">{{ type.value }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tables Row -->
+      <div class="dashboard-row">
+        
+        <!-- Premium Due Today -->
+        <div class="table-container">
+          <div class="table-header">
+            <h3><i class="fas fa-clock"></i> Premium Due Today</h3>
+            <span class="badge due-badge">{{ dashboardData.policiesDueToday }}</span>
+          </div>
+          <div class="table-content">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Policy No</th>
+                    <th>Customer</th>
+                    <th>Premium</th>
+                    <th>Mobile</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let policy of dashboardData.premiumDueToday">
+                    <td>{{ policy.policy_no }}</td>
+                    <td>{{ policy.fullname }}</td>
+                    <td class="amount">{{ formatCurrency(policy.premium) }}</td>
+                    <td>{{ policy.mobile }}</td>
+                    <td class="actions">
+                      <button class="btn-icon btn-whatsapp" 
+                              (click)="sendWhatsAppNotification(policy.id)"
+                              title="Send WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="dashboardData.premiumDueToday.length === 0">
+                    <td colspan="5" class="no-data">No policies due today</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Policies -->
+        <div class="table-container">
+          <div class="table-header">
+            <h3><i class="fas fa-plus-circle"></i> Recent Policies</h3>
+          </div>
+          <div class="table-content">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Policy No</th>
+                    <th>Customer</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let policy of dashboardData.recentPolicies">
+                    <td>{{ policy.policy_no }}</td>
+                    <td>{{ policy.fullname }}</td>
+                    <td>{{ policy.plan_name }}</td>
+                    <td>
+                      <span class="status-badge" 
+                            [class]="'status-' + (policy.status || 'active').toLowerCase()">
+                        {{ policy.status || 'Active' }}
+                      </span>
+                    </td>
+                    <td>{{ formatDate(policy.created_at) }}</td>
+                  </tr>
+                  <tr *ngIf="dashboardData.recentPolicies.length === 0">
+                    <td colspan="5" class="no-data">No recent policies</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Premium Chart -->
+      <div class="chart-container full-width">
+        <div class="chart-header">
+          <h3><i class="fas fa-chart-line"></i> Monthly Premium Collection (Last 6 Months)</h3>
+        </div>
+        <div class="chart-content">
+          <div class="monthly-chart">
+            <div class="chart-bars">
+              <div class="chart-bar" *ngFor="let month of chartData.monthlyPremium">
+                <div class="bar-container">
+                  <div class="bar-fill" 
+                       [style.height.%]="(month.premium / getMaxPremium()) * 100">
+                  </div>
+                </div>
+                <div class="bar-label">{{ month.month }}</div>
+                <div class="bar-value">{{ formatCurrency(month.premium) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-main-layout>

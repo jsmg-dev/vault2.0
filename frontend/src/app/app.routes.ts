@@ -8,11 +8,17 @@ import { ReportsComponent } from './pages/reports/reports.component';
 import { UsersComponent } from './pages/users/users.component';
 import { PoliciesComponent } from './pages/policies/policies.component';
 import { EmiCalculatorComponent } from './pages/calculator/emi-calculator.component';
+import { LicDashboardComponent } from './pages/lic-dashboard/lic-dashboard.component';
+import { LicProductsComponent } from './pages/lic-products/lic-products.component';
+import { LicPremiumCalculatorComponent } from './pages/lic-premium-calculator/lic-premium-calculator.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   { path: 'login', component: LoginComponent },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'lic'] } },
+  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
+  { path: 'lic-dashboard', component: LicDashboardComponent, canActivate: [authGuard], data: { roles: ['admin', 'lic'] } },
+  { path: 'lic-products', component: LicProductsComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'lic'] } },
+  { path: 'lic-premium-calculator', component: LicPremiumCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'lic'] } },
   { path: 'customers', component: CustomersComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
   { path: 'deposits', component: DepositsComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
   { path: 'reports', component: ReportsComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },

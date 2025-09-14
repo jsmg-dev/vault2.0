@@ -1,0 +1,69 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="dashboard-content">
+    <div class="card-container">
+      <div class="card customers">
+        <h3>Total Customers</h3>
+        <p>{{ totalCustomers | number }}</p>
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="card deposits">
+        <h3>Total Deposits</h3>
+        <p>₹ {{ totalDeposits | number }}</p>
+        <i class="fas fa-wallet"></i>
+      </div>
+      <div class="card loans">
+        <h3>Active Loans</h3>
+        <p>{{ activeLoans | number }}</p>
+        <i class="fas fa-hand-holding-usd"></i>
+      </div>
+      <div class="card earnings">
+        <h3>Monthly Earnings</h3>
+        <p>₹ {{ monthlyEarnings | number }}</p>
+        <i class="fas fa-chart-line"></i>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-box">
+        <h4>Customers Per Month</h4>
+        <canvas #barChart></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>Loan Distribution</h4>
+        <canvas #pieChart></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>Revenue Over Time</h4>
+        <canvas #lineChart></canvas>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-top:20px; background:white; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+      <h4 style="text-align:center; margin-bottom: 10px;">Customers Per Month</h4>
+      <table style="width:100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background:#f8f8f8;">
+            <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Month</th>
+            <th style="text-align:right; padding:8px; border-bottom:1px solid #eee;">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of customersPerMonth">
+            <td style="padding:8px; border-bottom:1px solid #f1f1f1;">{{ row.month }}</td>
+            <td style="padding:8px; border-bottom:1px solid #f1f1f1; text-align:right;">{{ row.count }}</td>
+          </tr>
+          <tr *ngIf="customersPerMonth.length === 0">
+            <td colspan="2" style="padding:8px; text-align:center; color:#777;">No data</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-main-layout>

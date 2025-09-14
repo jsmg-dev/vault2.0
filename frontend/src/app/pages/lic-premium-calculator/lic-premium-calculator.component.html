@@ -1,0 +1,387 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="lic-calculator-container">
+    
+
+    <!-- Calculator Form and Results -->
+    <div class="calculator-content">
+      
+      <!-- Form Section -->
+      <div class="form-section">
+        <div class="form-card">
+          <div class="form-header">
+            <h2><i class="fas fa-edit"></i> Policy Details</h2>
+            <p>Enter your policy details to calculate premium</p>
+          </div>
+
+          <form class="calculator-form" (ngSubmit)="calculatePremium()">
+            
+            <!-- LIC Plan Selection -->
+            <div class="form-group">
+              <label for="selectedPlan">
+                <i class="fas fa-list"></i>
+                Select LIC Plan
+              </label>
+              <select 
+                id="selectedPlan" 
+                [(ngModel)]="calculatorForm.selectedPlan" 
+                name="selectedPlan"
+                class="form-control"
+                required
+              >
+                <option value="">Choose a LIC Plan</option>
+                <optgroup label="Endowment Plans">
+                  <option *ngFor="let plan of getEndowmentPlans()" [value]="plan.id">
+                    {{ plan.name }}
+                  </option>
+                </optgroup>
+                <optgroup label="Limited Premium Plans">
+                  <option *ngFor="let plan of getLimitedPremiumPlans()" [value]="plan.id">
+                    {{ plan.name }}
+                  </option>
+                </optgroup>
+                <optgroup label="Money Back Plans">
+                  <option *ngFor="let plan of getMoneyBackPlans()" [value]="plan.id">
+                    {{ plan.name }}
+                  </option>
+                </optgroup>
+                <optgroup label="Term Plans">
+                  <option *ngFor="let plan of getTermPlans()" [value]="plan.id">
+                    {{ plan.name }}
+                  </option>
+                </optgroup>
+                <optgroup label="Pension Plans">
+                  <option *ngFor="let plan of getPensionPlans()" [value]="plan.id">
+                    {{ plan.name }}
+                  </option>
+                </optgroup>
+                <optgroup label="Single Premium Plans">
+                  <option *ngFor="let plan of getSinglePremiumPlans()" [value]="plan.id">
+                    {{ plan.name }}
+                  </option>
+                </optgroup>
+              </select>
+            </div>
+
+            <!-- Basic Details -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="age">
+                  <i class="fas fa-user"></i>
+                  Age (in Years)
+                </label>
+                <select 
+                  id="age" 
+                  [(ngModel)]="calculatorForm.age" 
+                  name="age"
+                  class="form-control"
+                  required
+                >
+                  <option *ngFor="let age of getAgeOptions()" [value]="age">{{ age }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="policyTerm">
+                  <i class="fas fa-calendar-alt"></i>
+                  Policy Term (in Years)
+                </label>
+                <select 
+                  id="policyTerm" 
+                  [(ngModel)]="calculatorForm.policyTerm" 
+                  name="policyTerm"
+                  class="form-control"
+                  required
+                >
+                  <option *ngFor="let term of getTermOptions()" [value]="term">{{ term }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Sum Assured -->
+            <div class="form-group">
+              <label for="basicSumAssured">
+                <i class="fas fa-rupee-sign"></i>
+                Basic Sum Assured (BSA)
+              </label>
+              <input 
+                type="number" 
+                id="basicSumAssured" 
+                [(ngModel)]="calculatorForm.basicSumAssured" 
+                name="basicSumAssured"
+                class="form-control"
+                placeholder="Enter Sum Assured"
+                min="100000"
+                step="10000"
+                required
+              >
+              <small class="form-help">Minimum ₹1,00,000</small>
+            </div>
+
+            <!-- Premium Payment Mode -->
+            <div class="form-group">
+              <label for="paymentMode">
+                <i class="fas fa-credit-card"></i>
+                Premium Payment Mode
+              </label>
+              <select 
+                id="paymentMode" 
+                [(ngModel)]="selectedPaymentMode" 
+                name="paymentMode"
+                class="form-control"
+              >
+                <option *ngFor="let mode of paymentModes" [value]="mode.value">
+                  {{ mode.label }} {{ mode.rebate > 0 ? '(' + mode.rebate + '% Rebate)' : '' }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Riders Section -->
+            <div class="riders-section">
+              <h3><i class="fas fa-plus-circle"></i> Optional Riders</h3>
+              
+              <div class="rider-group">
+                <div class="rider-item">
+                  <input 
+                    type="checkbox" 
+                    id="accidentalDisabilityRider" 
+                    [(ngModel)]="calculatorForm.accidentalDisabilityRider" 
+                    name="accidentalDisabilityRider"
+                    class="rider-checkbox"
+                  >
+                  <label for="accidentalDisabilityRider" class="rider-label">
+                    <span class="rider-name">Accidental Death & Disability Benefit (AD & DB) Rider</span>
+                    <span class="rider-rate">₹2.5 per ₹1000 SA</span>
+                  </label>
+                </div>
+
+                <div class="rider-item">
+                  <input 
+                    type="checkbox" 
+                    id="accidentalRider" 
+                    [(ngModel)]="calculatorForm.accidentalRider" 
+                    name="accidentalRider"
+                    class="rider-checkbox"
+                  >
+                  <label for="accidentalRider" class="rider-label">
+                    <span class="rider-name">Accidental Death Benefit (ADB) Rider</span>
+                    <span class="rider-rate">₹1.8 per ₹1000 SA</span>
+                  </label>
+                </div>
+
+                <div class="rider-item">
+                  <input 
+                    type="checkbox" 
+                    id="termRider" 
+                    [(ngModel)]="calculatorForm.termRider" 
+                    name="termRider"
+                    class="rider-checkbox"
+                  >
+                  <label for="termRider" class="rider-label">
+                    <span class="rider-name">Term Assurance Rider</span>
+                    <span class="rider-rate">₹0.5 per ₹1000 SA</span>
+                  </label>
+                </div>
+
+                <div class="form-group" *ngIf="calculatorForm.termRider">
+                  <label for="termRiderSumAssured">
+                    <i class="fas fa-shield-alt"></i>
+                    Term Rider Sum Assured
+                  </label>
+                  <input 
+                    type="number" 
+                    id="termRiderSumAssured" 
+                    [(ngModel)]="calculatorForm.termRiderSumAssured" 
+                    name="termRiderSumAssured"
+                    class="form-control"
+                    placeholder="Enter Term Rider Sum Assured"
+                    min="0"
+                    step="10000"
+                  >
+                </div>
+
+                <div class="rider-item">
+                  <input 
+                    type="checkbox" 
+                    id="premiumWaiverRider" 
+                    [(ngModel)]="calculatorForm.premiumWaiverRider" 
+                    name="premiumWaiverRider"
+                    class="rider-checkbox"
+                  >
+                  <label for="premiumWaiverRider" class="rider-label">
+                    <span class="rider-name">Premium Waiver Benefit (PWB) Rider</span>
+                    <span class="rider-rate">₹1.2 per ₹1000 SA</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Proposer Details -->
+            <div class="form-group">
+              <label for="proposerAge">
+                <i class="fas fa-user-friends"></i>
+                Proposer (Father) Age
+              </label>
+              <select 
+                id="proposerAge" 
+                [(ngModel)]="calculatorForm.proposerAge" 
+                name="proposerAge"
+                class="form-control"
+              >
+                <option *ngFor="let age of getProposerAgeOptions()" [value]="age">{{ age }}</option>
+              </select>
+            </div>
+
+            <!-- Maturity Settlement -->
+            <div class="form-group">
+              <input 
+                type="checkbox" 
+                id="maturitySettlement" 
+                [(ngModel)]="calculatorForm.maturitySettlement" 
+                name="maturitySettlement"
+                class="form-checkbox"
+              >
+              <label for="maturitySettlement" class="checkbox-label">
+                <span class="checkbox-text">Maturity Settlement</span>
+              </label>
+            </div>
+
+            <div class="form-group" *ngIf="calculatorForm.maturitySettlement">
+              <label for="settlementYears">
+                <i class="fas fa-clock"></i>
+                Settlement Years
+              </label>
+              <select 
+                id="settlementYears" 
+                [(ngModel)]="calculatorForm.settlementYears" 
+                name="settlementYears"
+                class="form-control"
+              >
+                <option *ngFor="let year of getSettlementOptions()" [value]="year">{{ year }} Years</option>
+              </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+              <button type="submit" class="btn btn-calculate">
+                <i class="fas fa-calculator"></i>
+                Calculate Premium
+              </button>
+              <button type="button" class="btn btn-reset" (click)="resetCalculator()">
+                <i class="fas fa-undo"></i>
+                Reset
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="results-section" *ngIf="calculationResults.finalPremium > 0">
+        <div class="results-card">
+          <div class="results-header">
+            <h2><i class="fas fa-chart-bar"></i> Premium Calculation Results</h2>
+            <div class="plan-info" *ngIf="getSelectedPlanDetails()">
+              <span class="plan-name">{{ getSelectedPlanDetails()?.name }}</span>
+              <span class="plan-category">{{ getSelectedPlanDetails()?.category }}</span>
+            </div>
+          </div>
+
+          <div class="results-content">
+            
+            <!-- Main Premium Display -->
+            <div class="premium-summary">
+              <div class="premium-card final-premium">
+                <div class="premium-icon">
+                  <i class="fas fa-rupee-sign"></i>
+                </div>
+                <div class="premium-content">
+                  <h3>Final Premium</h3>
+                  <div class="premium-amount">{{ formatCurrency(calculationResults.finalPremium) }}</div>
+                  <small>Including 18% GST</small>
+                </div>
+              </div>
+
+              <div class="premium-breakdown">
+                <div class="breakdown-item">
+                  <span class="label">Basic Premium:</span>
+                  <span class="value">{{ formatCurrency(calculationResults.basicPremium) }}</span>
+                </div>
+                <div class="breakdown-item">
+                  <span class="label">Rider Premium:</span>
+                  <span class="value">{{ formatCurrency(calculationResults.riderPremium) }}</span>
+                </div>
+                <div class="breakdown-item">
+                  <span class="label">Sub Total:</span>
+                  <span class="value">{{ formatCurrency(calculationResults.totalPremium) }}</span>
+                </div>
+                <div class="breakdown-item gst">
+                  <span class="label">GST (18%):</span>
+                  <span class="value">{{ formatCurrency(calculationResults.gst) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Breakdown -->
+            <div class="detailed-breakdown">
+              <h4><i class="fas fa-list-alt"></i> Detailed Breakdown</h4>
+              
+              <div class="breakdown-grid">
+                <div class="breakdown-card">
+                  <h5>Basic Premium Calculation</h5>
+                  <div class="breakdown-list">
+                    <div class="breakdown-row">
+                      <span>Tabular Premium:</span>
+                      <span>{{ formatCurrency(calculationResults.breakdown.tabularPremium) }}</span>
+                    </div>
+                    <div class="breakdown-row rebate">
+                      <span>Payment Mode Rebate:</span>
+                      <span>-{{ formatCurrency(calculationResults.breakdown.paymentModeRebate) }}</span>
+                    </div>
+                    <div class="breakdown-row rebate">
+                      <span>Sum Assured Rebate:</span>
+                      <span>-{{ formatCurrency(calculationResults.breakdown.sumAssuredRebate) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="breakdown-card" *ngIf="calculationResults.riderPremium > 0">
+                  <h5>Rider Premiums</h5>
+                  <div class="breakdown-list">
+                    <div class="breakdown-row" *ngIf="calculationResults.breakdown.accidentalDisabilityRider > 0">
+                      <span>AD & DB Rider:</span>
+                      <span>{{ formatCurrency(calculationResults.breakdown.accidentalDisabilityRider) }}</span>
+                    </div>
+                    <div class="breakdown-row" *ngIf="calculationResults.breakdown.accidentalRider > 0">
+                      <span>ADB Rider:</span>
+                      <span>{{ formatCurrency(calculationResults.breakdown.accidentalRider) }}</span>
+                    </div>
+                    <div class="breakdown-row" *ngIf="calculationResults.breakdown.termRider > 0">
+                      <span>Term Rider:</span>
+                      <span>{{ formatCurrency(calculationResults.breakdown.termRider) }}</span>
+                    </div>
+                    <div class="breakdown-row" *ngIf="calculationResults.breakdown.premiumWaiverRider > 0">
+                      <span>PWB Rider:</span>
+                      <span>{{ formatCurrency(calculationResults.breakdown.premiumWaiverRider) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+  </div>
+</app-main-layout>

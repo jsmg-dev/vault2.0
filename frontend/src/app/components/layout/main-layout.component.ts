@@ -4,11 +4,12 @@ import { RouterModule } from '@angular/router';
 import { SidenavComponent, NavItem } from '../sidenav/sidenav.component';
 import { HeaderComponent } from '../header/header.component';
 import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
+import { AiChatbotComponent } from '../../pages/ai-chatbot/ai-chatbot.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SidenavComponent, HeaderComponent],
+  imports: [CommonModule, RouterModule, SidenavComponent, HeaderComponent, AiChatbotComponent],
   template: `
     <div class="main-layout">
       <app-sidenav 
@@ -29,6 +30,9 @@ import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
           <ng-content></ng-content>
         </div>
       </div>
+      
+      <!-- Global AI Chatbot Widget -->
+      <app-ai-chatbot></app-ai-chatbot>
     </div>
   `,
   styles: [`
@@ -74,7 +78,10 @@ export class MainLayoutComponent {
 
   // Centralized navigation items
   navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'fas fa-tachometer-alt', route: '/dashboard', roles: ['admin', 'user', 'lic'] },
+    { label: 'Dashboard', icon: 'fas fa-tachometer-alt', route: '/dashboard', roles: ['admin', 'user'] },
+    { label: 'LIC Dashboard', icon: 'fas fa-chart-line', route: '/lic-dashboard', roles: ['admin', 'lic'] },
+    { label: 'LIC Products', icon: 'fas fa-shield-alt', route: '/lic-products', roles: ['admin', 'user', 'lic'] },
+    { label: 'LIC Premium Calculator', icon: 'fas fa-calculator', route: '/lic-premium-calculator', roles: ['admin', 'user', 'lic'] },
     { label: 'Customers', icon: 'fas fa-users', route: '/customers', roles: ['admin', 'user'] },
     { label: 'Deposits', icon: 'fas fa-piggy-bank', route: '/deposits', roles: ['admin', 'user'] },
     { label: 'LIC Policies', icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'user', 'lic'] },

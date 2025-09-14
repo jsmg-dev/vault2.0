@@ -31,13 +31,20 @@
   margin-bottom: 30px; /* Add bottom margin for better spacing */
 }
 .chart-box { 
-  background: white; 
+  background: #ffffff; 
   padding: 20px; 
   border-radius: 12px; 
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   overflow: visible; /* Ensure no extra scrollbars */
+  border: 1px solid #e2e8f0;
 }
-.chart-box h4 { margin-bottom: 10px; font-size: 18px; font-weight: 600; text-align: center; }
+.chart-box h4 { 
+  margin-bottom: 10px; 
+  font-size: 18px; 
+  font-weight: 600; 
+  text-align: center; 
+  color: #1f2937;
+}
 canvas { width: 100% !important; max-height: 300px; }
 @media (max-width: 1000px) {
   .dashboard-container { flex-direction: column; }

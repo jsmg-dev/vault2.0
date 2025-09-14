@@ -1,0 +1,151 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="reports-container">
+
+  <!-- EMI Notifications -->
+  <div class="notifications-container" *ngIf="emiNotifications.length > 0">
+    <div class="notification-header">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>EMI Due Notifications</span>
+    </div>
+    <ul class="notification-list">
+      <li *ngFor="let notification of emiNotifications">
+        <strong>{{ notification.customer }}</strong> has EMI due (till {{ notification.dueDate }})
+      </li>
+    </ul>
+  </div>
+
+  <!-- Report Form Container -->
+  <div class="form-container">
+    <div class="form-header">
+      <h2>Generate Report</h2>
+      <p>Select report type and date range to generate detailed reports</p>
+    </div>
+
+    <!-- Tab Buttons -->
+    <div class="tab-buttons">
+      <button 
+        type="button" 
+        class="tab-button" 
+        [class.active]="activeTab === 'customer'"
+        (click)="setActiveTab('customer')"
+      >
+        <i class="fas fa-users"></i>
+        Customer Details
+      </button>
+      <button 
+        type="button" 
+        class="tab-button" 
+        [class.active]="activeTab === 'deposit'"
+        (click)="setActiveTab('deposit')"
+      >
+        <i class="fas fa-wallet"></i>
+        Deposit
+      </button>
+      <button 
+        type="button" 
+        class="tab-button" 
+        [class.active]="activeTab === 'emi'"
+        (click)="setActiveTab('emi')"
+      >
+        <i class="fas fa-calendar-alt"></i>
+        Next EMI
+      </button>
+    </div>
+
+    <!-- Report Form -->
+    <form (submit)="generateReport($event)" class="report-form">
+      <!-- Customer Selection for Deposit Reports -->
+      <div class="form-row" *ngIf="activeTab === 'deposit'">
+        <div class="form-group">
+          <label for="customer_id">Customer</label>
+          <select id="customer_id" name="customer_id" [(ngModel)]="reportForm.customer_id">
+            <option value="">-- Select Customer --</option>
+            <option *ngFor="let customer of customers" [value]="customer.id">
+              {{ customer.name }} ({{ customer.customer_code }})
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Date Range -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="start_date">Start Date</label>
+          <input 
+            type="date" 
+            id="start_date" 
+            name="start_date" 
+            [(ngModel)]="reportForm.start_date" 
+            required 
+          />
+        </div>
+        <div class="form-group">
+          <label for="end_date">End Date</label>
+          <input 
+            type="date" 
+            id="end_date" 
+            name="end_date" 
+            [(ngModel)]="reportForm.end_date" 
+            required 
+          />
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-row">
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-search"></i>
+          Generate Report
+        </button>
+        <button 
+          type="button" 
+          class="btn-secondary" 
+          (click)="exportToCSV()"
+          [disabled]="!reportData || reportData.length === 0"
+        >
+          <i class="fas fa-download"></i>
+          Export CSV
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Report Results -->
+  <div class="report-results" *ngIf="reportData && reportData.length > 0">
+    <div class="results-header">
+      <h3>Report Results</h3>
+      <span class="results-count">{{ reportData.length }} records found</span>
+    </div>
+    
+    <div class="table-container">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th *ngFor="let header of reportHeaders">{{ header | titlecase }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of reportData">
+            <td *ngFor="let header of reportHeaders">{{ row[header] || 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- No Results Message -->
+  <div class="no-results" *ngIf="reportData && reportData.length === 0 && hasSearched">
+    <div class="no-results-icon">
+      <i class="fas fa-search"></i>
+    </div>
+    <h3>No Records Found</h3>
+    <p>No data found for the selected criteria. Try adjusting your date range or filters.</p>
+  </div>
+</div>
+</app-main-layout>

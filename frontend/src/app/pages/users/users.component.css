@@ -4,7 +4,7 @@
 
 .page-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 20px;
   padding: 20px;
@@ -13,12 +13,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.page-header h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2a44;
-}
 
 .header-actions {
   display: flex;
@@ -270,15 +264,16 @@
 }
 
 .users-table th {
-  background: #DDA0DD;
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
   font-weight: 600;
-  color: #374151;
+  color: #0f172a;
   font-size: 14px;
+  border: 1px solid #94a3b8;
 }
 
 .users-table td {
   font-size: 14px;
-  color: #374151;
+  color: #6b7280;
 }
 
 .users-table tbody tr:hover {

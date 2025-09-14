@@ -1,0 +1,348 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="policies-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>LIC Policy Management</h1>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="openForm()">
+          <i class="fas fa-plus"></i> Add New Policy
+        </button>
+      </div>
+    </div>
+
+  <!-- Policies List -->
+  <div class="policies-list" *ngIf="!showForm">
+    <div class="table-container">
+      <div class="table-wrapper">
+        <table class="policies-table">
+        <thead>
+          <tr>
+            <th>
+              <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
+            </th>
+            <th class="col-actions">Actions</th>
+            <th>Policy No</th>
+            <th>Name</th>
+            <th>DOB</th>
+            <th>Gender</th>
+            <th>Marital Status</th>
+            <th>Aadhaar/PAN</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Address</th>
+            <th>Plan</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Payment Mode</th>
+            <th>Next Premium Date</th>
+            <th>Sum Assured</th>
+            <th>Policy Term</th>
+            <th>Premium Term</th>
+            <th>Premium</th>
+            <th>Maturity Value</th>
+            <th>Nominee Name</th>
+            <th>Nominee Relation</th>
+            <th>Height (cm)</th>
+            <th>Weight (kg)</th>
+            <th>Health & Lifestyle</th>
+            <th>Bank Account</th>
+            <th>IFSC</th>
+            <th>Bank Name</th>
+            <th>Agent Code</th>
+            <th>Branch Code</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let policy of policies" [class.selected]="selectedPolicies.includes(policy.id)">
+            <td>
+              <input type="checkbox" [checked]="selectedPolicies.includes(policy.id)" (change)="toggleSelection(policy.id)" />
+            </td>
+            <td class="actions">
+              <button class="btn-icon btn-edit" (click)="openForm(policy)" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-icon btn-delete" (click)="deletePolicy(policy.id)" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+            <td>{{ policy.policy_no || 'Auto' }}</td>
+            <td>{{ policy.fullname }}</td>
+            <td>{{ policy.dob | date:'shortDate' }}</td>
+            <td>{{ policy.gender }}</td>
+            <td>{{ policy.marital_status }}</td>
+            <td>{{ policy.aadhaar_pan }}</td>
+            <td>{{ policy.email }}</td>
+            <td>{{ policy.mobile }}</td>
+            <td>{{ policy.address }}</td>
+            <td>{{ policy.plan_name }}</td>
+            <td>{{ policy.start_date | date:'shortDate' }}</td>
+            <td>{{ policy.end_date | date:'shortDate' }}</td>
+            <td>{{ policy.mode_of_payment }}</td>
+            <td>{{ policy.next_premium_date | date:'shortDate' }}</td>
+            <td class="amount">₹ {{ policy.sum_assured | number }}</td>
+            <td>{{ policy.policy_term }}</td>
+            <td>{{ policy.premium_term }}</td>
+            <td class="amount">₹ {{ policy.premium | number }}</td>
+            <td class="amount">₹ {{ policy.maturity_value | number }}</td>
+            <td>{{ policy.nominee_name }}</td>
+            <td>{{ policy.nominee_relation }}</td>
+            <td>{{ policy.height_cm }}</td>
+            <td>{{ policy.weight_kg }}</td>
+            <td>{{ policy.health_lifestyle }}</td>
+            <td>{{ policy.bank_account }}</td>
+            <td>{{ policy.ifsc_code }}</td>
+            <td>{{ policy.bank_name }}</td>
+            <td>{{ policy.agent_code }}</td>
+            <td>{{ policy.branch_code }}</td>
+            <td>
+              <span class="status-badge" [class]="'status-' + (policy.status ? policy.status.toLowerCase() : 'active')">
+                {{ policy.status || 'Active' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Policy Form -->
+  <div class="policy-form" *ngIf="showForm">
+    <div class="form-header">
+      <h2>{{ editingPolicy ? 'Edit Policy' : 'Add New Policy' }}</h2>
+      <button class="btn btn-secondary" (click)="closeForm()">
+        <i class="fa fa-times"></i> Close
+      </button>
+    </div>
+
+    <form (submit)="onSubmit($event)">
+      <!-- Policy Information -->
+      <div class="form-section">
+        <h3><i class="fa fa-hashtag"></i> Policy Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="policy_no">Policy No</label>
+            <input type="text" id="policy_no" name="policy_no" [(ngModel)]="policyForm.policy_no" placeholder="Leave blank for auto-generation">
+          </div>
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['plan_name']">
+            <label for="plan_name">Plan Name</label>
+            <input type="text" id="plan_name" name="plan_name" [(ngModel)]="policyForm.plan_name" required>
+            <small class="error" *ngIf="isSubmitted && validationErrors['plan_name']">{{ validationErrors['plan_name'] }}</small>
+          </div>
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['status']">
+            <label for="status">Status</label>
+            <select id="status" name="status" [(ngModel)]="policyForm.status" required>
+              <option value="Active">Active</option>
+              <option value="Lapsed">Lapsed</option>
+              <option value="Matured">Matured</option>
+              <option value="Surrendered">Surrendered</option>
+            </select>
+            <small class="error" *ngIf="isSubmitted && validationErrors['status']">{{ validationErrors['status'] }}</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal Information -->
+      <div class="form-section">
+        <h3><i class="fa fa-user"></i> Personal Information</h3>
+        <div class="form-grid">
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['fullname']">
+            <label for="fullname">Full Name *</label>
+            <input type="text" id="fullname" name="fullname" [(ngModel)]="policyForm.fullname" required>
+            <small class="error" *ngIf="isSubmitted && validationErrors['fullname']">{{ validationErrors['fullname'] }}</small>
+          </div>
+          <div class="form-group" [class.has-error]="isSubmitted && validationErrors['dob']">
+            <label for="dob">Date of Birth *</label>
+            <input type="date" id="dob" name="dob" [(ngModel)]="policyForm.dob" required>
+            <small class="error" *ngIf="isSubmitted && validationErrors['dob']">{{ validationErrors['dob'] }}</small>
+          </div>
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" [(ngModel)]="policyForm.gender">
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="marital_status">Marital Status</label>
+            <select id="marital_status" name="marital_status" [(ngModel)]="policyForm.marital_status">
+              <option value="">Select Status</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Divorced">Divorced</option>
+              <option value="Widowed">Widowed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="aadhaar_pan">Aadhaar/PAN</label>
+            <input type="text" id="aadhaar_pan" name="aadhaar_pan" [(ngModel)]="policyForm.aadhaar_pan">
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" [(ngModel)]="policyForm.email">
+          </div>
+          <div class="form-group">
+            <label for="mobile">Mobile</label>
+            <input type="tel" id="mobile" name="mobile" [(ngModel)]="policyForm.mobile">
+          </div>
+          <div class="form-group full-width">
+            <label for="address">Address</label>
+            <textarea id="address" name="address" [(ngModel)]="policyForm.address" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Policy Details -->
+      <div class="form-section">
+        <h3><i class="fa fa-file-contract"></i> Policy Details</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="start_date">Start Date</label>
+            <input type="date" id="start_date" name="start_date" [(ngModel)]="policyForm.start_date">
+          </div>
+          <div class="form-group">
+            <label for="end_date">End Date</label>
+            <input type="date" id="end_date" name="end_date" [(ngModel)]="policyForm.end_date">
+          </div>
+          <div class="form-group">
+            <label for="mode_of_payment">Payment Mode</label>
+            <select id="mode_of_payment" name="mode_of_payment" [(ngModel)]="policyForm.mode_of_payment">
+              <option value="">Select Mode</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Half Yearly">Half Yearly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="next_premium_date">Next Premium Date</label>
+            <input type="date" id="next_premium_date" name="next_premium_date" [(ngModel)]="policyForm.next_premium_date">
+          </div>
+          <div class="form-group">
+            <label for="sum_assured">Sum Assured</label>
+            <input type="number" id="sum_assured" name="sum_assured" [(ngModel)]="policyForm.sum_assured" step="0.01">
+          </div>
+          <div class="form-group">
+            <label for="policy_term">Policy Term (Years)</label>
+            <input type="number" id="policy_term" name="policy_term" [(ngModel)]="policyForm.policy_term">
+          </div>
+          <div class="form-group">
+            <label for="premium_term">Premium Term (Years)</label>
+            <input type="number" id="premium_term" name="premium_term" [(ngModel)]="policyForm.premium_term">
+          </div>
+          <div class="form-group">
+            <label for="premium">Premium Amount</label>
+            <input type="number" id="premium" name="premium" [(ngModel)]="policyForm.premium" step="0.01">
+          </div>
+          <div class="form-group">
+            <label for="maturity_value">Maturity Value</label>
+            <input type="number" id="maturity_value" name="maturity_value" [(ngModel)]="policyForm.maturity_value" step="0.01">
+          </div>
+        </div>
+      </div>
+
+      <!-- Nominee Information -->
+      <div class="form-section">
+        <h3><i class="fa fa-users"></i> Nominee Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nominee_name">Nominee Name</label>
+            <input type="text" id="nominee_name" name="nominee_name" [(ngModel)]="policyForm.nominee_name">
+          </div>
+          <div class="form-group">
+            <label for="nominee_relation">Nominee Relation</label>
+            <input type="text" id="nominee_relation" name="nominee_relation" [(ngModel)]="policyForm.nominee_relation">
+          </div>
+        </div>
+      </div>
+
+      <!-- Health & Lifestyle -->
+      <div class="form-section">
+        <h3><i class="fa fa-heartbeat"></i> Health & Lifestyle</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="height_cm">Height (cm)</label>
+            <input type="number" id="height_cm" name="height_cm" [(ngModel)]="policyForm.height_cm">
+          </div>
+          <div class="form-group">
+            <label for="weight_kg">Weight (kg)</label>
+            <input type="number" id="weight_kg" name="weight_kg" [(ngModel)]="policyForm.weight_kg">
+          </div>
+          <div class="form-group full-width">
+            <label for="health_lifestyle">Health & Lifestyle Notes</label>
+            <textarea id="health_lifestyle" name="health_lifestyle" [(ngModel)]="policyForm.health_lifestyle" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banking Information -->
+      <div class="form-section">
+        <h3><i class="fa fa-university"></i> Banking Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="bank_account">Bank Account No</label>
+            <input type="text" id="bank_account" name="bank_account" [(ngModel)]="policyForm.bank_account">
+          </div>
+          <div class="form-group">
+            <label for="ifsc_code">IFSC Code</label>
+            <input type="text" id="ifsc_code" name="ifsc_code" [(ngModel)]="policyForm.ifsc_code">
+          </div>
+          <div class="form-group">
+            <label for="bank_name">Bank Name</label>
+            <input type="text" id="bank_name" name="bank_name" [(ngModel)]="policyForm.bank_name">
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent & Branch -->
+      <div class="form-section">
+        <h3><i class="fa fa-id-badge"></i> Agent & Branch</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="agent_code">Agent Code</label>
+            <input type="text" id="agent_code" name="agent_code" [(ngModel)]="policyForm.agent_code">
+          </div>
+          <div class="form-group">
+            <label for="branch_code">Branch Code</label>
+            <input type="text" id="branch_code" name="branch_code" [(ngModel)]="policyForm.branch_code">
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+          <i class="fa fa-save"></i> {{ editingPolicy ? (saveMode === 'add' ? 'Save as New' : 'Update') : 'Save' }} Policy
+        </button>
+      </div>
+    </form>
+
+    <!-- Decision Modal -->
+    <div class="modal" [class.show]="showDecisionModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>How would you like to save?</h3>
+          <button class="modal-close" (click)="showDecisionModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <p>Do you want to create a new policy record or update the existing one?</p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="decideSaveMode('update')">No, Update Existing</button>
+          <button class="btn btn-primary" (click)="decideSaveMode('add')">Yes, Create New</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</app-main-layout>

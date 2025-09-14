@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { NavItem } from '../../components/sidenav/sidenav.component';
+import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-emi-calculator',
@@ -22,6 +23,9 @@ export class EmiCalculatorComponent {
 
   userRole: string = '';
   sidenavCollapsed = false;
+  breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Loan EMI Calculator', route: '/calculator' }
+  ];
 
   calculateEMI() {
     let emi = 0, n = 0, r = 0;

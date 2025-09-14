@@ -1,0 +1,130 @@
+<app-main-layout
+  [userRole]="userRole"
+  [sidenavCollapsed]="sidenavCollapsed"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()"
+>
+  <div class="deposits-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Deposit Management</h1>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i> New Deposit
+        </button>
+        <button class="btn-secondary" (click)="downloadTemplate()">
+          <i class="fas fa-download"></i> Template
+        </button>
+        <label class="btn-upload">
+          <i class="fas fa-upload"></i> Import Excel
+          <input type="file" #excelFile accept=".xlsx,.xls" (change)="uploadExcel($event)" />
+        </label>
+      </div>
+    </div>
+
+  <!-- Deposits Table -->
+  <div class="table-container">
+    <div class="table-header">
+      <div class="table-actions">
+        <input 
+          type="text" 
+          placeholder="Search deposits..." 
+          class="search-input"
+          (input)="filterDeposits($event)"
+        />
+        <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedDeposits.length === 0">
+          <i class="fas fa-trash"></i> Delete Selected
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="deposits-table">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
+          </th>
+          <th>Actions</th>
+          <th>Customer Code</th>
+          <th>Customer Name</th>
+          <th>Amount</th>
+          <th>Penalty</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let deposit of filteredDeposits" [class.selected]="selectedDeposits.includes(deposit.id)">
+          <td>
+            <input type="checkbox" [checked]="selectedDeposits.includes(deposit.id)" (change)="toggleSelection(deposit.id)" />
+          </td>
+          <td class="actions">
+            <button class="btn-icon btn-edit" (click)="editDeposit(deposit)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteDeposit(deposit.id)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+          <td>{{ deposit.customer_code }}</td>
+          <td>{{ getCustomerName(deposit.customer_code) }}</td>
+          <td class="amount">₹ {{ deposit.amount | number }}</td>
+          <td class="penalty">{{ deposit.penalty || 0 | number }}</td>
+          <td>{{ deposit.date | date:'shortDate' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal" [class.show]="showModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>{{ editingDeposit ? 'Edit' : 'Create' }} Deposit</h3>
+      <button class="modal-close" (click)="closeModal()">×</button>
+    </div>
+    <form (submit)="saveDeposit($event)" class="deposit-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer *</label>
+          <select name="customer_code" [(ngModel)]="depositForm.customer_code" required (change)="onCustomerChange($event)">
+            <option value="">Select Customer</option>
+            <option *ngFor="let customer of customers" [value]="customer.customer_code">
+              {{ customer.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Customer Code</label>
+          <input type="text" name="customer_code_display" [value]="depositForm.customer_code" readonly />
+        </div>
+        <div class="form-group">
+          <label>Amount *</label>
+          <input type="number" name="amount" [(ngModel)]="depositForm.amount" step="0.01" required />
+        </div>
+        <div class="form-group">
+          <label>Penalty</label>
+          <input type="number" name="penalty" [(ngModel)]="depositForm.penalty" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" name="date" [(ngModel)]="depositForm.date" required />
+        </div>
+        <div class="form-group full-width">
+          <label>Remark</label>
+          <textarea name="remark" [(ngModel)]="depositForm.remark" rows="3" placeholder="Optional remark"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">
+          {{ editingDeposit ? 'Update' : 'Create' }} Deposit
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</app-main-layout>

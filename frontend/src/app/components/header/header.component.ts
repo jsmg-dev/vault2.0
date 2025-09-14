@@ -38,8 +38,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../breadcrumb/breadcrumb.co
       align-items: center;
       margin-bottom: 32px;
       padding: 20px;
-      background: white;
-      border-radius: 12px;
+      background: #374151;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
@@ -50,7 +49,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../breadcrumb/breadcrumb.co
     }
 
     .btn-fullscreen {
-      background: #6b7280;
+      background: #ef4444;
       color: white;
       border: none;
       padding: 10px 12px;
@@ -63,7 +62,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../breadcrumb/breadcrumb.co
     }
 
     .btn-fullscreen:hover {
-      background: #4b5563;
+      background: #dc2626;
     }
 
     .logout-button {

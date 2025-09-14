@@ -1,12 +1,12 @@
 <app-main-layout
   [userRole]="userRole"
   [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems"
   (sidenavToggle)="onSidenavToggle($event)"
   (logoutEvent)="logout()"
 >
   <div class="emi-container">
   <div class="card">
-    <h2>Loan EMI Calculator</h2>
     <form (submit)="calculateEMI()" novalidate>
       <div class="form-grid">
         <div class="form-group">

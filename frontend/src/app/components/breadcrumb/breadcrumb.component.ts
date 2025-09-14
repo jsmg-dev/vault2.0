@@ -41,13 +41,13 @@ export interface BreadcrumbItem {
     }
 
     .breadcrumb-item {
-      color: #3b82f6;
+      color: #60a5fa;
       text-decoration: none;
       transition: color 0.2s;
     }
 
     .breadcrumb-item:hover {
-      color: #1d4ed8;
+      color: #93c5fd;
     }
 
     .breadcrumb-separator {
@@ -56,7 +56,7 @@ export interface BreadcrumbItem {
 
     .breadcrumb-current {
       font-size: 30px;
-      color: #374151;
+      color: #ffffff;
       font-weight: 600;
     }
   `]

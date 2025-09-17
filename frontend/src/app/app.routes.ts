@@ -11,6 +11,7 @@ import { EmiCalculatorComponent } from './pages/calculator/emi-calculator.compon
 import { LicDashboardComponent } from './pages/lic-dashboard/lic-dashboard.component';
 import { LicProductsComponent } from './pages/lic-products/lic-products.component';
 import { LicPremiumCalculatorComponent } from './pages/lic-premium-calculator/lic-premium-calculator.component';
+import { LaundryComponent } from './pages/laundry/laundry.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -25,6 +26,7 @@ export const routes: Routes = [
   { path: 'users', component: UsersComponent, canActivate: [authGuard], data: { roles: ['admin'] } },
   { path: 'policies', component: PoliciesComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'lic'] } },
   { path: 'calculator', component: EmiCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
+  { path: 'laundry', component: LaundryComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
 
   { path: '**', redirectTo: 'login' }
 ];

@@ -369,7 +369,8 @@ declare var Chart: any;
             </div>
           </div>
 
-          <div class="kanban-board">
+          <div class="kanban-board-container">
+            <div class="kanban-board">
             <div *ngFor="let statusCol of statuses" class="kanban-column" 
                  [id]="statusCol.id"
                  [class.drag-over]="draggedOverColumn === statusCol.id"
@@ -409,6 +410,7 @@ declare var Chart: any;
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -1203,12 +1205,27 @@ declare var Chart: any;
   styles: [`
     .laundry-container {
       padding: 0;
-      max-width: 1200px;
-      margin: 0 auto;
+      width: 100vw;
+      max-width: none;
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
     }
 
     /* Override main layout page-content padding */
     :host ::ng-deep .page-content {
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+    }
+    
+    /* Override main layout container */
+    :host ::ng-deep .main-container {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
       padding: 0 !important;
       margin: 0 !important;
     }
@@ -1453,6 +1470,9 @@ declare var Chart: any;
 
     .tab-content {
       animation: fadeIn 0.3s ease;
+      height: calc(100vh - 80px);
+      overflow-y: auto;
+      padding: 20px;
     }
 
     @keyframes fadeIn {
@@ -2601,6 +2621,8 @@ declare var Chart: any;
     .btn.primary {
       background: #3b82f6;
       color: white;
+      border: 2px solid #3b82f6;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }
 
     .btn.primary:hover {
@@ -2623,7 +2645,14 @@ declare var Chart: any;
     /* Responsive */
     @media (max-width: 768px) {
       .laundry-container {
-        padding: 15px;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+      
+      .tab-content {
+        height: calc(100vh - 70px);
+        padding: 10px;
       }
 
 
@@ -2658,7 +2687,9 @@ declare var Chart: any;
     .laundry-board-container {
       padding: 20px;
       background-color: #f4f7f6;
-      min-height: calc(100vh - 200px);
+      height: calc(100vh - 120px);
+      display: flex;
+      flex-direction: column;
     }
 
     .board-header {
@@ -2666,6 +2697,14 @@ declare var Chart: any;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
+      flex-shrink: 0;
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+      width: 100%;
+      max-width: none;
+      overflow: visible;
     }
 
     .board-header h2 {
@@ -2682,13 +2721,29 @@ declare var Chart: any;
 
     .header-actions {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      background-color: white;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+      width: 100%;
+      max-width: none;
+      flex: 1;
+      overflow: visible;
     }
 
     .header-actions .btn {
       white-space: nowrap;
+      min-height: 40px;
+      padding: 10px 16px;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
     }
 
     .search-input, .filter-select {
@@ -2696,37 +2751,41 @@ declare var Chart: any;
       border: 1px solid #ccc;
       border-radius: 5px;
       font-size: 14px;
+      min-width: 150px;
+      max-width: 200px;
+      flex-shrink: 1;
     }
 
-    .laundry-board-container {
-      height: calc(100vh - 200px);
+    .kanban-board-container {
+      flex: 1;
       overflow: auto;
       border: 1px solid #ddd;
       border-radius: 8px;
+      background-color: white;
     }
 
-    /* Custom scrollbar for the main container */
-    .laundry-board-container::-webkit-scrollbar {
+    /* Custom scrollbar for the kanban board container */
+    .kanban-board-container::-webkit-scrollbar {
       width: 12px;
       height: 12px;
     }
 
-    .laundry-board-container::-webkit-scrollbar-track {
+    .kanban-board-container::-webkit-scrollbar-track {
       background: #f1f1f1;
       border-radius: 6px;
     }
 
-    .laundry-board-container::-webkit-scrollbar-thumb {
+    .kanban-board-container::-webkit-scrollbar-thumb {
       background: #888;
       border-radius: 6px;
       border: 2px solid #f1f1f1;
     }
 
-    .laundry-board-container::-webkit-scrollbar-thumb:hover {
+    .kanban-board-container::-webkit-scrollbar-thumb:hover {
       background: #555;
     }
 
-    .laundry-board-container::-webkit-scrollbar-corner {
+    .kanban-board-container::-webkit-scrollbar-corner {
       background: #f1f1f1;
     }
 
@@ -2851,19 +2910,19 @@ declare var Chart: any;
 
     /* Two-Part Customer Modal Styles */
     .customer-modal-large {
-      width: 100vw;
-      max-width: none;
-      height: 100vh;
-      max-height: none;
-      margin: 0;
-      border-radius: 0;
+      width: 90vw;
+      max-width: 1400px;
+      height: 90vh;
+      max-height: 900px;
+      margin: 0 auto;
+      border-radius: 12px;
     }
 
     .two-part-layout {
       display: flex;
       height: calc(100% - 60px);
-      gap: 30px;
-      padding: 20px;
+      gap: 20px;
+      padding: 15px;
     }
 
     .services-section {
@@ -2871,7 +2930,7 @@ declare var Chart: any;
       display: flex;
       flex-direction: column;
       border-right: 1px solid #ddd;
-      padding-right: 20px;
+      padding-right: 15px;
     }
 
     .customer-section {
@@ -2884,9 +2943,9 @@ declare var Chart: any;
     .services-section h4,
     .customer-details h4,
     .cart-section h4 {
-      margin: 0 0 20px 0;
+      margin: 0 0 18px 0;
       color: #333;
-      font-size: 24px;
+      font-size: 22px;
       display: flex;
       align-items: center;
     }
@@ -2900,7 +2959,7 @@ declare var Chart: any;
 
     .service-controls {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       margin-bottom: 15px;
     }
 
@@ -2928,20 +2987,20 @@ declare var Chart: any;
       flex: 1;
       overflow-y: auto;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 25px;
-      padding-right: 15px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      padding-right: 10px;
     }
 
     .service-card {
       background: white;
       border: 1px solid #ddd;
       border-radius: 8px;
-      padding: 25px;
+      padding: 18px;
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
-      min-height: 140px;
+      min-height: 130px;
     }
 
     .service-card:hover {
@@ -3168,13 +3227,15 @@ declare var Chart: any;
 
     @media (max-width: 768px) {
       .customer-modal-large {
-        width: 100vw;
-        height: 100vh;
+        width: 95vw;
+        height: 95vh;
       }
       
       .two-part-layout {
         flex-direction: column;
         height: calc(100% - 60px);
+        gap: 10px;
+        padding: 5px;
       }
       
       .services-section {
@@ -3190,7 +3251,8 @@ declare var Chart: any;
       }
       
       .services-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 10px;
       }
 
       .board-header {
@@ -3210,7 +3272,7 @@ declare var Chart: any;
       }
 
       .laundry-board-container {
-        height: calc(100vh - 250px);
+        height: calc(100vh - 140px);
       }
 
       .kanban-board {
@@ -3709,7 +3771,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     
     // Debug: Log first service to check structure
     if (this.services.length > 0) {
-      console.log('First service structure:', this.services[0]);
+      // console.log('First service structure:', this.services[0]);
     }
   }
 
@@ -3926,34 +3988,34 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
   // Services field methods
   onServiceTypeChange() {
-    console.log('Selected service type:', this.selectedServiceType);
+    // console.log('Selected service type:', this.selectedServiceType);
     // Trigger change detection to update displayed prices
     this.filteredServices = [...this.filteredServices];
   }
 
   onServiceForChange() {
-    console.log('Selected service for:', this.selectedServiceFor);
+    // console.log('Selected service for:', this.selectedServiceFor);
     this.debouncedFilterServices();
   }
 
   filterServices() {
-    console.log('filterServices called - using simple approach');
+    // console.log('filterServices called - using simple approach');
     
     // Simple approach: just show all services for now
     if (!this.services || this.services.length === 0) {
-      console.log('Services array is empty');
+      // console.log('Services array is empty');
       this.filteredServices = [];
       return;
     }
     
     // Just copy all services for now to stop the continuous calling
     this.filteredServices = [...this.services];
-    console.log('Showing all services:', this.filteredServices.length);
+    // console.log('Showing all services:', this.filteredServices.length);
   }
 
   // Debounced version for search input
   debouncedFilterServices() {
-    console.log('debouncedFilterServices called');
+    // console.log('debouncedFilterServices called');
     // For now, just call filterServices directly to avoid any timing issues
     this.filterServices();
   }
@@ -3970,23 +4032,23 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       price = service.ironingPrice || service.price;
     }
     
-    console.log('Getting price for', service.name, 'service type:', this.selectedServiceType, 'price:', price);
+    // console.log('Getting price for', service.name, 'service type:', this.selectedServiceType, 'price:', price);
     return price;
   }
 
   // Update the price for a specific service type and cloth
   updateServicePrice(service: any, newPrice: number) {
-    console.log('Updating price for', service.name, 'to', newPrice, 'for service type:', this.selectedServiceType);
+    // console.log('Updating price for', service.name, 'to', newPrice, 'for service type:', this.selectedServiceType);
     
     if (this.selectedServiceType === 'laundry') {
       service.laundryPrice = newPrice;
-      console.log('Set laundryPrice to:', service.laundryPrice);
+      // console.log('Set laundryPrice to:', service.laundryPrice);
     } else if (this.selectedServiceType === 'dry-clean') {
       service.dryCleanPrice = newPrice;
-      console.log('Set dryCleanPrice to:', service.dryCleanPrice);
+      // console.log('Set dryCleanPrice to:', service.dryCleanPrice);
     } else if (this.selectedServiceType === 'ironing') {
       service.ironingPrice = newPrice;
-      console.log('Set ironingPrice to:', service.ironingPrice);
+      // console.log('Set ironingPrice to:', service.ironingPrice);
     }
     
     // Also update the base price
@@ -4024,26 +4086,26 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   onPriceChange(service: any) {
     // Ensure the base price is also updated
     service.price = service[this.getServicePriceProperty()] || service.price;
-    console.log('Price updated for', service.name, ':', service[this.getServicePriceProperty()]);
+    // console.log('Price updated for', service.name, ':', service[this.getServicePriceProperty()]);
   }
 
   // Debug method to check prices
   debugPrices() {
-    console.log('=== DEBUG PRICES ===');
-    console.log('Selected service type:', this.selectedServiceType);
-    console.log('Selected service for:', this.selectedServiceFor);
-    console.log('Filtered services count:', this.filteredServices.length);
+    // console.log('=== DEBUG PRICES ===');
+    // console.log('Selected service type:', this.selectedServiceType);
+    // console.log('Selected service for:', this.selectedServiceFor);
+    // console.log('Filtered services count:', this.filteredServices.length);
     
     if (this.filteredServices.length > 0) {
       const firstService = this.filteredServices[0];
-      console.log('First service:', firstService.name);
-      console.log('Base price:', firstService.price);
-      console.log('Laundry price:', firstService.laundryPrice);
-      console.log('Dry clean price:', firstService.dryCleanPrice);
-      console.log('Ironing price:', firstService.ironingPrice);
-      console.log('Current displayed price:', this.getServicePrice(firstService));
+      // console.log('First service:', firstService.name);
+      // console.log('Base price:', firstService.price);
+      // console.log('Laundry price:', firstService.laundryPrice);
+      // console.log('Dry clean price:', firstService.dryCleanPrice);
+      // console.log('Ironing price:', firstService.ironingPrice);
+      // console.log('Current displayed price:', this.getServicePrice(firstService));
     }
-    console.log('=== END DEBUG ===');
+    // console.log('=== END DEBUG ===');
   }
 
   getServiceColor(category: string, clothType: string): string {
@@ -4567,7 +4629,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   }
 
   addItemToBill(service: any) {
-    console.log('Adding item to bill:', service.name, 'Current service type:', this.selectedServiceType);
+    // console.log('Adding item to bill:', service.name, 'Current service type:', this.selectedServiceType);
     
     // Get the current service type for this item
     const currentServiceType = this.getCurrentServiceType();
@@ -4701,20 +4763,20 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   }
 
   submitBill() {
-    console.log('=== BILL SUBMISSION DEBUG ===');
-    console.log('Form valid:', this.billForm.valid);
-    console.log('Form errors:', this.billForm.errors);
-    console.log('Form value:', this.billForm.value);
-    console.log('Selected items count:', this.selectedBillItems.length);
-    console.log('Selected items:', this.selectedBillItems);
-    console.log('Bill total amount:', this.billTotalAmount);
+    // console.log('=== BILL SUBMISSION DEBUG ===');
+    // console.log('Form valid:', this.billForm.valid);
+    // console.log('Form errors:', this.billForm.errors);
+    // console.log('Form value:', this.billForm.value);
+    // console.log('Selected items count:', this.selectedBillItems.length);
+    // console.log('Selected items:', this.selectedBillItems);
+    // console.log('Bill total amount:', this.billTotalAmount);
     
     // Check individual form controls
-    console.log('Customer name valid:', this.billForm.get('customerName')?.valid);
-    console.log('Customer phone valid:', this.billForm.get('customerPhone')?.valid);
-    console.log('Service type valid:', this.billForm.get('serviceType')?.valid);
-    console.log('Amount valid:', this.billForm.get('amount')?.valid);
-    console.log('Due date valid:', this.billForm.get('dueDate')?.valid);
+    // console.log('Customer name valid:', this.billForm.get('customerName')?.valid);
+    // console.log('Customer phone valid:', this.billForm.get('customerPhone')?.valid);
+    // console.log('Service type valid:', this.billForm.get('serviceType')?.valid);
+    // console.log('Amount valid:', this.billForm.get('amount')?.valid);
+    // console.log('Due date valid:', this.billForm.get('dueDate')?.valid);
     
     // Check if we have the required data
     const hasItems = this.selectedBillItems.length > 0;
@@ -4835,7 +4897,14 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   }
 
   // Load services from API
+  private servicesLoaded = false;
+  
   async loadServices() {
+    // Prevent multiple API calls
+    if (this.servicesLoaded) {
+      return;
+    }
+    
     try {
       const response = await fetch(`${environment.apiUrl}/laundry-services`, {
         credentials: 'include'
@@ -4862,7 +4931,8 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             });
           }
         });
-        console.log('Loaded services from API:', apiServices.length);
+        this.servicesLoaded = true; // Mark as loaded
+        // console.log('Loaded services from API:', apiServices.length);
       } else {
         console.error('Failed to load services:', response.statusText);
       }
@@ -4882,45 +4952,38 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // Get appropriate image for service
+  // Get appropriate image for service (cached version)
+  private imageCache = new Map<string, string>();
+  
   getServiceImage(serviceName: string, category: string): string {
+    const cacheKey = `${serviceName}-${category}`;
+    
+    if (this.imageCache.has(cacheKey)) {
+      return this.imageCache.get(cacheKey)!;
+    }
+    
     const name = serviceName.toLowerCase();
     const cat = category.toLowerCase();
     
-    console.log('getServiceImage called:', { serviceName, category, name, cat });
+    let url: string;
     
     // Return appropriate placeholder images based on service type
     if (name.includes('wash') || name.includes('laundry')) {
-      const url = 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=WASH';
-      console.log('Returning wash image:', url);
-      return url;
+      url = 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=WASH';
     } else if (name.includes('dry') || name.includes('clean')) {
-      const url = 'https://via.placeholder.com/80x80/2196F3/ffffff?text=DRY';
-      console.log('Returning dry clean image:', url);
-      return url;
+      url = 'https://via.placeholder.com/80x80/2196F3/ffffff?text=DRY';
     } else if (name.includes('iron')) {
-      const url = 'https://via.placeholder.com/80x80/FF9800/ffffff?text=IRON';
-      console.log('Returning iron image:', url);
-      return url;
+      url = 'https://via.placeholder.com/80x80/FF9800/ffffff?text=IRON';
     } else if (name.includes('express') || name.includes('quick')) {
-      const url = 'https://via.placeholder.com/80x80/E91E63/ffffff?text=EXPRESS';
-      console.log('Returning express image:', url);
-      return url;
+      url = 'https://via.placeholder.com/80x80/E91E63/ffffff?text=EXPRESS';
     } else if (name.includes('stain') || name.includes('bleach')) {
-      const url = 'https://via.placeholder.com/80x80/9C27B0/ffffff?text=STAIN';
-      console.log('Returning stain removal image:', url);
-      return url;
+      url = 'https://via.placeholder.com/80x80/9C27B0/ffffff?text=STAIN';
     } else if (name.includes('suit') || name.includes('formal')) {
-      const url = 'https://via.placeholder.com/80x80/607D8B/ffffff?text=SUIT';
-      console.log('Returning suit image:', url);
-      return url;
+      url = 'https://via.placeholder.com/80x80/607D8B/ffffff?text=SUIT';
     } else if (name.includes('curtain') || name.includes('carpet')) {
-      const url = 'https://via.placeholder.com/80x80/795548/ffffff?text=HOME';
-      console.log('Returning home image:', url);
-      return url;
+      url = 'https://via.placeholder.com/80x80/795548/ffffff?text=HOME';
     } else {
       // Default based on category
-      let url = '';
       switch (cat) {
         case 'basic': 
           url = 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=BASIC';
@@ -4938,9 +5001,11 @@ export class LaundryComponent implements OnInit, AfterViewInit {
           url = 'https://via.placeholder.com/80x80/6c757d/ffffff?text=SERVICE';
           break;
       }
-      console.log('Returning default image for category:', cat, url);
-      return url;
     }
+    
+    // Cache the result
+    this.imageCache.set(cacheKey, url);
+    return url;
   }
 
   // Board-related methods

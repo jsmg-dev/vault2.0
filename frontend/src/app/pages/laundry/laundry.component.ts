@@ -1,9 +1,11 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 import { environment } from '../../../environments/environment';
+import { ToastService } from '../../services/toast.service';
 
 declare var Chart: any;
 
@@ -22,16 +24,24 @@ declare var Chart: any;
     >
       <div class="laundry-container">
 
-      <!-- Navigation Tabs -->
-      <div class="tab-navigation">
-        <button 
-          class="tab-btn" 
-          [class.active]="activeTab === 'dashboard'"
-          (click)="setActiveTab('dashboard')"
-        >
-          <i class="fas fa-tachometer-alt"></i>
-          Dashboard
-        </button>
+        <!-- Navigation Tabs -->
+        <div class="tab-navigation">
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'dashboard'"
+            (click)="setActiveTab('dashboard')"
+          >
+            <i class="fas fa-tachometer-alt"></i>
+            Dashboard
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'board'"
+            (click)="navigateToBoard()"
+          >
+            <i class="fas fa-columns"></i>
+            Laundry Board
+          </button>
         <button 
           class="tab-btn" 
           [class.active]="activeTab === 'customers'"
@@ -203,7 +213,7 @@ declare var Chart: any;
                   <div class="dropdown-container">
                     <select 
                       id="servicesDropdown"
-                      [(ngModel)]="selectedServiceType" 
+                      [(ngModel)]="cartServiceTypeFilter" 
                       class="services-dropdown"
                       (change)="onServiceTypeChange()"
                     >
@@ -335,6 +345,74 @@ declare var Chart: any;
         </div>
       </div>
 
+      <!-- Laundry Board Tab -->
+      <div class="tab-content" *ngIf="activeTab === 'board'">
+        <div class="laundry-board-container">
+          <div class="board-header">
+            <h2><i class="fas fa-columns"></i> Laundry Board</h2>
+            <div class="header-actions">
+              <input 
+                type="text" 
+                [(ngModel)]="searchTerm" 
+                (input)="filterOrders()" 
+                placeholder="Search by name or phone..." 
+                class="search-input"
+              >
+              <select [(ngModel)]="filterStatus" (change)="filterOrders()" class="filter-select">
+                <option value="">All Statuses</option>
+                <option *ngFor="let status of allStatuses" [value]="status">{{ status }}</option>
+              </select>
+              <button class="btn primary" (click)="openCustomerModal()">
+                <i class="fas fa-plus"></i>
+                Add New Customer
+              </button>
+            </div>
+          </div>
+
+          <div class="kanban-board">
+            <div *ngFor="let statusCol of statuses" class="kanban-column" 
+                 [id]="statusCol.id"
+                 [class.drag-over]="draggedOverColumn === statusCol.id"
+                 (dragover)="onDragOver($event, statusCol.id)"
+                 (dragenter)="onDragEnter($event, statusCol.id)"
+                 (dragleave)="onDragLeave($event)"
+                 (drop)="onDrop($event, statusCol.id)">
+              <div class="column-header" [style.background-color]="statusCol.color">
+                <h3>{{ statusCol.name }} ({{ getOrdersByStatus(statusCol.id)?.length || 0 }})</h3>
+              </div>
+              <div class="column-content">
+                <div *ngFor="let order of getOrdersByStatus(statusCol.id)" class="kanban-card"
+                     [class.delayed]="isDelayed(order)"
+                     [class.dragging]="draggedOrder?.id === order.id"
+                     draggable="true"
+                     (dragstart)="onDragStart($event, order)"
+                     (dragend)="onDragEnd($event)"
+                     (click)="viewOrderDetails(order)">
+                  <div class="card-header">
+                    <h4>{{ order.name }}</h4>
+                    <div class="card-actions">
+                      <button class="action-btn" (click)="viewOrderDetails(order); $event.stopPropagation()"><i class="fas fa-eye"></i></button>
+                      <button class="action-btn" (click)="editOrder(order); $event.stopPropagation()"><i class="fas fa-edit"></i></button>
+                      <button class="action-btn" (click)="viewOrderDetails(order); $event.stopPropagation()"><i class="fas fa-file-invoice"></i></button>
+                    </div>
+                  </div>
+                  <p><strong>Phone:</strong> {{ order.phone }}</p>
+                  <p><strong>Items:</strong> {{ order.items || 'N/A' }}</p>
+                  <p><strong>Order Date:</strong> {{ order.createdDate | date:'shortDate' }}</p>
+                  <p><strong>Amount:</strong> ₹{{ order.totalAmount || 0 }}</p>
+                  <div class="drag-indicator">
+                    <i class="fas fa-grip-vertical"></i>
+                  </div>
+                </div>
+                <div *ngIf="!getOrdersByStatus(statusCol.id)?.length" class="no-orders-message">
+                  Drop orders here or add new ones.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- New Order Modal -->
       <div class="modal" [class.active]="showNewOrderModal" (click)="closeModal($event)">
         <div class="modal-content" (click)="$event.stopPropagation()">
@@ -420,70 +498,366 @@ declare var Chart: any;
 
       <!-- Customer Modal -->
       <div class="modal" [class.active]="showCustomerModal" (click)="closeModal($event)">
-        <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-content customer-modal-large" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h3>{{ editingCustomer ? 'Edit Customer' : 'Add New Customer' }}</h3>
             <button class="close-btn" (click)="closeCustomerModal()">
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <div class="modal-body">
-            <form [formGroup]="customerForm" (ngSubmit)="submitCustomer()">
-              <div class="form-group">
-                <label for="customerName">Full Name</label>
-                <input 
-                  type="text" 
-                  id="customerName" 
-                  formControlName="name"
-                  placeholder="Enter full name"
-                  required
-                >
-              </div>
-              <div class="form-group">
-                <label for="customerPhone">Phone Number</label>
-                <input 
-                  type="tel" 
-                  id="customerPhone" 
-                  formControlName="phone"
-                  placeholder="Enter phone number"
-                  required
-                >
-              </div>
-              <div class="form-group">
-                <label for="customerEmail">Email Address</label>
-                <input 
-                  type="email" 
-                  id="customerEmail" 
-                  formControlName="email"
-                  placeholder="Enter email address"
-                >
-              </div>
-              <div class="form-group">
-                <label for="customerAddress">Address</label>
-                <textarea 
-                  id="customerAddress" 
-                  formControlName="address"
-                  placeholder="Enter full address"
-                  rows="3"
-                ></textarea>
-              </div>
-              <div class="form-group">
-                <label for="customerStatus">Status</label>
-                <select id="customerStatus" formControlName="status">
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="vip">VIP</option>
+          <div class="modal-body two-part-layout">
+            <!-- Left Part: Services -->
+            <div class="services-section">
+              <h4><i class="fas fa-list"></i> Available Services</h4>
+              
+              <!-- Service Search and Filter -->
+              <div class="service-controls">
+                <div class="search-box">
+                  <i class="fas fa-search"></i>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="serviceSearchTerm"
+                    (input)="debouncedFilterServices()"
+                    placeholder="Search services..."
+                  >
+                </div>
+                <select [(ngModel)]="cartServiceTypeFilter" (change)="debouncedFilterServices()" class="filter-select">
+                  <option value="">All Categories</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                  <option value="Kids">Kids</option>
+                  <option value="Home">Home</option>
                 </select>
               </div>
+
+              <!-- Services Grid -->
+              <div class="services-grid">
+                <div *ngFor="let service of filteredServices" class="service-card" (click)="addServiceToCart(service)">
+                  <div class="service-image">
+                    <img [src]="service.photo" [alt]="service.name" onerror="this.src='https://via.placeholder.com/80x80/6c757d/ffffff?text=SERVICE'">
+                  </div>
+                  <div class="service-info">
+                    <h5>{{ service.name }}</h5>
+                    <p class="service-category">{{ service.category }} - {{ service.clothType }}</p>
+                    <div class="service-prices">
+                      <span class="price-label">Wash & Iron:</span>
+                      <span class="price">₹{{ service.laundryPrice }}</span>
+                      <span class="price-label">Dry Clean:</span>
+                      <span class="price">₹{{ service.dryCleanPrice }}</span>
+                    </div>
+                  </div>
+                  <button class="add-to-cart-btn">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Part: Customer Details & Cart -->
+            <div class="customer-section">
+              <div class="customer-details">
+                <h4><i class="fas fa-user"></i> Customer Details</h4>
+                <form [formGroup]="customerForm" (ngSubmit)="submitCustomer()">
+                  <div class="form-group">
+                    <label for="customerName">Full Name *</label>
+                    <input 
+                      type="text" 
+                      id="customerName" 
+                      formControlName="name"
+                      placeholder="Enter full name"
+                      required
+                    >
+                  </div>
+                  <div class="form-group">
+                    <label for="customerPhone">Phone Number *</label>
+                    <input 
+                      type="tel" 
+                      id="customerPhone" 
+                      formControlName="phone"
+                      placeholder="Enter phone number"
+                      required
+                    >
+                  </div>
+                  <div class="form-group">
+                    <label for="customerEmail">Email Address</label>
+                    <input 
+                      type="email" 
+                      id="customerEmail" 
+                      formControlName="email"
+                      placeholder="Enter email address"
+                    >
+                  </div>
+                  <div class="form-group">
+                    <label for="customerAddress">Address</label>
+                    <textarea 
+                      id="customerAddress" 
+                      formControlName="address"
+                      placeholder="Enter full address"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="customerStatus">Order Status</label>
+                    <select id="customerStatus" formControlName="status">
+                      <option value="received">Received</option>
+                      <option value="inProcess">In Process</option>
+                      <option value="readyForDelivery">Ready for Delivery</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="billed">Billed</option>
+                    </select>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Selected Items Cart -->
+              <div class="cart-section">
+                <h4><i class="fas fa-shopping-cart"></i> Selected Items ({{ selectedItems.length }})</h4>
+                
+                <div class="cart-items" *ngIf="selectedItems.length > 0; else emptyCart">
+                  <div *ngFor="let item of selectedItems; let i = index" class="cart-item">
+                    <div class="item-info">
+                      <h6>{{ item.service.name }}</h6>
+                      <p>{{ item.service.category }} - {{ item.service.clothType }}</p>
+                      <div class="item-details">
+                        <select [(ngModel)]="item.serviceType" (change)="updateItemPrice(item)">
+                          <option value="laundry">Wash & Iron (₹{{ item.service.laundryPrice }})</option>
+                          <option value="dryClean">Dry Clean (₹{{ item.service.dryCleanPrice }})</option>
+                          <option value="ironing">Iron Only (₹{{ item.service.ironingPrice }})</option>
+                        </select>
+                        <div class="quantity-controls">
+                          <label>Qty:</label>
+                          <button class="qty-btn" (click)="decreaseCartQuantity(item)">-</button>
+                          <span class="quantity">{{ item.quantity }}</span>
+                          <button class="qty-btn" (click)="increaseCartQuantity(item)">+</button>
+                        </div>
+                      </div>
+                      <div class="item-total">
+                        <strong>Total: ₹{{ item.totalPrice }}</strong>
+                      </div>
+                    </div>
+                    <button class="remove-item-btn" (click)="removeFromCart(i)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <ng-template #emptyCart>
+                  <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <p>No items selected</p>
+                    <small>Click on services from the left to add them</small>
+                  </div>
+                </ng-template>
+
+                <div class="cart-summary" *ngIf="selectedItems.length > 0">
+                  <div class="total-line">
+                    <span>Subtotal:</span>
+                    <span>₹{{ totalAmount }}</span>
+                  </div>
+                  <div class="total-line">
+                    <span>Tax (5%):</span>
+                    <span>₹{{ (totalAmount * 0.05).toFixed(2) }}</span>
+                  </div>
+                  <div class="total-line total">
+                    <span>Grand Total:</span>
+                    <span>₹{{ (totalAmount * 1.05).toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="form-actions">
                 <button type="button" class="btn secondary" (click)="closeCustomerModal()">
                   Cancel
                 </button>
-                <button type="submit" class="btn primary">
-                  {{ editingCustomer ? 'Update Customer' : 'Add Customer' }}
+                <button type="button" class="btn primary" (click)="submitCustomer()" [disabled]="selectedItems.length === 0">
+                  <i class="fas fa-plus"></i>
+                  {{ editingCustomer ? 'Update Customer' : 'Add Customer & Order' }}
                 </button>
               </div>
-            </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer Details Modal -->
+      <div class="modal" [class.active]="showCustomerDetailsModal" (click)="closeModal($event)">
+        <div class="modal-content customer-modal-large" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3><i class="fas fa-user"></i> Customer Details</h3>
+            <button class="close-btn" (click)="closeCustomerDetailsModal()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body two-part-layout" *ngIf="selectedCustomerForDetails">
+            <!-- Left Part: Services -->
+            <div class="services-section">
+              <h4><i class="fas fa-list"></i> Available Services</h4>
+              
+              <!-- Service Search and Filter -->
+              <div class="service-controls">
+                <div class="search-box">
+                  <i class="fas fa-search"></i>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="serviceSearchTerm"
+                    (input)="debouncedFilterServices()"
+                    placeholder="Search services..."
+                  >
+                </div>
+                <select [(ngModel)]="cartServiceTypeFilter" (change)="debouncedFilterServices()" class="filter-select">
+                  <option value="">All Categories</option>
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                  <option value="Kids">Kids</option>
+                  <option value="Home">Home</option>
+                </select>
+              </div>
+
+              <!-- Services Grid -->
+              <div class="services-grid">
+                <div *ngFor="let service of filteredServices" class="service-card" (click)="addServiceToCart(service)">
+                  <div class="service-image">
+                    <img [src]="service.photo" [alt]="service.name" onerror="this.src='https://via.placeholder.com/80x80/6c757d/ffffff?text=SERVICE'">
+                  </div>
+                  <div class="service-info">
+                    <h5>{{ service.name }}</h5>
+                    <p class="service-category">{{ service.category }} - {{ service.clothType }}</p>
+                    <div class="service-prices">
+                      <span class="price-label">Wash & Iron:</span>
+                      <span class="price">₹{{ service.laundryPrice }}</span>
+                      <span class="price-label">Dry Clean:</span>
+                      <span class="price">₹{{ service.dryCleanPrice }}</span>
+                    </div>
+                  </div>
+                  <button class="add-to-cart-btn">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Part: Customer Details & Cart -->
+            <div class="customer-section">
+              <div class="customer-details">
+                <h4><i class="fas fa-user"></i> Customer Details</h4>
+                <form [formGroup]="customerForm" (ngSubmit)="submitCustomer()">
+                  <div class="form-group">
+                    <label for="customerName">Full Name *</label>
+                    <input 
+                      type="text" 
+                      id="customerName" 
+                      formControlName="name"
+                      placeholder="Enter full name"
+                      required
+                    >
+                  </div>
+                  <div class="form-group">
+                    <label for="customerPhone">Phone Number *</label>
+                    <input 
+                      type="tel" 
+                      id="customerPhone" 
+                      formControlName="phone"
+                      placeholder="Enter phone number"
+                      required
+                    >
+                  </div>
+                  <div class="form-group">
+                    <label for="customerEmail">Email Address</label>
+                    <input 
+                      type="email" 
+                      id="customerEmail" 
+                      formControlName="email"
+                      placeholder="Enter email address"
+                    >
+                  </div>
+                  <div class="form-group">
+                    <label for="customerAddress">Address</label>
+                    <textarea 
+                      id="customerAddress" 
+                      formControlName="address"
+                      placeholder="Enter full address"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="customerStatus">Order Status</label>
+                    <select id="customerStatus" formControlName="status">
+                      <option value="received">Received</option>
+                      <option value="inProcess">In Process</option>
+                      <option value="readyForDelivery">Ready for Delivery</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="billed">Billed</option>
+                    </select>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Selected Items Cart -->
+              <div class="cart-section">
+                <h4><i class="fas fa-shopping-cart"></i> Selected Items ({{ selectedItems.length }})</h4>
+                
+                <div class="cart-items" *ngIf="selectedItems.length > 0; else emptyCart">
+                  <div *ngFor="let item of selectedItems; let i = index" class="cart-item">
+                    <div class="item-info">
+                      <h6>{{ item.service.name }}</h6>
+                      <p>{{ item.service.category }} - {{ item.service.clothType }}</p>
+                      <div class="item-details">
+                        <select [(ngModel)]="item.serviceType" (change)="updateItemPrice(item)">
+                          <option value="laundry">Wash & Iron (₹{{ item.service.laundryPrice }})</option>
+                          <option value="dryClean">Dry Clean (₹{{ item.service.dryCleanPrice }})</option>
+                          <option value="ironing">Iron Only (₹{{ item.service.ironingPrice }})</option>
+                        </select>
+                        <div class="quantity-controls">
+                          <label>Qty:</label>
+                          <button class="qty-btn" (click)="decreaseCartQuantity(item)">-</button>
+                          <span class="quantity">{{ item.quantity }}</span>
+                          <button class="qty-btn" (click)="increaseCartQuantity(item)">+</button>
+                        </div>
+                      </div>
+                      <div class="item-total">
+                        <strong>Total: ₹{{ item.totalPrice }}</strong>
+                      </div>
+                    </div>
+                    <button class="remove-item-btn" (click)="removeFromCart(i)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <ng-template #emptyCart>
+                  <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <p>No items selected</p>
+                    <small>Click on services from the left to add them</small>
+                  </div>
+                </ng-template>
+
+                <div class="cart-summary" *ngIf="selectedItems.length > 0">
+                  <div class="total-line">
+                    <span>Subtotal:</span>
+                    <span>₹{{ totalAmount }}</span>
+                  </div>
+                  <div class="total-line">
+                    <span>Tax (5%):</span>
+                    <span>₹{{ (totalAmount * 0.05).toFixed(2) }}</span>
+                  </div>
+                  <div class="total-line total">
+                    <span>Grand Total:</span>
+                    <span>₹{{ (totalAmount * 1.05).toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn secondary" (click)="closeCustomerDetailsModal()">
+                  Cancel
+                </button>
+                <button type="button" class="btn primary" (click)="submitCustomer()" [disabled]="selectedItems.length === 0">
+                  <i class="fas fa-save"></i>
+                  {{ editingCustomer ? 'Update Customer' : 'Update Customer & Order' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -566,7 +940,7 @@ declare var Chart: any;
                 <div class="section-header">
                   <h4><i class="fas fa-tshirt"></i> Select Items</h4>
                   <div class="service-filters">
-                    <select [(ngModel)]="selectedServiceType" (change)="onServiceTypeChange()">
+                    <select [(ngModel)]="cartServiceTypeFilter" (change)="onServiceTypeChange()">
                       <option value="laundry">Laundry</option>
                       <option value="dry-clean">Dry Clean</option>
                       <option value="ironing">Ironing</option>
@@ -2279,6 +2653,766 @@ declare var Chart: any;
         margin: 20px;
       }
     }
+
+    /* Laundry Board Styles */
+    .laundry-board-container {
+      padding: 20px;
+      background-color: #f4f7f6;
+      min-height: calc(100vh - 200px);
+    }
+
+    .board-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .board-header h2 {
+      color: #333;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    .board-header h2 i {
+      margin-right: 10px;
+      color: #007bff;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .header-actions .btn {
+      white-space: nowrap;
+    }
+
+    .search-input, .filter-select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .laundry-board-container {
+      height: calc(100vh - 200px);
+      overflow: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    /* Custom scrollbar for the main container */
+    .laundry-board-container::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+
+    .laundry-board-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 6px;
+    }
+
+    .laundry-board-container::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 6px;
+      border: 2px solid #f1f1f1;
+    }
+
+    .laundry-board-container::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .laundry-board-container::-webkit-scrollbar-corner {
+      background: #f1f1f1;
+    }
+
+    .kanban-board {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      min-width: max-content;
+    }
+
+    .kanban-column {
+      min-width: 300px;
+      width: 300px;
+      background-color: #e2e4e6;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .column-header {
+      padding: 15px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .column-content {
+      flex-grow: 1;
+      padding: 15px;
+    }
+
+    .kanban-card {
+      background-color: white;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      transition: all 0.2s ease-in-out;
+      cursor: grab;
+      position: relative;
+    }
+
+    .kanban-card:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+
+    .kanban-card.dragging {
+      opacity: 0.5;
+      transform: rotate(5deg);
+      cursor: grabbing;
+    }
+
+    .kanban-card.delayed {
+      border: 2px solid red;
+      background-color: #ffe0e0;
+    }
+
+    .drag-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      color: #ccc;
+      font-size: 12px;
+    }
+
+    .kanban-card:hover .drag-indicator {
+      color: #666;
+    }
+
+    .kanban-column.drag-over {
+      background-color: #e3f2fd;
+      border: 2px dashed #2196f3;
+    }
+
+    .kanban-column.drag-over .column-content {
+      background-color: rgba(33, 150, 243, 0.05);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .card-header h4 {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .card-actions .action-btn {
+      background: none;
+      border: none;
+      color: #007bff;
+      cursor: pointer;
+      font-size: 14px;
+      margin-left: 8px;
+    }
+
+    .card-actions .action-btn:hover {
+      color: #0056b3;
+    }
+
+    .kanban-card p {
+      margin: 5px 0;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .no-orders-message {
+      text-align: center;
+      color: #777;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    /* Two-Part Customer Modal Styles */
+    .customer-modal-large {
+      width: 100vw;
+      max-width: none;
+      height: 100vh;
+      max-height: none;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .two-part-layout {
+      display: flex;
+      height: calc(100% - 60px);
+      gap: 30px;
+      padding: 20px;
+    }
+
+    .services-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #ddd;
+      padding-right: 20px;
+    }
+
+    .customer-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .services-section h4,
+    .customer-details h4,
+    .cart-section h4 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    .services-section h4 i,
+    .customer-details h4 i,
+    .cart-section h4 i {
+      margin-right: 8px;
+      color: #007bff;
+    }
+
+    .service-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .service-controls .search-box {
+      flex: 1;
+      position: relative;
+    }
+
+    .service-controls .search-box i {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+    }
+
+    .service-controls .search-box input {
+      width: 100%;
+      padding: 8px 10px 8px 35px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .services-grid {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 25px;
+      padding-right: 15px;
+    }
+
+    .service-card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 25px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      min-height: 140px;
+    }
+
+    .service-card:hover {
+      border-color: #007bff;
+      box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .service-image {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .service-image img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .service-info h5 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .service-category {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .service-prices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .price-label {
+      color: #666;
+    }
+
+    .price {
+      color: #007bff;
+      font-weight: bold;
+    }
+
+    .add-to-cart-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .add-to-cart-btn:hover {
+      background: #0056b3;
+    }
+
+    .customer-details {
+      margin-bottom: 20px;
+    }
+
+    .cart-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+
+    .cart-item {
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .item-info {
+      flex: 1;
+    }
+
+    .item-info h6 {
+      margin: 0 0 5px 0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .item-info p {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .item-details {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .item-details select {
+      flex: 1;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .quantity-controls label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .qty-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .qty-btn:hover {
+      background: #0056b3;
+    }
+
+    .quantity {
+      font-size: 12px;
+      font-weight: bold;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .item-total {
+      font-size: 12px;
+      color: #007bff;
+    }
+
+    .remove-item-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      width: 25px;
+      height: 25px;
+      cursor: pointer;
+      font-size: 10px;
+    }
+
+    .remove-item-btn:hover {
+      background: #c82333;
+    }
+
+    .empty-cart {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+
+    .empty-cart i {
+      font-size: 48px;
+      margin-bottom: 15px;
+      color: #ddd;
+    }
+
+    .empty-cart p {
+      margin: 0 0 5px 0;
+      font-size: 16px;
+    }
+
+    .empty-cart small {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .cart-summary {
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+      margin-top: auto;
+    }
+
+    .total-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .total-line.total {
+      font-weight: bold;
+      font-size: 16px;
+      color: #007bff;
+      border-top: 1px solid #ddd;
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .customer-modal-large {
+        width: 100vw;
+        height: 100vh;
+      }
+      
+      .two-part-layout {
+        flex-direction: column;
+        height: calc(100% - 60px);
+      }
+      
+      .services-section {
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        padding-right: 0;
+        padding-bottom: 20px;
+        flex: 0 0 40%;
+      }
+      
+      .customer-section {
+        flex: 1;
+      }
+      
+      .services-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      }
+
+      .board-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .header-actions .search-input {
+        min-width: 200px;
+      }
+
+      .laundry-board-container {
+        height: calc(100vh - 250px);
+      }
+
+      .kanban-board {
+        padding: 10px;
+        gap: 15px;
+      }
+
+      .kanban-column {
+        min-width: 280px;
+        width: 280px;
+      }
+    }
+
+    /* Customer Details Modal Styles */
+    .order-details {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-height: calc(100vh - 400px);
+      overflow-y: auto;
+    }
+
+    .detail-card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .detail-card h5 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+    }
+
+    .detail-card h5 i {
+      margin-right: 8px;
+      color: #007bff;
+      width: 16px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .date-info p {
+      margin: 5px 0;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .items-list p {
+      margin: 5px 0;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .financial-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .amount-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .amount-row:last-child {
+      border-bottom: none;
+    }
+
+    .amount {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .amount.paid {
+      color: #28a745;
+    }
+
+    .amount.balance {
+      color: #dc3545;
+    }
+
+    .customer-info {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-row label {
+      font-weight: bold;
+      color: #666;
+      min-width: 120px;
+    }
+
+    .info-row span {
+      color: #333;
+      text-align: right;
+      flex: 1;
+    }
+
+    .action-section {
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .action-buttons .btn {
+      width: 100%;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .btn.warning {
+      background-color: #ffc107;
+      border-color: #ffc107;
+      color: #212529;
+    }
+
+    .btn.warning:hover {
+      background-color: #e0a800;
+      border-color: #d39e00;
+    }
+
+    .btn.success {
+      background-color: #28a745;
+      border-color: #28a745;
+      color: white;
+    }
+
+    .btn.success:hover {
+      background-color: #218838;
+      border-color: #1e7e34;
+    }
+
+    .btn.danger {
+      background-color: #dc3545;
+      border-color: #dc3545;
+      color: white;
+    }
+
+    .btn.danger:hover {
+      background-color: #c82333;
+      border-color: #bd2130;
+    }
+
+    @media (max-width: 768px) {
+      .order-details {
+        max-height: calc(100vh - 300px);
+      }
+
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+
+      .info-row label {
+        min-width: auto;
+      }
+
+      .info-row span {
+        text-align: left;
+      }
+
+      .amount-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+    }
   `]
 })
 export class LaundryComponent implements OnInit, AfterViewInit {
@@ -2336,96 +3470,120 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     { id: 'L005', customer: 'David Brown', items: '1 Coat', status: 'Processing', amount: 120, date: '2024-01-13' }
   ];
 
-  customers = [
-    { id: 'C001', name: 'John Doe', phone: '+91 98765 43210', email: 'john@example.com', address: '123 Main St, City', status: 'Active', totalOrders: 15 },
-    { id: 'C002', name: 'Jane Smith', phone: '+91 98765 43211', email: 'jane@example.com', address: '456 Oak Ave, City', status: 'VIP', totalOrders: 25 },
-    { id: 'C003', name: 'Mike Johnson', phone: '+91 98765 43212', email: 'mike@example.com', address: '789 Pine Rd, City', status: 'Active', totalOrders: 8 },
-    { id: 'C004', name: 'Sarah Wilson', phone: '+91 98765 43213', email: 'sarah@example.com', address: '321 Elm St, City', status: 'Inactive', totalOrders: 3 },
-    { id: 'C005', name: 'David Brown', phone: '+91 98765 43214', email: 'david@example.com', address: '654 Maple Dr, City', status: 'Active', totalOrders: 12 }
-  ];
+  customers: any[] = [];
+  filteredCustomers: any[] = [];
 
-  filteredCustomers = [...this.customers];
+  // Board-related properties
+  searchTerm: string = '';
+  filterStatus: string = '';
+  statuses = [
+    { id: 'received', name: 'Received', color: '#607d8b' },
+    { id: 'inProcess', name: 'In Process', color: '#ffc107' },
+    { id: 'readyForDelivery', name: 'Ready for Delivery', color: '#17a2b8' },
+    { id: 'delivered', name: 'Delivered', color: '#28a745' },
+    { id: 'cancelled', name: 'Cancelled', color: '#dc3545' },
+    { id: 'billed', name: 'Billed', color: '#007bff' }
+  ];
+  allStatuses = this.statuses.map(s => s.id);
+
+  // Cart functionality
+  selectedItems: any[] = [];
+  totalAmount: number = 0;
+  serviceSearchTerm: string = '';
+  cartServiceTypeFilter: string = '';
+  private filterTimeout: any;
+  private lastFilterState: string = '';
+  private isFiltering: boolean = false;
+
+  // Drag and Drop functionality
+  draggedOrder: any = null;
+  draggedOverColumn: string = '';
+  isDragging: boolean = false;
+
+  // Customer Details Modal
+  showCustomerDetailsModal: boolean = false;
+  selectedCustomerForDetails: any = null;
 
   services = [
     // Men's Services - Comprehensive Collection
-    { id: 'M001', name: 'Men Formal Shirt', description: 'Wash & Iron for Men Formal Shirts', price: 25, laundryPrice: 25, dryCleanPrice: 45, ironingPrice: 15, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👔' },
-    { id: 'M002', name: 'Men Casual Shirt', description: 'Wash & Iron for Men Casual Shirts', price: 22, laundryPrice: 22, dryCleanPrice: 40, ironingPrice: 12, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👕' },
-    { id: 'M003', name: 'Men T-Shirt', description: 'Wash & Iron for Men T-Shirts', price: 20, laundryPrice: 20, dryCleanPrice: 35, ironingPrice: 10, icon: 'fas fa-tshirt', category: 'Men', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👕' },
-    { id: 'M004', name: 'Men Polo Shirt', description: 'Wash & Iron for Men Polo Shirts', price: 23, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Polo Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👕' },
-    { id: 'M005', name: 'Men Tank Top', description: 'Wash & Iron for Men Tank Tops', price: 18, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👕' },
-    { id: 'M006', name: 'Men Hoodie', description: 'Wash & Iron for Men Hoodies', price: 35, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🧥' },
-    { id: 'M007', name: 'Men Sweatshirt', description: 'Wash & Iron for Men Sweatshirts', price: 32, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🧥' },
-    { id: 'M008', name: 'Men Formal Trousers', description: 'Wash & Iron for Men Formal Trousers', price: 30, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👖' },
-    { id: 'M009', name: 'Men Casual Trousers', description: 'Wash & Iron for Men Casual Trousers', price: 28, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👖' },
-    { id: 'M010', name: 'Men Jeans', description: 'Wash & Iron for Men Jeans', price: 35, icon: 'fas fa-user', category: 'Men', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👖' },
-    { id: 'M011', name: 'Men Shorts', description: 'Wash & Iron for Men Shorts', price: 22, icon: 'fas fa-user', category: 'Men', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🩳' },
-    { id: 'M012', name: 'Men Track Pants', description: 'Wash & Iron for Men Track Pants', price: 25, icon: 'fas fa-user', category: 'Men', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👖' },
-    { id: 'M013', name: 'Men Suit Jacket', description: 'Dry Clean for Men Suit Jackets', price: 80, laundryPrice: 60, dryCleanPrice: 80, ironingPrice: 35, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Suit Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=👔' },
-    { id: 'M014', name: 'Men Blazer', description: 'Dry Clean for Men Blazers', price: 75, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=👔' },
-    { id: 'M015', name: 'Men Waistcoat', description: 'Dry Clean for Men Waistcoats', price: 45, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Waistcoat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=👔' },
-    { id: 'M016', name: 'Men Coat', description: 'Dry Clean for Men Coats', price: 90, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=🧥' },
-    { id: 'M017', name: 'Men Jacket', description: 'Wash & Iron for Men Jackets', price: 40, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🧥' },
-    { id: 'M018', name: 'Men Sweater', description: 'Wash & Iron for Men Sweaters', price: 38, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🧥' },
-    { id: 'M019', name: 'Men Cardigan', description: 'Wash & Iron for Men Cardigans', price: 35, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🧥' },
-    { id: 'M020', name: 'Men Vest', description: 'Wash & Iron for Men Vests', price: 20, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👕' },
-    { id: 'M021', name: 'Men Kurta', description: 'Wash & Iron for Men Kurtas', price: 35, icon: 'fas fa-user', category: 'Men', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👕' },
-    { id: 'M022', name: 'Men Pyjama', description: 'Wash & Iron for Men Pyjamas', price: 25, icon: 'fas fa-user', category: 'Men', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👖' },
-    { id: 'M023', name: 'Men Lungi', description: 'Wash & Iron for Men Lungis', price: 20, icon: 'fas fa-user', category: 'Men', clothType: 'Lungi', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=👖' },
-    { id: 'M024', name: 'Men Underwear', description: 'Wash & Iron for Men Underwear', price: 15, icon: 'fas fa-user', category: 'Men', clothType: 'Underwear', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🩲' },
-    { id: 'M025', name: 'Men Socks', description: 'Wash & Iron for Men Socks', price: 10, icon: 'fas fa-user', category: 'Men', clothType: 'Socks', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=🧦' },
+    { id: 'M001', name: 'Men Formal Shirt', description: 'Wash & Iron for Men Formal Shirts', price: 25, laundryPrice: 25, dryCleanPrice: 45, ironingPrice: 15, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M002', name: 'Men Casual Shirt', description: 'Wash & Iron for Men Casual Shirts', price: 22, laundryPrice: 22, dryCleanPrice: 40, ironingPrice: 12, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M003', name: 'Men T-Shirt', description: 'Wash & Iron for Men T-Shirts', price: 20, laundryPrice: 20, dryCleanPrice: 35, ironingPrice: 10, icon: 'fas fa-tshirt', category: 'Men', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M004', name: 'Men Polo Shirt', description: 'Wash & Iron for Men Polo Shirts', price: 23, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Polo Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M005', name: 'Men Tank Top', description: 'Wash & Iron for Men Tank Tops', price: 18, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M006', name: 'Men Hoodie', description: 'Wash & Iron for Men Hoodies', price: 35, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M007', name: 'Men Sweatshirt', description: 'Wash & Iron for Men Sweatshirts', price: 32, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M008', name: 'Men Formal Trousers', description: 'Wash & Iron for Men Formal Trousers', price: 30, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M009', name: 'Men Casual Trousers', description: 'Wash & Iron for Men Casual Trousers', price: 28, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M010', name: 'Men Jeans', description: 'Wash & Iron for Men Jeans', price: 35, icon: 'fas fa-user', category: 'Men', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M011', name: 'Men Shorts', description: 'Wash & Iron for Men Shorts', price: 22, icon: 'fas fa-user', category: 'Men', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHORTS' },
+    { id: 'M012', name: 'Men Track Pants', description: 'Wash & Iron for Men Track Pants', price: 25, icon: 'fas fa-user', category: 'Men', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M013', name: 'Men Suit Jacket', description: 'Dry Clean for Men Suit Jackets', price: 80, laundryPrice: 60, dryCleanPrice: 80, ironingPrice: 35, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Suit Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
+    { id: 'M014', name: 'Men Blazer', description: 'Dry Clean for Men Blazers', price: 75, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
+    { id: 'M015', name: 'Men Waistcoat', description: 'Dry Clean for Men Waistcoats', price: 45, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Waistcoat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
+    { id: 'M016', name: 'Men Coat', description: 'Dry Clean for Men Coats', price: 90, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=JACKET' },
+    { id: 'M017', name: 'Men Jacket', description: 'Wash & Iron for Men Jackets', price: 40, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M018', name: 'Men Sweater', description: 'Wash & Iron for Men Sweaters', price: 38, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M019', name: 'Men Cardigan', description: 'Wash & Iron for Men Cardigans', price: 35, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M020', name: 'Men Vest', description: 'Wash & Iron for Men Vests', price: 20, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M021', name: 'Men Kurta', description: 'Wash & Iron for Men Kurtas', price: 35, icon: 'fas fa-user', category: 'Men', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M022', name: 'Men Pyjama', description: 'Wash & Iron for Men Pyjamas', price: 25, icon: 'fas fa-user', category: 'Men', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M023', name: 'Men Lungi', description: 'Wash & Iron for Men Lungis', price: 20, icon: 'fas fa-user', category: 'Men', clothType: 'Lungi', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M024', name: 'Men Underwear', description: 'Wash & Iron for Men Underwear', price: 15, icon: 'fas fa-user', category: 'Men', clothType: 'Underwear', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=UNDER' },
+    { id: 'M025', name: 'Men Socks', description: 'Wash & Iron for Men Socks', price: 10, icon: 'fas fa-user', category: 'Men', clothType: 'Socks', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SOCKS' },
     
     // Women's Services - Comprehensive Collection
-    { id: 'W001', name: 'Women Blouse', description: 'Wash & Iron for Women Blouses', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Blouse', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W002', name: 'Women Formal Shirt', description: 'Wash & Iron for Women Formal Shirts', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👔' },
-    { id: 'W003', name: 'Women Casual Shirt', description: 'Wash & Iron for Women Casual Shirts', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W004', name: 'Women T-Shirt', description: 'Wash & Iron for Women T-Shirts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W005', name: 'Women Tank Top', description: 'Wash & Iron for Women Tank Tops', price: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W006', name: 'Women Crop Top', description: 'Wash & Iron for Women Crop Tops', price: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Crop Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W007', name: 'Women Hoodie', description: 'Wash & Iron for Women Hoodies', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=🧥' },
-    { id: 'W008', name: 'Women Sweatshirt', description: 'Wash & Iron for Women Sweatshirts', price: 32, icon: 'fas fa-female', category: 'Women', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=🧥' },
-    { id: 'W009', name: 'Women Dress', description: 'Wash & Iron for Women Dresses', price: 50, icon: 'fas fa-venus', category: 'Women', clothType: 'Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W010', name: 'Women Formal Dress', description: 'Dry Clean for Women Formal Dresses', price: 80, icon: 'fas fa-venus', category: 'Women', clothType: 'Formal Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=👗' },
-    { id: 'W011', name: 'Women Casual Dress', description: 'Wash & Iron for Women Casual Dresses', price: 45, icon: 'fas fa-venus', category: 'Women', clothType: 'Casual Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W012', name: 'Women Maxi Dress', description: 'Wash & Iron for Women Maxi Dresses', price: 55, icon: 'fas fa-venus', category: 'Women', clothType: 'Maxi Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W013', name: 'Women Skirt', description: 'Wash & Iron for Women Skirts', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W014', name: 'Women Mini Skirt', description: 'Wash & Iron for Women Mini Skirts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'Mini Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W015', name: 'Women Midi Skirt', description: 'Wash & Iron for Women Midi Skirts', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Midi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W016', name: 'Women Maxi Skirt', description: 'Wash & Iron for Women Maxi Skirts', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Maxi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W017', name: 'Women Formal Trousers', description: 'Wash & Iron for Women Formal Trousers', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W018', name: 'Women Casual Trousers', description: 'Wash & Iron for Women Casual Trousers', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W019', name: 'Women Jeans', description: 'Wash & Iron for Women Jeans', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W020', name: 'Women Shorts', description: 'Wash & Iron for Women Shorts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=🩳' },
-    { id: 'W021', name: 'Women Track Pants', description: 'Wash & Iron for Women Track Pants', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W022', name: 'Women Leggings', description: 'Wash & Iron for Women Leggings', price: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Leggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W023', name: 'Women Jeggings', description: 'Wash & Iron for Women Jeggings', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Jeggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W024', name: 'Women Saree', description: 'Dry Clean for Women Sarees', price: 60, icon: 'fas fa-female', category: 'Women', clothType: 'Saree', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=👗' },
-    { id: 'W025', name: 'Women Kurta', description: 'Wash & Iron for Women Kurtas', price: 40, icon: 'fas fa-female', category: 'Women', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W026', name: 'Women Salwar Kameez', description: 'Wash & Iron for Women Salwar Kameez', price: 45, icon: 'fas fa-female', category: 'Women', clothType: 'Salwar Kameez', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W027', name: 'Women Palazzo', description: 'Wash & Iron for Women Palazzos', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Palazzo', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W028', name: 'Women Churidar', description: 'Wash & Iron for Women Churidars', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Churidar', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W029', name: 'Women Blazer', description: 'Dry Clean for Women Blazers', price: 70, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=👔' },
-    { id: 'W030', name: 'Women Jacket', description: 'Wash & Iron for Women Jackets', price: 40, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=🧥' },
-    { id: 'W031', name: 'Women Coat', description: 'Dry Clean for Women Coats', price: 85, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=🧥' },
-    { id: 'W032', name: 'Women Sweater', description: 'Wash & Iron for Women Sweaters', price: 38, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=🧥' },
-    { id: 'W033', name: 'Women Cardigan', description: 'Wash & Iron for Women Cardigans', price: 35, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=🧥' },
-    { id: 'W034', name: 'Women Vest', description: 'Wash & Iron for Women Vests', price: 25, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👚' },
-    { id: 'W035', name: 'Women Nightdress', description: 'Wash & Iron for Women Nightdresses', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Nightdress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👗' },
-    { id: 'W036', name: 'Women Pyjama', description: 'Wash & Iron for Women Pyjamas', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👖' },
-    { id: 'W037', name: 'Women Bra', description: 'Wash & Iron for Women Bras', price: 15, icon: 'fas fa-female', category: 'Women', clothType: 'Bra', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👙' },
-    { id: 'W038', name: 'Women Panties', description: 'Wash & Iron for Women Panties', price: 12, icon: 'fas fa-female', category: 'Women', clothType: 'Panties', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=👙' },
-    { id: 'W039', name: 'Women Stockings', description: 'Wash & Iron for Women Stockings', price: 10, icon: 'fas fa-female', category: 'Women', clothType: 'Stockings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=🧦' },
+    { id: 'W001', name: 'Women Blouse', description: 'Wash & Iron for Women Blouses', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Blouse', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W002', name: 'Women Formal Shirt', description: 'Wash & Iron for Women Formal Shirts', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SHIRT' },
+    { id: 'W003', name: 'Women Casual Shirt', description: 'Wash & Iron for Women Casual Shirts', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W004', name: 'Women T-Shirt', description: 'Wash & Iron for Women T-Shirts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W005', name: 'Women Tank Top', description: 'Wash & Iron for Women Tank Tops', price: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W006', name: 'Women Crop Top', description: 'Wash & Iron for Women Crop Tops', price: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Crop Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W007', name: 'Women Hoodie', description: 'Wash & Iron for Women Hoodies', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W008', name: 'Women Sweatshirt', description: 'Wash & Iron for Women Sweatshirts', price: 32, icon: 'fas fa-female', category: 'Women', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W009', name: 'Women Dress', description: 'Wash & Iron for Women Dresses', price: 50, icon: 'fas fa-venus', category: 'Women', clothType: 'Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W010', name: 'Women Formal Dress', description: 'Dry Clean for Women Formal Dresses', price: 80, icon: 'fas fa-venus', category: 'Women', clothType: 'Formal Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=DRESS' },
+    { id: 'W011', name: 'Women Casual Dress', description: 'Wash & Iron for Women Casual Dresses', price: 45, icon: 'fas fa-venus', category: 'Women', clothType: 'Casual Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W012', name: 'Women Maxi Dress', description: 'Wash & Iron for Women Maxi Dresses', price: 55, icon: 'fas fa-venus', category: 'Women', clothType: 'Maxi Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W013', name: 'Women Skirt', description: 'Wash & Iron for Women Skirts', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W014', name: 'Women Mini Skirt', description: 'Wash & Iron for Women Mini Skirts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'Mini Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W015', name: 'Women Midi Skirt', description: 'Wash & Iron for Women Midi Skirts', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Midi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W016', name: 'Women Maxi Skirt', description: 'Wash & Iron for Women Maxi Skirts', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Maxi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W017', name: 'Women Formal Trousers', description: 'Wash & Iron for Women Formal Trousers', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W018', name: 'Women Casual Trousers', description: 'Wash & Iron for Women Casual Trousers', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W019', name: 'Women Jeans', description: 'Wash & Iron for Women Jeans', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W020', name: 'Women Shorts', description: 'Wash & Iron for Women Shorts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SHORTS' },
+    { id: 'W021', name: 'Women Track Pants', description: 'Wash & Iron for Women Track Pants', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W022', name: 'Women Leggings', description: 'Wash & Iron for Women Leggings', price: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Leggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W023', name: 'Women Jeggings', description: 'Wash & Iron for Women Jeggings', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Jeggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W024', name: 'Women Saree', description: 'Dry Clean for Women Sarees', price: 60, icon: 'fas fa-female', category: 'Women', clothType: 'Saree', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=DRESS' },
+    { id: 'W025', name: 'Women Kurta', description: 'Wash & Iron for Women Kurtas', price: 40, icon: 'fas fa-female', category: 'Women', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W026', name: 'Women Salwar Kameez', description: 'Wash & Iron for Women Salwar Kameez', price: 45, icon: 'fas fa-female', category: 'Women', clothType: 'Salwar Kameez', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W027', name: 'Women Palazzo', description: 'Wash & Iron for Women Palazzos', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Palazzo', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W028', name: 'Women Churidar', description: 'Wash & Iron for Women Churidars', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Churidar', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W029', name: 'Women Blazer', description: 'Dry Clean for Women Blazers', price: 70, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
+    { id: 'W030', name: 'Women Jacket', description: 'Wash & Iron for Women Jackets', price: 40, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W031', name: 'Women Coat', description: 'Dry Clean for Women Coats', price: 85, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=JACKET' },
+    { id: 'W032', name: 'Women Sweater', description: 'Wash & Iron for Women Sweaters', price: 38, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W033', name: 'Women Cardigan', description: 'Wash & Iron for Women Cardigans', price: 35, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W034', name: 'Women Vest', description: 'Wash & Iron for Women Vests', price: 25, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W035', name: 'Women Nightdress', description: 'Wash & Iron for Women Nightdresses', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Nightdress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W036', name: 'Women Pyjama', description: 'Wash & Iron for Women Pyjamas', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W037', name: 'Women Bra', description: 'Wash & Iron for Women Bras', price: 15, icon: 'fas fa-female', category: 'Women', clothType: 'Bra', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=UNDER' },
+    { id: 'W038', name: 'Women Panties', description: 'Wash & Iron for Women Panties', price: 12, icon: 'fas fa-female', category: 'Women', clothType: 'Panties', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=UNDER' },
+    { id: 'W039', name: 'Women Stockings', description: 'Wash & Iron for Women Stockings', price: 10, icon: 'fas fa-female', category: 'Women', clothType: 'Stockings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SOCKS' },
     
     // Children's Services (Boy)
-    { id: 'CB001', name: 'Boy Shirt', description: 'Wash & Iron for Boy Shirts', price: 15, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=👕' },
-    { id: 'CB002', name: 'Boy Shorts', description: 'Wash & Iron for Boy Shorts', price: 12, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=🩳' },
-    { id: 'CB003', name: 'Boy T-Shirt', description: 'Wash & Iron for Boy T-Shirts', price: 10, icon: 'fas fa-child', category: 'Children', clothType: 'Boy T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=👕' },
-    { id: 'CB004', name: 'Boy Pants', description: 'Wash & Iron for Boy Pants', price: 18, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=👖' },
+    { id: 'CB001', name: 'Boy Shirt', description: 'Wash & Iron for Boy Shirts', price: 15, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHIRT' },
+    { id: 'CB002', name: 'Boy Shorts', description: 'Wash & Iron for Boy Shorts', price: 12, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHORTS' },
+    { id: 'CB003', name: 'Boy T-Shirt', description: 'Wash & Iron for Boy T-Shirts', price: 10, icon: 'fas fa-child', category: 'Children', clothType: 'Boy T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHIRT' },
+    { id: 'CB004', name: 'Boy Pants', description: 'Wash & Iron for Boy Pants', price: 18, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=PANTS' },
     
     // Children's Services (Girl)
-    { id: 'CG001', name: 'Girl Dress', description: 'Wash & Iron for Girl Dresses', price: 20, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=👗' },
-    { id: 'CG002', name: 'Girl Skirt', description: 'Wash & Iron for Girl Skirts', price: 15, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=👗' },
-    { id: 'CG003', name: 'Girl Top', description: 'Wash & Iron for Girl Tops', price: 12, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Top', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=👚' },
-    { id: 'CG004', name: 'Girl Frock', description: 'Wash & Iron for Girl Frocks', price: 18, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Frock', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=👗' }
+    { id: 'CG001', name: 'Girl Dress', description: 'Wash & Iron for Girl Dresses', price: 20, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' },
+    { id: 'CG002', name: 'Girl Skirt', description: 'Wash & Iron for Girl Skirts', price: 15, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' },
+    { id: 'CG003', name: 'Girl Top', description: 'Wash & Iron for Girl Tops', price: 12, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Top', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=WOMEN' },
+    { id: 'CG004', name: 'Girl Frock', description: 'Wash & Iron for Girl Frocks', price: 18, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Frock', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' }
   ];
 
   bills = [
@@ -2501,7 +3659,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   serviceForm: FormGroup;
   billForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private router: Router, private toastService: ToastService) {
     this.newOrderForm = this.fb.group({
       customerName: ['', Validators.required],
       customerPhone: ['', Validators.required],
@@ -2516,7 +3674,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       phone: ['', Validators.required],
       email: [''],
       address: [''],
-      status: ['active']
+      status: ['received']
     });
 
     this.serviceForm = this.fb.group({
@@ -2537,11 +3695,16 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';
     // Initialize price properties for all services
     this.initializeServicePrices();
-    // Initialize filtered services
+    
+    // Load customers and services from API first
+    await this.loadCustomers();
+    await this.loadServices();
+    
+    // Initialize filtered services after data is loaded
     this.filterServices();
     
     // Debug: Log first service to check structure
@@ -2757,6 +3920,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.activeTab = tab;
   }
 
+  navigateToBoard() {
+    this.setActiveTab('board');
+  }
+
   // Services field methods
   onServiceTypeChange() {
     console.log('Selected service type:', this.selectedServiceType);
@@ -2766,21 +3933,29 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
   onServiceForChange() {
     console.log('Selected service for:', this.selectedServiceFor);
-    this.filterServices();
+    this.debouncedFilterServices();
   }
 
   filterServices() {
-    // Filter by target audience only - show all clothes for the selected category
-    this.filteredServices = this.services.filter(service => {
-      if (this.selectedServiceFor === 'man') {
-        return service.category === 'Men';
-      } else if (this.selectedServiceFor === 'woman') {
-        return service.category === 'Women';
-      } else if (this.selectedServiceFor === 'children') {
-        return service.category === 'Children';
-      }
-      return false;
-    });
+    console.log('filterServices called - using simple approach');
+    
+    // Simple approach: just show all services for now
+    if (!this.services || this.services.length === 0) {
+      console.log('Services array is empty');
+      this.filteredServices = [];
+      return;
+    }
+    
+    // Just copy all services for now to stop the continuous calling
+    this.filteredServices = [...this.services];
+    console.log('Showing all services:', this.filteredServices.length);
+  }
+
+  // Debounced version for search input
+  debouncedFilterServices() {
+    console.log('debouncedFilterServices called');
+    // For now, just call filterServices directly to avoid any timing issues
+    this.filterServices();
   }
 
   // Get the price for a specific service type and cloth
@@ -2973,15 +4148,43 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.newOrderForm.reset();
   }
 
-  submitOrder() {
+  async submitOrder() {
     if (this.newOrderForm.valid) {
-      // Handle form submission
-      console.log('New order:', this.newOrderForm.value);
-      // Here you would typically send the data to your backend
-      alert('Order created successfully!');
-      this.closeNewOrderModal();
+      try {
+        const orderData = this.newOrderForm.value;
+        const response = await fetch(`${environment.apiUrl}/laundry-customers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: orderData.customerName,
+            phone: orderData.customerPhone,
+            items: orderData.items,
+            service_type: orderData.serviceType,
+            total_amount: parseFloat(orderData.amount) || 0,
+            expected_delivery_date: orderData.pickupDate,
+            status: 'received'
+          }),
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          this.toastService.success('Order created successfully!');
+          this.closeNewOrderModal();
+          this.newOrderForm.reset();
+          await this.loadCustomers(); // Reload customers to show the new order
+          this.filteredCustomers = [...this.customers];
+        } else {
+          const error = await response.json();
+          this.toastService.error(error.error || 'Failed to create order');
+        }
+      } catch (error) {
+        console.error('Error creating order:', error);
+        this.toastService.error('Error creating order');
+      }
     } else {
-      alert('Please fill in all required fields');
+      this.toastService.error('Please fill in all required fields');
     }
   }
 
@@ -3000,10 +4203,6 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     console.log('View order:', orderId);
   }
 
-  editOrder(orderId: string) {
-    // Edit specific order
-    console.log('Edit order:', orderId);
-  }
 
   // Customer Management Methods
   filterCustomers() {
@@ -3020,51 +4219,119 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     });
   }
 
-  openCustomerModal() {
-    this.editingCustomer = null;
-    this.customerForm.reset();
-    this.customerForm.patchValue({ status: 'active' });
-    this.showCustomerModal = true;
-  }
-
-  closeCustomerModal() {
-    this.showCustomerModal = false;
-    this.editingCustomer = null;
-    this.customerForm.reset();
-  }
 
   editCustomer(customerId: string) {
     const customer = this.customers.find(c => c.id === customerId);
     if (customer) {
       this.editingCustomer = customer;
-      this.customerForm.patchValue(customer);
+      this.customerForm.patchValue({
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        address: customer.address,
+        status: customer.status || 'received'
+      });
       this.showCustomerModal = true;
     }
   }
 
-  submitCustomer() {
-    if (this.customerForm.valid) {
-      const customerData = this.customerForm.value;
-      
-      if (this.editingCustomer) {
-        // Update existing customer
-        const index = this.customers.findIndex(c => c.id === this.editingCustomer.id);
-        if (index !== -1) {
-          this.customers[index] = { ...this.customers[index], ...customerData };
+  async submitCustomer() {
+    console.log('Form valid:', this.customerForm.valid);
+    console.log('Form errors:', this.customerForm.errors);
+    console.log('Form value:', this.customerForm.value);
+    console.log('Editing customer:', this.editingCustomer);
+    console.log('Form status:', this.customerForm.status);
+    
+    // Force form validation
+    this.customerForm.markAllAsTouched();
+    this.customerForm.updateValueAndValidity();
+    
+    console.log('After validation - Form valid:', this.customerForm.valid);
+    console.log('After validation - Form errors:', this.customerForm.errors);
+    
+    // Allow updates even if form validation fails, as long as we have the required data
+    const customerData = this.customerForm.value;
+    const hasRequiredData = customerData.name && customerData.phone;
+    
+    if (this.customerForm.valid || (this.editingCustomer && hasRequiredData)) {
+      try {
+        if (this.editingCustomer) {
+          // Update existing customer with items
+          const itemsDescription = this.selectedItems.map(item => 
+            `${item.quantity}x ${item.service.name} (${item.serviceType})`
+          ).join(', ');
+          
+          const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: customerData.name,
+              phone: customerData.phone,
+              alt_phone: customerData.altPhone,
+              email: customerData.email,
+              address: customerData.address,
+              status: customerData.status || 'received',
+              items: itemsDescription,
+              service_type: this.selectedItems.map(item => item.serviceType).join(', '),
+              total_amount: this.totalAmount * 1.05 // Include tax
+            }),
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            this.toastService.success('Customer updated successfully!');
+            this.closeCustomerDetailsModal();
+            await this.loadCustomers();
+            this.filteredCustomers = [...this.customers];
+          } else {
+            const error = await response.json();
+            this.toastService.error(error.error || 'Failed to update customer');
+          }
+        } else {
+          // Add new customer with items
+          const itemsDescription = this.selectedItems.map(item => 
+            `${item.quantity}x ${item.service.name} (${item.serviceType})`
+          ).join(', ');
+          
+          const response = await fetch(`${environment.apiUrl}/laundry-customers`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: customerData.name,
+              phone: customerData.phone,
+              alt_phone: customerData.altPhone,
+              email: customerData.email,
+              address: customerData.address,
+              status: customerData.status || 'received',
+              items: itemsDescription,
+              service_type: this.selectedItems.map(item => item.serviceType).join(', '),
+              total_amount: this.totalAmount * 1.05 // Include tax
+            }),
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            this.toastService.success('Customer created successfully!');
+            this.closeCustomerModal();
+            this.customerForm.reset();
+            await this.loadCustomers();
+            this.filteredCustomers = [...this.customers];
+          } else {
+            const error = await response.json();
+            this.toastService.error(error.error || 'Failed to create customer');
+          }
         }
-      } else {
-        // Add new customer
-        const newCustomer = {
-          id: 'C' + String(this.customers.length + 1).padStart(3, '0'),
-          ...customerData,
-          totalOrders: 0
-        };
-        this.customers.push(newCustomer);
+      } catch (error) {
+        console.error('Error saving customer:', error);
+        this.toastService.error('Error saving customer');
       }
-      
-      this.filterCustomers();
-      this.closeCustomerModal();
-      alert('Customer saved successfully!');
+    } else {
+      console.log('Form is not valid, showing error');
+      this.toastService.error('Please fill in all required fields (Name and Phone are required)');
     }
   }
 
@@ -3072,13 +4339,6 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     console.log('View customer:', customerId);
   }
 
-  deleteCustomer(customerId: string) {
-    if (confirm('Are you sure you want to delete this customer?')) {
-      this.customers = this.customers.filter(c => c.id !== customerId);
-      this.filterCustomers();
-      alert('Customer deleted successfully!');
-    }
-  }
 
   // Service Management Methods
   openServiceModal() {
@@ -3526,6 +4786,599 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       }
       
       alert(errorMessage);
+    }
+  }
+
+  // Load customers from API
+  async loadCustomers() {
+    try {
+      console.log('Loading customers from:', `${environment.apiUrl}/laundry-customers`);
+      const response = await fetch(`${environment.apiUrl}/laundry-customers`, {
+        credentials: 'include'
+      });
+      console.log('Response status:', response.status);
+      if (response.ok) {
+        const customers = await response.json();
+        // Replace hardcoded customers with API data
+        this.customers = customers.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          phone: c.phone,
+          altPhone: c.alt_phone || '',
+          email: c.email || '',
+          address: c.address || '',
+          status: c.status || 'received',
+          orderDate: c.order_date,
+          expectedDeliveryDate: c.expected_delivery_date,
+          deliveryDate: c.delivery_date,
+          items: c.items || '',
+          serviceType: c.service_type || '',
+          totalAmount: c.total_amount || 0,
+          paidAmount: c.paid_amount || 0,
+          balanceAmount: c.balance_amount || 0,
+          specialInstructions: c.special_instructions || '',
+          createdDate: c.created_at ? new Date(c.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          selectedItems: [],
+          totalOrders: 1 // Add totalOrders for compatibility
+        }));
+        // Update filtered customers to show API data
+        this.filteredCustomers = [...this.customers];
+        console.log('Loaded customers from API:', this.customers.length);
+      } else {
+        console.error('Failed to load customers:', response.statusText);
+        this.toastService.error('Failed to load customers');
+      }
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      this.toastService.error('Error loading customers');
+    }
+  }
+
+  // Load services from API
+  async loadServices() {
+    try {
+      const response = await fetch(`${environment.apiUrl}/laundry-services`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const apiServices = await response.json();
+        // Merge API services with existing hardcoded services
+        const existingServiceNames = this.services.map(s => s.name.toLowerCase());
+        apiServices.forEach((apiService: any) => {
+          if (!existingServiceNames.includes(apiService.name.toLowerCase())) {
+            this.services.push({
+              id: apiService.id,
+              name: apiService.name,
+              description: apiService.description || '',
+              price: parseFloat(apiService.price) || 0,
+              laundryPrice: parseFloat(apiService.price) || 0,
+              dryCleanPrice: Math.round((parseFloat(apiService.price) || 0) * 1.5),
+              ironingPrice: Math.round((parseFloat(apiService.price) || 0) * 0.6),
+              category: apiService.category || 'General',
+              icon: this.getServiceIcon(apiService.category || 'General'),
+              clothType: 'General',
+              pickup: false,
+              photo: 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=SERVICE'
+            });
+          }
+        });
+        console.log('Loaded services from API:', apiServices.length);
+      } else {
+        console.error('Failed to load services:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error loading services:', error);
+    }
+  }
+
+  // Get appropriate icon for service category
+  getServiceIcon(category: string): string {
+    switch (category.toLowerCase()) {
+      case 'basic': return 'fas fa-tshirt';
+      case 'premium': return 'fas fa-crown';
+      case 'express': return 'fas fa-clock';
+      case 'special': return 'fas fa-star';
+      default: return 'fas fa-cog';
+    }
+  }
+
+  // Get appropriate image for service
+  getServiceImage(serviceName: string, category: string): string {
+    const name = serviceName.toLowerCase();
+    const cat = category.toLowerCase();
+    
+    console.log('getServiceImage called:', { serviceName, category, name, cat });
+    
+    // Return appropriate placeholder images based on service type
+    if (name.includes('wash') || name.includes('laundry')) {
+      const url = 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=WASH';
+      console.log('Returning wash image:', url);
+      return url;
+    } else if (name.includes('dry') || name.includes('clean')) {
+      const url = 'https://via.placeholder.com/80x80/2196F3/ffffff?text=DRY';
+      console.log('Returning dry clean image:', url);
+      return url;
+    } else if (name.includes('iron')) {
+      const url = 'https://via.placeholder.com/80x80/FF9800/ffffff?text=IRON';
+      console.log('Returning iron image:', url);
+      return url;
+    } else if (name.includes('express') || name.includes('quick')) {
+      const url = 'https://via.placeholder.com/80x80/E91E63/ffffff?text=EXPRESS';
+      console.log('Returning express image:', url);
+      return url;
+    } else if (name.includes('stain') || name.includes('bleach')) {
+      const url = 'https://via.placeholder.com/80x80/9C27B0/ffffff?text=STAIN';
+      console.log('Returning stain removal image:', url);
+      return url;
+    } else if (name.includes('suit') || name.includes('formal')) {
+      const url = 'https://via.placeholder.com/80x80/607D8B/ffffff?text=SUIT';
+      console.log('Returning suit image:', url);
+      return url;
+    } else if (name.includes('curtain') || name.includes('carpet')) {
+      const url = 'https://via.placeholder.com/80x80/795548/ffffff?text=HOME';
+      console.log('Returning home image:', url);
+      return url;
+    } else {
+      // Default based on category
+      let url = '';
+      switch (cat) {
+        case 'basic': 
+          url = 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=BASIC';
+          break;
+        case 'premium': 
+          url = 'https://via.placeholder.com/80x80/2196F3/ffffff?text=PREMIUM';
+          break;
+        case 'express': 
+          url = 'https://via.placeholder.com/80x80/E91E63/ffffff?text=EXPRESS';
+          break;
+        case 'special': 
+          url = 'https://via.placeholder.com/80x80/9C27B0/ffffff?text=SPECIAL';
+          break;
+        default: 
+          url = 'https://via.placeholder.com/80x80/6c757d/ffffff?text=SERVICE';
+          break;
+      }
+      console.log('Returning default image for category:', cat, url);
+      return url;
+    }
+  }
+
+  // Board-related methods
+  getOrdersByStatus(status: string): any[] {
+    return this.customers.filter(customer => customer.status === status);
+  }
+
+  filterOrders() {
+    // This method can be used for filtering if needed
+    // For now, we'll use the existing customers array
+  }
+
+  isDelayed(order: any): boolean {
+    if (order.status === 'inProcess' && order.createdDate) {
+      const orderDateTime = new Date(order.createdDate).getTime();
+      const now = new Date().getTime();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      return (now - orderDateTime) > twentyFourHours;
+    }
+    return false;
+  }
+
+  viewOrderDetails(order: any) {
+    // Don't open modal if we're in the middle of dragging
+    if (this.isDragging) {
+      return;
+    }
+    this.selectedCustomerForDetails = order;
+    this.editingCustomer = order; // Set editing customer for updates
+    
+    // Populate the form with customer data
+    this.customerForm.patchValue({
+      name: order.name,
+      phone: order.phone,
+      email: order.email || '',
+      address: order.address || '',
+      status: order.status || 'received'
+    });
+    
+    // Mark form as valid since we're populating with existing data
+    this.customerForm.markAsTouched();
+    this.customerForm.updateValueAndValidity();
+    
+    // Clear cart initially - user can add items if needed
+    this.clearCart();
+    
+    // Reset search and filter terms for services
+    this.serviceSearchTerm = '';
+    this.cartServiceTypeFilter = '';
+    this.selectedServiceFor = ''; // Reset to show all services
+    
+    this.showCustomerDetailsModal = true;
+  }
+
+  editOrder(order: any) {
+    console.log('Edit order:', order);
+    // You can implement order editing functionality
+  }
+
+
+  // Cart functionality methods
+  addServiceToCart(service: any) {
+    const existingItem = this.selectedItems.find(item => item.service.id === service.id);
+    
+    if (existingItem) {
+      existingItem.quantity += 1;
+      this.updateItemPrice(existingItem);
+    } else {
+      const newItem = {
+        service: service,
+        serviceType: 'laundry',
+        quantity: 1,
+        totalPrice: service.laundryPrice
+      };
+      this.selectedItems.push(newItem);
+    }
+    
+    this.calculateTotal();
+  }
+
+  removeFromCart(index: number) {
+    this.selectedItems.splice(index, 1);
+    this.calculateTotal();
+  }
+
+  increaseCartQuantity(item: any) {
+    item.quantity += 1;
+    this.updateItemPrice(item);
+    this.calculateTotal();
+  }
+
+  decreaseCartQuantity(item: any) {
+    if (item.quantity > 1) {
+      item.quantity -= 1;
+      this.updateItemPrice(item);
+      this.calculateTotal();
+    }
+  }
+
+  updateItemPrice(item: any) {
+    let price = 0;
+    switch (item.serviceType) {
+      case 'laundry':
+        price = item.service.laundryPrice;
+        break;
+      case 'dryClean':
+        price = item.service.dryCleanPrice;
+        break;
+      case 'ironing':
+        price = item.service.ironingPrice;
+        break;
+    }
+    item.totalPrice = price * item.quantity;
+    this.calculateTotal();
+  }
+
+  calculateTotal() {
+    this.totalAmount = this.selectedItems.reduce((total, item) => total + item.totalPrice, 0);
+  }
+
+  clearCart() {
+    this.selectedItems = [];
+    this.totalAmount = 0;
+  }
+
+  openCustomerModal() {
+    this.editingCustomer = null;
+    this.customerForm.reset();
+    this.customerForm.patchValue({ status: 'received' });
+    this.clearCart();
+    // Reset search and filter terms for services
+    this.serviceSearchTerm = '';
+    this.cartServiceTypeFilter = '';
+    this.selectedServiceFor = ''; // Reset to show all services
+    this.showCustomerModal = true;
+  }
+
+  closeCustomerModal() {
+    this.showCustomerModal = false;
+    this.editingCustomer = null;
+    this.clearCart();
+    this.customerForm.reset();
+    // Reset search and filter terms
+    this.serviceSearchTerm = '';
+    this.cartServiceTypeFilter = '';
+    this.selectedServiceFor = 'man'; // Reset to default
+  }
+
+  // Drag and Drop methods
+  onDragStart(event: DragEvent, order: any) {
+    this.draggedOrder = order;
+    this.isDragging = true;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/html', '');
+    }
+  }
+
+  onDragOver(event: DragEvent, columnId: string) {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    this.draggedOverColumn = columnId;
+  }
+
+  onDragEnter(event: DragEvent, columnId: string) {
+    event.preventDefault();
+    this.draggedOverColumn = columnId;
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.draggedOverColumn = '';
+  }
+
+  onDragEnd(event: DragEvent) {
+    // Reset dragging state when drag ends (whether successful or cancelled)
+    setTimeout(() => {
+      this.isDragging = false;
+    }, 100);
+  }
+
+  async onDrop(event: DragEvent, targetColumnId: string) {
+    event.preventDefault();
+    this.isDragging = false; // Reset dragging state immediately
+    
+    if (!this.draggedOrder || this.draggedOrder.status === targetColumnId) {
+      this.draggedOrder = null;
+      this.draggedOverColumn = '';
+      return;
+    }
+
+    const originalStatus = this.draggedOrder.status;
+    this.draggedOrder.status = targetColumnId;
+
+    try {
+      const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.draggedOrder.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: targetColumnId }),
+        credentials: 'include'
+      });
+
+        if (response.ok) {
+          this.toastService.success(`Order moved to ${this.getStatusDisplayName(targetColumnId)} successfully!`);
+          // Update the local customers array
+          const customerIndex = this.customers.findIndex(c => c.id === this.draggedOrder.id);
+          if (customerIndex !== -1) {
+            this.customers[customerIndex].status = targetColumnId;
+            this.filteredCustomers = [...this.customers];
+          }
+          
+          // Update selected customer details if currently being viewed
+          if (this.selectedCustomerForDetails && this.selectedCustomerForDetails.id === this.draggedOrder.id) {
+            this.selectedCustomerForDetails.status = targetColumnId;
+          }
+          
+          // Update editing customer if currently being edited
+          if (this.editingCustomer && this.editingCustomer.id === this.draggedOrder.id) {
+            this.editingCustomer.status = targetColumnId;
+            this.customerForm.patchValue({ status: targetColumnId });
+          }
+        } else {
+        // Revert the change on failure
+        this.draggedOrder.status = originalStatus;
+        const error = await response.json();
+        this.toastService.error(error.error || 'Failed to update order status');
+      }
+    } catch (error) {
+      // Revert the change on error
+      this.draggedOrder.status = originalStatus;
+      console.error('Error updating order status:', error);
+      this.toastService.error('Error updating order status');
+    }
+
+    this.draggedOrder = null;
+    this.draggedOverColumn = '';
+    this.isDragging = false;
+  }
+
+  getStatusDisplayName(statusId: string): string {
+    const status = this.statuses.find(s => s.id === statusId);
+    return status ? status.name : statusId;
+  }
+
+  getStatusColor(statusId: string): string {
+    const status = this.statuses.find(s => s.id === statusId);
+    return status ? status.color : '#6c757d';
+  }
+
+  // Customer Details Modal methods
+  closeCustomerDetailsModal() {
+    this.showCustomerDetailsModal = false;
+    this.selectedCustomerForDetails = null;
+    this.editingCustomer = null;
+    this.clearCart();
+    // Reset search and filter terms
+    this.serviceSearchTerm = '';
+    this.cartServiceTypeFilter = '';
+    this.selectedServiceFor = 'man'; // Reset to default
+  }
+
+  editCustomerFromDetails() {
+    // Keep the modal open and populate the form
+    this.editingCustomer = this.selectedCustomerForDetails;
+    this.customerForm.patchValue({
+      name: this.selectedCustomerForDetails.name,
+      phone: this.selectedCustomerForDetails.phone,
+      email: this.selectedCustomerForDetails.email,
+      address: this.selectedCustomerForDetails.address,
+      status: this.selectedCustomerForDetails.status || 'received'
+    });
+    
+    // Mark form as valid since we're populating with existing data
+    this.customerForm.markAsTouched();
+    this.customerForm.updateValueAndValidity();
+    
+    // Populate the cart with existing items if any
+    this.populateCartFromCustomerDetails();
+  }
+
+  populateCartFromCustomerDetails() {
+    // Clear existing cart
+    this.clearCart();
+    
+    // If customer has items, try to parse them and add to cart
+    if (this.selectedCustomerForDetails.items) {
+      const items = this.selectedCustomerForDetails.items.split(',');
+      items.forEach((item: string) => {
+        // Parse item format: "2x Men Formal Shirt (laundry)"
+        const match = item.trim().match(/(\d+)x\s*(.+?)\s*\((.+?)\)/);
+        if (match) {
+          const quantity = parseInt(match[1]);
+          const serviceName = match[2].trim();
+          const serviceType = match[3].trim();
+          
+          // Find the service in our services array
+          const service = this.services.find(s => s.name === serviceName);
+          if (service) {
+            for (let i = 0; i < quantity; i++) {
+              this.addServiceToCart(service);
+            }
+            // Set the service type for all items of this service
+            this.selectedItems.forEach((item: any) => {
+              if (item.service.name === serviceName) {
+                item.serviceType = serviceType;
+                this.updateItemPrice(item);
+              }
+            });
+          }
+        }
+      });
+    }
+  }
+
+  async updateOrderStatus() {
+    const currentStatus = this.selectedCustomerForDetails.status;
+    const availableStatuses = this.statuses.filter(s => s.id !== currentStatus);
+    
+    const statusNames = availableStatuses.map(s => s.name).join(', ');
+    const newStatus = prompt(`Current status: ${this.getStatusDisplayName(currentStatus)}\n\nAvailable statuses: ${statusNames}\n\nEnter new status (received, inProcess, readyForDelivery, delivered, cancelled, billed):`);
+    
+    if (newStatus && newStatus !== currentStatus) {
+      const statusObj = this.statuses.find(s => s.id === newStatus || s.name.toLowerCase().includes(newStatus.toLowerCase()));
+      if (statusObj) {
+        try {
+          const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.selectedCustomerForDetails.id}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: statusObj.id }),
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            this.toastService.success(`Order status updated to ${statusObj.name} successfully!`);
+            this.selectedCustomerForDetails.status = statusObj.id;
+            await this.loadCustomers();
+            this.filteredCustomers = [...this.customers];
+          } else {
+            const error = await response.json();
+            this.toastService.error(error.error || 'Failed to update order status');
+          }
+        } catch (error) {
+          console.error('Error updating order status:', error);
+          this.toastService.error('Error updating order status');
+        }
+      } else {
+        this.toastService.error('Invalid status. Please use one of the available statuses.');
+      }
+    }
+  }
+
+  async markAsDelivered() {
+    if (confirm(`Mark order for ${this.selectedCustomerForDetails.name} as delivered?`)) {
+      try {
+        const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.selectedCustomerForDetails.id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            status: 'delivered',
+            delivery_date: new Date().toISOString()
+          }),
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          this.toastService.success('Order marked as delivered successfully!');
+          this.selectedCustomerForDetails.status = 'delivered';
+          this.selectedCustomerForDetails.deliveryDate = new Date().toISOString();
+          await this.loadCustomers();
+          this.filteredCustomers = [...this.customers];
+        } else {
+          const error = await response.json();
+          this.toastService.error(error.error || 'Failed to mark order as delivered');
+        }
+      } catch (error) {
+        console.error('Error marking order as delivered:', error);
+        this.toastService.error('Error marking order as delivered');
+      }
+    }
+  }
+
+  async moveToBilled() {
+    if (confirm(`Move order for ${this.selectedCustomerForDetails.name} to billed status?`)) {
+      try {
+        const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.selectedCustomerForDetails.id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'billed' }),
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          this.toastService.success('Order moved to billed status successfully!');
+          this.selectedCustomerForDetails.status = 'billed';
+          await this.loadCustomers();
+          this.filteredCustomers = [...this.customers];
+        } else {
+          const error = await response.json();
+          this.toastService.error(error.error || 'Failed to move order to billed status');
+        }
+      } catch (error) {
+        console.error('Error moving order to billed status:', error);
+        this.toastService.error('Error moving order to billed status');
+      }
+    }
+  }
+
+  async deleteCustomer() {
+    if (confirm(`Are you sure you want to delete the order for ${this.selectedCustomerForDetails.name}? This action cannot be undone.`)) {
+      try {
+        const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.selectedCustomerForDetails.id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          this.toastService.success('Order deleted successfully!');
+          this.closeCustomerDetailsModal();
+          await this.loadCustomers();
+          this.filteredCustomers = [...this.customers];
+        } else {
+          const error = await response.json();
+          this.toastService.error(error.error || 'Failed to delete order');
+        }
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        this.toastService.error('Error deleting order');
+      }
     }
   }
 

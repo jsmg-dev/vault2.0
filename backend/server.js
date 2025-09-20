@@ -17,6 +17,8 @@ const depositRoutes = require('./routes/deposits');   // ensure Postgres
 const reportsRoutes = require('./routes/reports');    // ensure Postgres
 const policiesRoutes = require('./routes/policies');  // ensure Postgres
 const dashboardRoutes = require('./routes/dashboard'); // new dashboard routes
+const laundryCustomerRoutes = require('./routes/laundry-customers'); // new laundry routes
+const laundryServiceRoutes = require('./routes/laundry-services'); // new laundry service routes
 
 const app = express();
 const port = config.server.port;
@@ -46,6 +48,8 @@ app.use('/deposits', depositRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/policies', policiesRoutes);
 app.use('/dashboard', dashboardRoutes);
+app.use('/laundry-customers', laundryCustomerRoutes);
+app.use('/laundry-services', laundryServiceRoutes);
 
 // Bootstrap users table + seed admin (Postgres)
 (async () => {
@@ -168,6 +172,68 @@ app.use('/dashboard', dashboardRoutes);
       ALTER TABLE lic_policy_details 
       ADD COLUMN IF NOT EXISTS last_payment_date DATE;
     `);
+
+    // Create laundry tables
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS laundry_customers (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        alt_phone TEXT,
+        address TEXT,
+        email TEXT,
+        status TEXT DEFAULT 'received',
+        order_date TIMESTAMP DEFAULT NOW(),
+        expected_delivery_date DATE,
+        delivery_date TIMESTAMP,
+        items TEXT,
+        service_type TEXT,
+        total_amount DECIMAL(10,2),
+        paid_amount DECIMAL(10,2) DEFAULT 0,
+        balance_amount DECIMAL(10,2),
+        special_instructions TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS laundry_services (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        category TEXT,
+        price DECIMAL(10,2) NOT NULL,
+        description TEXT,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Create indexes for laundry tables
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_laundry_customers_status ON laundry_customers(status);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_laundry_customers_phone ON laundry_customers(phone);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_laundry_customers_order_date ON laundry_customers(order_date);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_laundry_services_category ON laundry_services(category);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_laundry_services_active ON laundry_services(is_active);`);
+
+    // Seed default laundry services if table is empty
+    const serviceCount = await db.query(`SELECT COUNT(*)::int AS cnt FROM laundry_services;`);
+    if ((serviceCount.rows[0]?.cnt ?? 0) === 0) {
+      await db.query(`
+        INSERT INTO laundry_services (name, category, price, description) VALUES
+        ('Wash & Iron', 'Basic', 25.00, 'Basic wash and iron service'),
+        ('Dry Clean', 'Premium', 50.00, 'Dry cleaning service'),
+        ('Express Wash', 'Express', 35.00, 'Same day wash and iron'),
+        ('Iron Only', 'Basic', 10.00, 'Ironing service only'),
+        ('Wash Only', 'Basic', 20.00, 'Washing service only'),
+        ('Bleach Service', 'Special', 15.00, 'Bleaching service'),
+        ('Stain Removal', 'Special', 30.00, 'Professional stain removal'),
+        ('Suit Dry Clean', 'Premium', 80.00, 'Formal suit dry cleaning'),
+        ('Curtain Wash', 'Special', 60.00, 'Curtain washing service'),
+        ('Carpet Clean', 'Special', 100.00, 'Carpet cleaning service')
+      `);
+      console.log('Seeded default laundry services');
+    }
 
   } catch (err) {
     console.error('❌ Bootstrap users failed:', err);

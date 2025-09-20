@@ -26,7 +26,7 @@ export const routes: Routes = [
   { path: 'users', component: UsersComponent, canActivate: [authGuard], data: { roles: ['admin'] } },
   { path: 'policies', component: PoliciesComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'lic'] } },
   { path: 'calculator', component: EmiCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
-  { path: 'laundry', component: LaundryComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
+  { path: 'laundry', component: LaundryComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'laundry'] } },
 
   { path: '**', redirectTo: 'login' }
 ];

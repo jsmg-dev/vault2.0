@@ -87,6 +87,39 @@ CREATE TABLE IF NOT EXISTS lic_policy_details (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Laundry Customers table
+CREATE TABLE IF NOT EXISTS laundry_customers (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    alt_phone TEXT,
+    address TEXT,
+    email TEXT,
+    status TEXT DEFAULT 'received',
+    order_date TIMESTAMP DEFAULT NOW(),
+    expected_delivery_date DATE,
+    delivery_date TIMESTAMP,
+    items TEXT,
+    service_type TEXT,
+    total_amount DECIMAL(10,2),
+    paid_amount DECIMAL(10,2) DEFAULT 0,
+    balance_amount DECIMAL(10,2),
+    special_instructions TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Laundry Services table (for service types and pricing)
+CREATE TABLE IF NOT EXISTS laundry_services (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_customers_customer_code ON customers(customer_code);
 CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
@@ -96,3 +129,8 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_policies_policy_no ON lic_policy_details(policy_no);
 CREATE INDEX IF NOT EXISTS idx_policies_status ON lic_policy_details(status);
 CREATE INDEX IF NOT EXISTS idx_policies_created_at ON lic_policy_details(created_at);
+CREATE INDEX IF NOT EXISTS idx_laundry_customers_status ON laundry_customers(status);
+CREATE INDEX IF NOT EXISTS idx_laundry_customers_phone ON laundry_customers(phone);
+CREATE INDEX IF NOT EXISTS idx_laundry_customers_order_date ON laundry_customers(order_date);
+CREATE INDEX IF NOT EXISTS idx_laundry_services_category ON laundry_services(category);
+CREATE INDEX IF NOT EXISTS idx_laundry_services_active ON laundry_services(is_active);

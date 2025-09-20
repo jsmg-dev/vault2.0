@@ -1,121 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const { query, one, many } = require('../db');
+const { Pool } = require('pg');
+
+// Database connection
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'vault_db',
+  password: 'postgres',
+  port: 5432,
+});
 
 // Get all laundry services
 router.get('/', async (req, res) => {
   try {
-    const services = await many(`
-      SELECT * FROM laundry_services 
-      WHERE is_active = true 
-      ORDER BY category, name
+    const result = await pool.query(`
+      SELECT 
+        id,
+        service_id,
+        name,
+        description,
+        price,
+        laundry_price,
+        dry_clean_price,
+        ironing_price,
+        category,
+        cloth_type,
+        icon,
+        pickup,
+        photo,
+        created_at,
+        updated_at
+      FROM laundry_services 
+      ORDER BY category, cloth_type, name
     `);
-    res.json(services);
+    
+    res.json(result.rows);
   } catch (error) {
     console.error('Error fetching laundry services:', error);
     res.status(500).json({ error: 'Failed to fetch laundry services' });
-  }
-});
-
-// Get laundry service by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const service = await one('SELECT * FROM laundry_services WHERE id = $1', [id]);
-    
-    if (!service) {
-      return res.status(404).json({ error: 'Laundry service not found' });
-    }
-    
-    res.json(service);
-  } catch (error) {
-    console.error('Error fetching laundry service:', error);
-    res.status(500).json({ error: 'Failed to fetch laundry service' });
-  }
-});
-
-// Create new laundry service
-router.post('/', async (req, res) => {
-  try {
-    const {
-      name,
-      category,
-      price,
-      description
-    } = req.body;
-
-    // Validate required fields
-    if (!name || !price) {
-      return res.status(400).json({ error: 'Name and price are required' });
-    }
-
-    const result = await query(`
-      INSERT INTO laundry_services (name, category, price, description)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *
-    `, [name, category, price, description]);
-
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error('Error creating laundry service:', error);
-    res.status(500).json({ error: 'Failed to create laundry service' });
-  }
-});
-
-// Update laundry service
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      name,
-      category,
-      price,
-      description,
-      is_active
-    } = req.body;
-
-    const result = await query(`
-      UPDATE laundry_services SET
-        name = COALESCE($1, name),
-        category = COALESCE($2, category),
-        price = COALESCE($3, price),
-        description = COALESCE($4, description),
-        is_active = COALESCE($5, is_active)
-      WHERE id = $6
-      RETURNING *
-    `, [name, category, price, description, is_active, id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Laundry service not found' });
-    }
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error updating laundry service:', error);
-    res.status(500).json({ error: 'Failed to update laundry service' });
-  }
-});
-
-// Delete laundry service (soft delete)
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const result = await query(`
-      UPDATE laundry_services 
-      SET is_active = false 
-      WHERE id = $1 
-      RETURNING *
-    `, [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Laundry service not found' });
-    }
-    
-    res.json({ message: 'Laundry service deactivated successfully' });
-  } catch (error) {
-    console.error('Error deleting laundry service:', error);
-    res.status(500).json({ error: 'Failed to delete laundry service' });
   }
 });
 
@@ -123,16 +46,252 @@ router.delete('/:id', async (req, res) => {
 router.get('/category/:category', async (req, res) => {
   try {
     const { category } = req.params;
-    const services = await many(`
-      SELECT * FROM laundry_services 
-      WHERE category = $1 AND is_active = true 
-      ORDER BY name
+    const result = await pool.query(`
+      SELECT 
+        id,
+        service_id,
+        name,
+        description,
+        price,
+        laundry_price,
+        dry_clean_price,
+        ironing_price,
+        category,
+        cloth_type,
+        icon,
+        pickup,
+        photo,
+        created_at,
+        updated_at
+      FROM laundry_services 
+      WHERE category = $1
+      ORDER BY cloth_type, name
     `, [category]);
     
-    res.json(services);
+    res.json(result.rows);
   } catch (error) {
     console.error('Error fetching services by category:', error);
     res.status(500).json({ error: 'Failed to fetch services by category' });
+  }
+});
+
+// Get services by cloth type
+router.get('/cloth-type/:clothType', async (req, res) => {
+  try {
+    const { clothType } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        id,
+        service_id,
+        name,
+        description,
+        price,
+        laundry_price,
+        dry_clean_price,
+        ironing_price,
+        category,
+        cloth_type,
+        icon,
+        pickup,
+        photo,
+        created_at,
+        updated_at
+      FROM laundry_services 
+      WHERE cloth_type = $1
+      ORDER BY name
+    `, [clothType]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching services by cloth type:', error);
+    res.status(500).json({ error: 'Failed to fetch services by cloth type' });
+  }
+});
+
+// Get service by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        id,
+        service_id,
+        name,
+        description,
+        price,
+        laundry_price,
+        dry_clean_price,
+        ironing_price,
+        category,
+        cloth_type,
+        icon,
+        pickup,
+        photo,
+        created_at,
+        updated_at
+      FROM laundry_services 
+      WHERE id = $1 OR service_id = $1
+    `, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching service:', error);
+    res.status(500).json({ error: 'Failed to fetch service' });
+  }
+});
+
+// Create new service
+router.post('/', async (req, res) => {
+  try {
+    const {
+      service_id,
+      name,
+      description,
+      price,
+      laundry_price,
+      dry_clean_price,
+      ironing_price,
+      category,
+      cloth_type,
+      icon,
+      pickup,
+      photo
+    } = req.body;
+
+    // Validate required fields
+    if (!service_id || !name || !price || !category || !cloth_type) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const result = await pool.query(`
+      INSERT INTO laundry_services (
+        service_id, name, description, price, laundry_price, dry_clean_price, ironing_price,
+        category, cloth_type, icon, pickup, photo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `, [
+      service_id, name, description, price || 0,
+      laundry_price || price || 0, dry_clean_price || (price * 1.5) || 0, ironing_price || (price * 0.6) || 0,
+      category, cloth_type, icon || 'fas fa-tshirt', pickup !== false, photo || ''
+    ]);
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    if (error.code === '23505') { // Unique violation
+      return res.status(400).json({ error: 'Service ID already exists' });
+    }
+    console.error('Error creating service:', error);
+    res.status(500).json({ error: 'Failed to create service' });
+  }
+});
+
+// Update service
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      description,
+      price,
+      laundry_price,
+      dry_clean_price,
+      ironing_price,
+      category,
+      cloth_type,
+      icon,
+      pickup,
+      photo
+    } = req.body;
+
+    const result = await pool.query(`
+      UPDATE laundry_services 
+      SET 
+        name = COALESCE($2, name),
+        description = COALESCE($3, description),
+        price = COALESCE($4, price),
+        laundry_price = COALESCE($5, laundry_price),
+        dry_clean_price = COALESCE($6, dry_clean_price),
+        ironing_price = COALESCE($7, ironing_price),
+        category = COALESCE($8, category),
+        cloth_type = COALESCE($9, cloth_type),
+        icon = COALESCE($10, icon),
+        pickup = COALESCE($11, pickup),
+        photo = COALESCE($12, photo),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 OR service_id = $1
+      RETURNING *
+    `, [id, name, description, price, laundry_price, dry_clean_price, ironing_price, category, cloth_type, icon, pickup, photo]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating service:', error);
+    res.status(500).json({ error: 'Failed to update service' });
+  }
+});
+
+// Delete service
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      DELETE FROM laundry_services 
+      WHERE id = $1 OR service_id = $1
+      RETURNING *
+    `, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    res.json({ message: 'Service deleted successfully', service: result.rows[0] });
+  } catch (error) {
+    console.error('Error deleting service:', error);
+    res.status(500).json({ error: 'Failed to delete service' });
+  }
+});
+
+// Search services
+router.get('/search/:query', async (req, res) => {
+  try {
+    const { query } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        id,
+        service_id,
+        name,
+        description,
+        price,
+        laundry_price,
+        dry_clean_price,
+        ironing_price,
+        category,
+        cloth_type,
+        icon,
+        pickup,
+        photo,
+        created_at,
+        updated_at
+      FROM laundry_services 
+      WHERE 
+        name ILIKE $1 OR 
+        description ILIKE $1 OR 
+        cloth_type ILIKE $1 OR 
+        category ILIKE $1
+      ORDER BY category, cloth_type, name
+    `, [`%${query}%`]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error searching services:', error);
+    res.status(500).json({ error: 'Failed to search services' });
   }
 });
 

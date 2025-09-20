@@ -24,16 +24,16 @@ declare var Chart: any;
     >
       <div class="laundry-container">
 
-        <!-- Navigation Tabs -->
-        <div class="tab-navigation">
-          <button 
-            class="tab-btn" 
-            [class.active]="activeTab === 'dashboard'"
-            (click)="setActiveTab('dashboard')"
-          >
-            <i class="fas fa-tachometer-alt"></i>
-            Dashboard
-          </button>
+      <!-- Navigation Tabs -->
+      <div class="tab-navigation">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'dashboard'"
+          (click)="setActiveTab('dashboard')"
+        >
+          <i class="fas fa-tachometer-alt"></i>
+          Dashboard
+        </button>
           <button 
             class="tab-btn" 
             [class.active]="activeTab === 'board'"
@@ -64,7 +64,7 @@ declare var Chart: any;
           (click)="setActiveTab('billing')"
         >
           <i class="fas fa-receipt"></i>
-          Billing
+          Billed
         </button>
       </div>
 
@@ -350,7 +350,7 @@ declare var Chart: any;
         <div class="laundry-board-container">
           <div class="board-header">
             <h2><i class="fas fa-columns"></i> Laundry Board</h2>
-            <div class="header-actions">
+          <div class="header-actions">
               <input 
                 type="text" 
                 [(ngModel)]="searchTerm" 
@@ -362,15 +362,15 @@ declare var Chart: any;
                 <option value="">All Statuses</option>
                 <option *ngFor="let status of allStatuses" [value]="status">{{ status }}</option>
               </select>
-              <button class="btn primary" (click)="openCustomerModal()">
+            <button class="btn primary" (click)="openCustomerModal()">
                 <i class="fas fa-plus"></i>
                 Add New Customer
-              </button>
-            </div>
+            </button>
           </div>
+        </div>
 
           <div class="kanban-board-container">
-            <div class="kanban-board">
+        <div class="kanban-board">
             <div *ngFor="let statusCol of statuses" class="kanban-column" 
                  [id]="statusCol.id"
                  [class.drag-over]="draggedOverColumn === statusCol.id"
@@ -385,32 +385,32 @@ declare var Chart: any;
                 <div *ngFor="let order of getOrdersByStatus(statusCol.id)" class="kanban-card"
                      [class.delayed]="isDelayed(order)"
                      [class.dragging]="draggedOrder?.id === order.id"
-                     draggable="true"
-                     (dragstart)="onDragStart($event, order)"
+                   draggable="true"
+                   (dragstart)="onDragStart($event, order)"
                      (dragend)="onDragEnd($event)"
-                     (click)="viewOrderDetails(order)">
-                  <div class="card-header">
+                   (click)="viewOrderDetails(order)">
+                <div class="card-header">
                     <h4>{{ order.name }}</h4>
                     <div class="card-actions">
                       <button class="action-btn" (click)="viewOrderDetails(order); $event.stopPropagation()"><i class="fas fa-eye"></i></button>
                       <button class="action-btn" (click)="editOrder(order); $event.stopPropagation()"><i class="fas fa-edit"></i></button>
                       <button class="action-btn" (click)="viewOrderDetails(order); $event.stopPropagation()"><i class="fas fa-file-invoice"></i></button>
-                    </div>
                   </div>
+                </div>
                   <p><strong>Phone:</strong> {{ order.phone }}</p>
                   <p><strong>Items:</strong> {{ order.items || 'N/A' }}</p>
                   <p><strong>Order Date:</strong> {{ order.createdDate | date:'shortDate' }}</p>
                   <p><strong>Amount:</strong> ₹{{ order.totalAmount || 0 }}</p>
                   <div class="drag-indicator">
                     <i class="fas fa-grip-vertical"></i>
-                  </div>
+                </div>
                 </div>
                 <div *ngIf="!getOrdersByStatus(statusCol.id)?.length" class="no-orders-message">
                   Drop orders here or add new ones.
                 </div>
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
@@ -529,88 +529,90 @@ declare var Chart: any;
                   <option value="Women">Women</option>
                   <option value="Kids">Kids</option>
                   <option value="Home">Home</option>
-                </select>
-              </div>
-
+                    </select>
+                </div>
+                
               <!-- Services Grid -->
-              <div class="services-grid">
+                <div class="services-grid">
                 <div *ngFor="let service of filteredServices" class="service-card" (click)="addServiceToCart(service)">
-                  <div class="service-image">
-                    <img [src]="service.photo" [alt]="service.name" onerror="this.src='https://via.placeholder.com/80x80/6c757d/ffffff?text=SERVICE'">
-                  </div>
-                  <div class="service-info">
-                    <h5>{{ service.name }}</h5>
+                    <div class="service-image">
+                    <div class="service-photo" [style.background-color]="getServiceColor(service.category, service.clothType)">
+                      <span class="service-emoji">{{ getServiceEmoji(service.clothType) }}</span>
+                    </div>
+                    </div>
+                    <div class="service-info">
+                      <h5>{{ service.name }}</h5>
                     <p class="service-category">{{ service.category }} - {{ service.clothType }}</p>
-                    <div class="service-prices">
+                      <div class="service-prices">
                       <span class="price-label">Wash & Iron:</span>
                       <span class="price">₹{{ service.laundryPrice }}</span>
                       <span class="price-label">Dry Clean:</span>
                       <span class="price">₹{{ service.dryCleanPrice }}</span>
+                      </div>
                     </div>
-                  </div>
                   <button class="add-to-cart-btn">
                     <i class="fas fa-plus"></i>
                   </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
             <!-- Right Part: Customer Details & Cart -->
             <div class="customer-section">
               <div class="customer-details">
-                <h4><i class="fas fa-user"></i> Customer Details</h4>
+                    <h4><i class="fas fa-user"></i> Customer Details</h4>
                 <form [formGroup]="customerForm" (ngSubmit)="submitCustomer()">
-                  <div class="form-group">
-                    <label for="customerName">Full Name *</label>
-                    <input 
-                      type="text" 
-                      id="customerName" 
-                      formControlName="name"
-                      placeholder="Enter full name"
-                      required
-                    >
-                  </div>
-                  <div class="form-group">
-                    <label for="customerPhone">Phone Number *</label>
-                    <input 
-                      type="tel" 
-                      id="customerPhone" 
-                      formControlName="phone"
-                      placeholder="Enter phone number"
-                      required
-                    >
-                  </div>
-                  <div class="form-group">
-                    <label for="customerEmail">Email Address</label>
-                    <input 
-                      type="email" 
-                      id="customerEmail" 
-                      formControlName="email"
-                      placeholder="Enter email address"
-                    >
-                  </div>
-                  <div class="form-group">
-                    <label for="customerAddress">Address</label>
-                    <textarea 
-                      id="customerAddress" 
-                      formControlName="address"
-                      placeholder="Enter full address"
-                      rows="3"
-                    ></textarea>
-                  </div>
-                  <div class="form-group">
-                    <label for="customerStatus">Order Status</label>
+              <div class="form-group">
+                      <label for="customerName">Full Name *</label>
+                <input 
+                  type="text" 
+                  id="customerName" 
+                  formControlName="name"
+                  placeholder="Enter full name"
+                  required
+                >
+              </div>
+              <div class="form-group">
+                      <label for="customerPhone">Phone Number *</label>
+                <input 
+                  type="tel" 
+                  id="customerPhone" 
+                  formControlName="phone"
+                  placeholder="Enter phone number"
+                  required
+                >
+              </div>
+              <div class="form-group">
+                <label for="customerEmail">Email Address</label>
+                <input 
+                  type="email" 
+                  id="customerEmail" 
+                  formControlName="email"
+                  placeholder="Enter email address"
+                >
+              </div>
+              <div class="form-group">
+                <label for="customerAddress">Address</label>
+                <textarea 
+                  id="customerAddress" 
+                  formControlName="address"
+                  placeholder="Enter full address"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                    <label for="customerStatus">Status</label>
                     <select id="customerStatus" formControlName="status">
                       <option value="received">Received</option>
-                      <option value="inProcess">In Process</option>
-                      <option value="readyForDelivery">Ready for Delivery</option>
+                      <option value="inProcess">In process</option>
+                      <option value="readyForDelivery">Ready For Delivery</option>
                       <option value="delivered">Delivered</option>
                       <option value="billed">Billed</option>
                     </select>
-                  </div>
+                </div>
                 </form>
               </div>
-
+                    
               <!-- Selected Items Cart -->
               <div class="cart-section">
                 <h4><i class="fas fa-shopping-cart"></i> Selected Items ({{ selectedItems.length }})</h4>
@@ -719,7 +721,9 @@ declare var Chart: any;
               <div class="services-grid">
                 <div *ngFor="let service of filteredServices" class="service-card" (click)="addServiceToCart(service)">
                   <div class="service-image">
-                    <img [src]="service.photo" [alt]="service.name" onerror="this.src='https://via.placeholder.com/80x80/6c757d/ffffff?text=SERVICE'">
+                    <div class="service-photo" [style.background-color]="getServiceColor(service.category, service.clothType)">
+                      <span class="service-emoji">{{ getServiceEmoji(service.clothType) }}</span>
+                    </div>
                   </div>
                   <div class="service-info">
                     <h5>{{ service.name }}</h5>
@@ -781,18 +785,18 @@ declare var Chart: any;
                       rows="3"
                     ></textarea>
                   </div>
-                  <div class="form-group">
-                    <label for="customerStatus">Order Status</label>
-                    <select id="customerStatus" formControlName="status">
-                      <option value="received">Received</option>
-                      <option value="inProcess">In Process</option>
-                      <option value="readyForDelivery">Ready for Delivery</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="billed">Billed</option>
-                    </select>
-                  </div>
-                </form>
+              <div class="form-group">
+                <label for="customerStatus">Status</label>
+                <select id="customerStatus" formControlName="status">
+                        <option value="received">Received</option>
+                      <option value="inProcess">In process</option>
+                      <option value="readyForDelivery">Ready For Delivery</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="billed">Billed</option>
+                </select>
               </div>
+                </form>
+                  </div>
 
               <!-- Selected Items Cart -->
               <div class="cart-section">
@@ -803,7 +807,7 @@ declare var Chart: any;
                     <div class="item-info">
                       <h6>{{ item.service.name }}</h6>
                       <p>{{ item.service.category }} - {{ item.service.clothType }}</p>
-                      <div class="item-details">
+                        <div class="item-details">
                         <select [(ngModel)]="item.serviceType" (change)="updateItemPrice(item)">
                           <option value="laundry">Wash & Iron (₹{{ item.service.laundryPrice }})</option>
                           <option value="dryClean">Dry Clean (₹{{ item.service.dryCleanPrice }})</option>
@@ -821,11 +825,11 @@ declare var Chart: any;
                       </div>
                     </div>
                     <button class="remove-item-btn" (click)="removeFromCart(i)">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </div>
-
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                    
                 <ng-template #emptyCart>
                   <div class="empty-cart">
                     <i class="fas fa-shopping-cart"></i>
@@ -847,8 +851,8 @@ declare var Chart: any;
                     <span>Grand Total:</span>
                     <span>₹{{ (totalAmount * 1.05).toFixed(2) }}</span>
                   </div>
-                </div>
-              </div>
+                    </div>
+                  </div>
 
               <div class="form-actions">
                 <button type="button" class="btn secondary" (click)="closeCustomerDetailsModal()">
@@ -1205,27 +1209,29 @@ declare var Chart: any;
   styles: [`
     .laundry-container {
       padding: 0;
-      width: 100vw;
-      max-width: none;
+      width: 100%;
+      max-width: 100%;
       margin: 0;
       height: 100vh;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
+      box-sizing: border-box;
     }
 
     /* Override main layout page-content padding */
     :host ::ng-deep .page-content {
       padding: 0 !important;
       margin: 0 !important;
-      width: 100vw !important;
+      width: 100% !important;
       height: 100vh !important;
-      max-width: none !important;
+      max-width: 100% !important;
     }
     
     /* Override main layout container */
     :host ::ng-deep .main-container {
-      width: 100vw !important;
+      width: 100% !important;
       height: 100vh !important;
-      max-width: none !important;
+      max-width: 100% !important;
       padding: 0 !important;
       margin: 0 !important;
     }
@@ -1378,10 +1384,13 @@ declare var Chart: any;
       border-radius: 12px;
       padding: 5px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      overflow-x: auto;
+      min-width: 0;
     }
 
     .tab-btn {
       flex: 1;
+      min-width: 140px;
       padding: 15px 20px;
       border: none;
       background: transparent;
@@ -1395,6 +1404,8 @@ declare var Chart: any;
       font-weight: 600;
       color: #6b7280;
       font-size: 14px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .tab-btn:hover {
@@ -1411,6 +1422,25 @@ declare var Chart: any;
 
     .tab-btn i {
       font-size: 16px;
+    }
+
+    /* Custom scrollbar for tab navigation */
+    .tab-navigation::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .tab-navigation::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+
+    .tab-navigation::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+
+    .tab-navigation::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
     }
 
         /* Header Layout */
@@ -1472,7 +1502,8 @@ declare var Chart: any;
       animation: fadeIn 0.3s ease;
       height: calc(100vh - 80px);
       overflow-y: auto;
-      padding: 20px;
+      padding: 10px 15px 20px 15px;
+      box-sizing: border-box;
     }
 
     @keyframes fadeIn {
@@ -2646,13 +2677,13 @@ declare var Chart: any;
     @media (max-width: 768px) {
       .laundry-container {
         padding: 0;
-        width: 100vw;
+        width: 100%;
         height: 100vh;
       }
       
       .tab-content {
         height: calc(100vh - 70px);
-        padding: 10px;
+        padding: 5px 10px 10px 10px;
       }
 
 
@@ -2696,22 +2727,24 @@ declare var Chart: any;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 8px;
       flex-shrink: 0;
       background-color: #f8f9fa;
-      padding: 15px;
+      padding: 8px 12px;
       border-radius: 8px;
       border: 1px solid #e9ecef;
       width: 100%;
       max-width: none;
       overflow: visible;
+      gap: 20px;
     }
 
     .board-header h2 {
       color: #333;
-      font-size: 24px;
+        font-size: 20px;
       display: flex;
       align-items: center;
+      margin: 0;
     }
 
     .board-header h2 i {
@@ -2721,11 +2754,11 @@ declare var Chart: any;
 
     .header-actions {
       display: flex;
-      gap: 12px;
+      gap: 8px;
       align-items: center;
       flex-wrap: nowrap;
       background-color: white;
-      padding: 10px;
+      padding: 6px;
       border-radius: 6px;
       border: 1px solid #dee2e6;
       width: 100%;
@@ -2736,8 +2769,8 @@ declare var Chart: any;
 
     .header-actions .btn {
       white-space: nowrap;
-      min-height: 40px;
-      padding: 10px 16px;
+      min-height: 36px;
+      padding: 8px 14px;
       font-weight: 500;
       border: none;
       border-radius: 6px;
@@ -2747,7 +2780,7 @@ declare var Chart: any;
     }
 
     .search-input, .filter-select {
-      padding: 8px 12px;
+      padding: 6px 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
       font-size: 14px;
@@ -2791,8 +2824,8 @@ declare var Chart: any;
 
     .kanban-board {
       display: flex;
-      gap: 20px;
-      padding: 20px;
+        gap: 20px;
+        padding: 20px;
       min-width: max-content;
     }
 
@@ -2807,11 +2840,11 @@ declare var Chart: any;
     }
 
     .column-header {
-      padding: 15px;
+      padding: 6px 12px;
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
       color: white;
-      font-size: 18px;
+      font-size: 14px;
       font-weight: bold;
       flex-shrink: 0;
     }
@@ -2853,9 +2886,9 @@ declare var Chart: any;
       top: 8px;
       right: 8px;
       color: #ccc;
-      font-size: 12px;
-    }
-
+        font-size: 12px;
+      }
+      
     .kanban-card:hover .drag-indicator {
       color: #666;
     }
@@ -2887,7 +2920,7 @@ declare var Chart: any;
       border: none;
       color: #007bff;
       cursor: pointer;
-      font-size: 14px;
+        font-size: 14px;
       margin-left: 8px;
     }
 
@@ -2904,7 +2937,7 @@ declare var Chart: any;
     .no-orders-message {
       text-align: center;
       color: #777;
-      padding: 20px;
+        padding: 20px;
       font-style: italic;
     }
 
@@ -3019,6 +3052,35 @@ declare var Chart: any;
       height: 100px;
       object-fit: cover;
       border-radius: 8px;
+    }
+
+    /* Customer create modal service images */
+    .customer-modal-large .service-image .service-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin: 0 auto;
+    }
+
+    .customer-modal-large .service-image .service-emoji {
+      font-size: 28px;
+      transition: transform 0.3s ease;
+    }
+
+    .customer-modal-large .service-card:hover .service-photo {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .customer-modal-large .service-card:hover .service-emoji {
+      transform: scale(1.1);
     }
 
     .service-info h5 {
@@ -3999,18 +4061,12 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   }
 
   filterServices() {
-    // console.log('filterServices called - using simple approach');
-    
-    // Simple approach: just show all services for now
     if (!this.services || this.services.length === 0) {
-      // console.log('Services array is empty');
       this.filteredServices = [];
       return;
     }
     
-    // Just copy all services for now to stop the continuous calling
     this.filteredServices = [...this.services];
-    // console.log('Showing all services:', this.filteredServices.length);
   }
 
   // Debounced version for search input
@@ -4186,9 +4242,8 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   }
 
   logout() {
-    // Implement logout logic
-    console.log('Logout clicked');
-    // You can navigate to login page or clear auth data
+    sessionStorage.clear();
+    this.router.navigate(['/login']);
   }
 
   openNewOrderModal() {
@@ -4233,11 +4288,11 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
         if (response.ok) {
           this.toastService.success('Order created successfully!');
-          this.closeNewOrderModal();
+      this.closeNewOrderModal();
           this.newOrderForm.reset();
           await this.loadCustomers(); // Reload customers to show the new order
           this.filteredCustomers = [...this.customers];
-        } else {
+    } else {
           const error = await response.json();
           this.toastService.error(error.error || 'Failed to create order');
         }
@@ -4339,29 +4394,29 @@ export class LaundryComponent implements OnInit, AfterViewInit {
               service_type: this.selectedItems.map(item => item.serviceType).join(', '),
               total_amount: this.totalAmount * 1.05 // Include tax
             }),
-            credentials: 'include'
-          });
+          credentials: 'include'
+        });
 
-          if (response.ok) {
+        if (response.ok) {
             this.toastService.success('Customer updated successfully!');
             this.closeCustomerDetailsModal();
             await this.loadCustomers();
             this.filteredCustomers = [...this.customers];
-          } else {
+        } else {
             const error = await response.json();
             this.toastService.error(error.error || 'Failed to update customer');
           }
-        } else {
+      } else {
           // Add new customer with items
           const itemsDescription = this.selectedItems.map(item => 
             `${item.quantity}x ${item.service.name} (${item.serviceType})`
           ).join(', ');
           
           const response = await fetch(`${environment.apiUrl}/laundry-customers`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
             body: JSON.stringify({
               name: customerData.name,
               phone: customerData.phone,
@@ -4374,28 +4429,28 @@ export class LaundryComponent implements OnInit, AfterViewInit {
               total_amount: this.totalAmount * 1.05 // Include tax
             }),
             credentials: 'include'
-          });
+      });
 
-          if (response.ok) {
+      if (response.ok) {
             this.toastService.success('Customer created successfully!');
             this.closeCustomerModal();
             this.customerForm.reset();
             await this.loadCustomers();
             this.filteredCustomers = [...this.customers];
-          } else {
+      } else {
             const error = await response.json();
             this.toastService.error(error.error || 'Failed to create customer');
           }
-        }
-      } catch (error) {
+      }
+    } catch (error) {
         console.error('Error saving customer:', error);
         this.toastService.error('Error saving customer');
       }
-    } else {
+      } else {
       console.log('Form is not valid, showing error');
       this.toastService.error('Please fill in all required fields (Name and Phone are required)');
+      }
     }
-  }
 
   viewCustomer(customerId: string) {
     console.log('View customer:', customerId);
@@ -4909,35 +4964,35 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       const response = await fetch(`${environment.apiUrl}/laundry-services`, {
         credentials: 'include'
       });
+      
       if (response.ok) {
         const apiServices = await response.json();
-        // Merge API services with existing hardcoded services
-        const existingServiceNames = this.services.map(s => s.name.toLowerCase());
-        apiServices.forEach((apiService: any) => {
-          if (!existingServiceNames.includes(apiService.name.toLowerCase())) {
-            this.services.push({
-              id: apiService.id,
-              name: apiService.name,
-              description: apiService.description || '',
-              price: parseFloat(apiService.price) || 0,
-              laundryPrice: parseFloat(apiService.price) || 0,
-              dryCleanPrice: Math.round((parseFloat(apiService.price) || 0) * 1.5),
-              ironingPrice: Math.round((parseFloat(apiService.price) || 0) * 0.6),
-              category: apiService.category || 'General',
-              icon: this.getServiceIcon(apiService.category || 'General'),
-              clothType: 'General',
-              pickup: false,
-              photo: 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=SERVICE'
-            });
-          }
-        });
-        this.servicesLoaded = true; // Mark as loaded
-        // console.log('Loaded services from API:', apiServices.length);
+        
+        // Replace hardcoded services with API services
+        this.services = apiServices.map((apiService: any) => ({
+          id: apiService.service_id,
+          name: apiService.name,
+          description: apiService.description || '',
+          price: parseFloat(apiService.price) || 0,
+          laundryPrice: parseFloat(apiService.laundry_price) || 0,
+          dryCleanPrice: parseFloat(apiService.dry_clean_price) || 0,
+          ironingPrice: parseFloat(apiService.ironing_price) || 0,
+          category: apiService.category || 'General',
+          icon: apiService.icon || 'fas fa-tshirt',
+          clothType: apiService.cloth_type || 'General',
+          pickup: apiService.pickup !== false,
+          photo: apiService.photo || 'https://via.placeholder.com/80x80/4CAF50/ffffff?text=SERVICE'
+        }));
+        
+        this.servicesLoaded = true;
+        console.log('Loaded services from API:', this.services.length);
       } else {
-        console.error('Failed to load services:', response.statusText);
+        console.error('Failed to load services from API, using hardcoded services');
+        this.servicesLoaded = true;
       }
     } catch (error) {
-      console.error('Error loading services:', error);
+      console.error('Error loading services from API, using hardcoded services:', error);
+      this.servicesLoaded = true;
     }
   }
 
@@ -4982,7 +5037,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       url = 'https://via.placeholder.com/80x80/607D8B/ffffff?text=SUIT';
     } else if (name.includes('curtain') || name.includes('carpet')) {
       url = 'https://via.placeholder.com/80x80/795548/ffffff?text=HOME';
-    } else {
+        } else {
       // Default based on category
       switch (cat) {
         case 'basic': 
@@ -5010,12 +5065,31 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
   // Board-related methods
   getOrdersByStatus(status: string): any[] {
-    return this.customers.filter(customer => customer.status === status);
+    // First apply search and filter to customers, then filter by status
+    const filteredCustomers = this.getFilteredCustomers();
+    return filteredCustomers.filter(customer => customer.status === status);
+  }
+
+  getFilteredCustomers(): any[] {
+    return this.customers.filter(customer => {
+      // Apply search term filter
+      const matchesSearch = !this.searchTerm || 
+        customer.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        customer.phone.includes(this.searchTerm) ||
+        (customer.email && customer.email.toLowerCase().includes(this.searchTerm.toLowerCase()));
+      
+      // Apply status filter
+      const matchesStatus = !this.filterStatus || customer.status === this.filterStatus;
+      
+      return matchesSearch && matchesStatus;
+    });
   }
 
   filterOrders() {
-    // This method can be used for filtering if needed
-    // For now, we'll use the existing customers array
+    // This method is called when search or filter changes
+    // The filtering logic is handled in getOrdersByStatus and getFilteredCustomers
+    // Force change detection to update the kanban board
+    // No additional logic needed as the template will automatically call getOrdersByStatus
   }
 
   isDelayed(order: any): boolean {
@@ -5349,7 +5423,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             this.selectedCustomerForDetails.status = statusObj.id;
             await this.loadCustomers();
             this.filteredCustomers = [...this.customers];
-          } else {
+    } else {
             const error = await response.json();
             this.toastService.error(error.error || 'Failed to update order status');
           }

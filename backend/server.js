@@ -18,7 +18,9 @@ const reportsRoutes = require('./routes/reports');    // ensure Postgres
 const policiesRoutes = require('./routes/policies');  // ensure Postgres
 const dashboardRoutes = require('./routes/dashboard'); // new dashboard routes
 const laundryCustomerRoutes = require('./routes/laundry-customers'); // new laundry routes
-const laundryServiceRoutes = require('./routes/laundry-services'); // new laundry service routes
+const laundryServiceRoutes = require('./routes/laundry-services');
+const whatsappConfigRoutes = require('./routes/whatsapp-config'); // new laundry service routes
+const whatsappNotificationRoutes = require('./routes/whatsapp-notifications'); // new WhatsApp notification routes
 
 const app = express();
 const port = config.server.port;
@@ -40,6 +42,9 @@ app.use(session(config.session));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Static file serving for uploads
+app.use('/uploads', express.static('uploads'));
+
 // Mount routes
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
@@ -50,6 +55,8 @@ app.use('/policies', policiesRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/laundry-customers', laundryCustomerRoutes);
 app.use('/laundry-services', laundryServiceRoutes);
+app.use('/whatsapp', whatsappConfigRoutes);
+app.use('/whatsapp-notifications', whatsappNotificationRoutes);
 
 // Bootstrap users table + seed admin (Postgres)
 (async () => {

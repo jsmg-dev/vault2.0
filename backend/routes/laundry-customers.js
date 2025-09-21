@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { query, one, many } = require('../db');
+const whatsappNotificationService = require('../services/whatsappNotificationService');
 
 // Get all laundry customers
 router.get('/', async (req, res) => {
@@ -45,6 +46,7 @@ router.post('/', async (req, res) => {
       status = 'received',
       expected_delivery_date,
       items,
+      items_json,
       service_type,
       total_amount,
       special_instructions
@@ -61,13 +63,13 @@ router.post('/', async (req, res) => {
     const result = await query(`
       INSERT INTO laundry_customers (
         name, phone, alt_phone, address, email, status, 
-        expected_delivery_date, items, service_type, 
+        expected_delivery_date, items, items_json, service_type, 
         total_amount, paid_amount, balance_amount, special_instructions
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `, [
       name, phone, alt_phone, address, email, status,
-      expected_delivery_date, items, service_type,
+      expected_delivery_date, items, items_json, service_type,
       total_amount, req.body.paid_amount || 0, balance_amount, special_instructions
     ]);
 
@@ -92,11 +94,13 @@ router.put('/:id', async (req, res) => {
       expected_delivery_date,
       delivery_date,
       items,
+      items_json,
       service_type,
       total_amount,
       paid_amount,
       special_instructions
     } = req.body;
+    
 
     // Calculate balance amount
     const balance_amount = total_amount ? total_amount - (paid_amount || 0) : 0;
@@ -112,17 +116,18 @@ router.put('/:id', async (req, res) => {
         expected_delivery_date = COALESCE($7, expected_delivery_date),
         delivery_date = COALESCE($8, delivery_date),
         items = COALESCE($9, items),
-        service_type = COALESCE($10, service_type),
-        total_amount = COALESCE($11, total_amount),
-        paid_amount = COALESCE($12, paid_amount),
-        balance_amount = COALESCE($13, balance_amount),
-        special_instructions = COALESCE($14, special_instructions),
+        items_json = COALESCE($10, items_json),
+        service_type = COALESCE($11, service_type),
+        total_amount = COALESCE($12, total_amount),
+        paid_amount = COALESCE($13, paid_amount),
+        balance_amount = COALESCE($14, balance_amount),
+        special_instructions = COALESCE($15, special_instructions),
         updated_at = NOW()
-      WHERE id = $15
+      WHERE id = $16
       RETURNING *
     `, [
       name, phone, alt_phone, address, email, status,
-      expected_delivery_date, delivery_date, items, service_type,
+      expected_delivery_date, delivery_date, items, items_json, service_type,
       total_amount, paid_amount, balance_amount, special_instructions, id
     ]);
 
@@ -141,10 +146,16 @@ router.put('/:id', async (req, res) => {
 router.put('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, oldStatus } = req.body;
 
     if (!status) {
       return res.status(400).json({ error: 'Status is required' });
+    }
+
+    // Get current customer data before updating
+    const currentCustomer = await one('SELECT * FROM laundry_customers WHERE id = $1', [id]);
+    if (!currentCustomer) {
+      return res.status(404).json({ error: 'Laundry customer not found' });
     }
 
     const result = await query(`
@@ -158,7 +169,23 @@ router.put('/:id/status', async (req, res) => {
       return res.status(404).json({ error: 'Laundry customer not found' });
     }
 
-    res.json(result.rows[0]);
+    const updatedCustomer = result.rows[0];
+
+    // Send WhatsApp notification if status changed
+    if (status !== oldStatus && status !== currentCustomer.status) {
+      try {
+        await whatsappNotificationService.sendStatusChangeNotification(
+          updatedCustomer,
+          currentCustomer.status,
+          status
+        );
+        console.log(`WhatsApp notification sent for customer ${updatedCustomer.name}`);
+      } catch (notificationError) {
+        console.error('Failed to send WhatsApp notification:', notificationError);
+      }
+    }
+
+    res.json(updatedCustomer);
   } catch (error) {
     console.error('Error updating laundry customer status:', error);
     res.status(500).json({ error: 'Failed to update laundry customer status' });

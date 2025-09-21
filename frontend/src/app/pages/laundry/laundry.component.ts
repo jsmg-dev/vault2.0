@@ -64,7 +64,15 @@ declare var Chart: any;
           (click)="setActiveTab('billing')"
         >
           <i class="fas fa-receipt"></i>
-          Billed
+          Billing
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'whatsapp'"
+          (click)="setActiveTab('whatsapp')"
+        >
+          <i class="fas fa-cog"></i>
+          Settings
         </button>
       </div>
 
@@ -379,7 +387,7 @@ declare var Chart: any;
                  (dragleave)="onDragLeave($event)"
                  (drop)="onDrop($event, statusCol.id)">
               <div class="column-header" [style.background-color]="statusCol.color">
-                <h3>{{ statusCol.name }} ({{ getOrdersByStatus(statusCol.id)?.length || 0 }})</h3>
+                <h3>{{ statusCol.name }} ({{ getOrdersByStatus(statusCol.id).length || 0 }})</h3>
               </div>
               <div class="column-content">
                 <div *ngFor="let order of getOrdersByStatus(statusCol.id)" class="kanban-card"
@@ -411,6 +419,18 @@ declare var Chart: any;
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div class="tab-content" *ngIf="activeTab === 'whatsapp'">
+        <div class="whatsapp-config-placeholder">
+          <h2><i class="fas fa-cog"></i> Settings</h2>
+          <p>System settings and configuration options will be available here.</p>
+          <div class="config-section">
+            <h3>General Settings</h3>
+            <p>Configure system preferences and notification settings.</p>
           </div>
         </div>
       </div>
@@ -1386,6 +1406,7 @@ declare var Chart: any;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       overflow-x: auto;
       min-width: 0;
+      width: 100%;
     }
 
     .tab-btn {
@@ -3537,6 +3558,50 @@ declare var Chart: any;
         gap: 5px;
       }
     }
+
+    /* WhatsApp Configuration Placeholder */
+    .whatsapp-config-placeholder {
+      padding: 40px;
+      text-align: center;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .whatsapp-config-placeholder h2 {
+      color: #25D366;
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+
+    .whatsapp-config-placeholder h2 i {
+      margin-right: 10px;
+    }
+
+    .whatsapp-config-placeholder p {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+
+    .config-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    .config-section h3 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .config-section p {
+      color: #666;
+      margin: 0;
+      font-size: 14px;
+    }
+
   `]
 })
 export class LaundryComponent implements OnInit, AfterViewInit {
@@ -3605,8 +3670,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     { id: 'inProcess', name: 'In Process', color: '#ffc107' },
     { id: 'readyForDelivery', name: 'Ready for Delivery', color: '#17a2b8' },
     { id: 'delivered', name: 'Delivered', color: '#28a745' },
-    { id: 'cancelled', name: 'Cancelled', color: '#dc3545' },
-    { id: 'billed', name: 'Billed', color: '#007bff' }
+    { id: 'cancelled', name: 'Cancelled', color: '#dc3545' }
   ];
   allStatuses = this.statuses.map(s => s.id);
 
@@ -4092,6 +4156,20 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     return price;
   }
 
+  getServicePriceByType(service: any, serviceType: string): number {
+    let price = service.price; // Default price
+    
+    if (serviceType === 'laundry') {
+      price = service.laundryPrice || service.price;
+    } else if (serviceType === 'dry-clean') {
+      price = service.dryCleanPrice || service.price;
+    } else if (serviceType === 'ironing') {
+      price = service.ironingPrice || service.price;
+    }
+    
+    return price;
+  }
+
   // Update the price for a specific service type and cloth
   updateServicePrice(service: any, newPrice: number) {
     // console.log('Updating price for', service.name, 'to', newPrice, 'for service type:', this.selectedServiceType);
@@ -4378,6 +4456,17 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             `${item.quantity}x ${item.service.name} (${item.serviceType})`
           ).join(', ');
           
+          // Prepare items_json for structured storage
+          const itemsJson = this.selectedItems.map(item => ({
+            serviceId: item.service.id,
+            serviceName: item.service.name,
+            quantity: item.quantity,
+            serviceType: item.serviceType,
+            price: item.price,
+            totalPrice: item.quantity * item.price
+          }));
+          
+          
           const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`, {
             method: 'PUT',
             headers: {
@@ -4391,6 +4480,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
               address: customerData.address,
               status: customerData.status || 'received',
               items: itemsDescription,
+              items_json: itemsJson,
               service_type: this.selectedItems.map(item => item.serviceType).join(', '),
               total_amount: this.totalAmount * 1.05 // Include tax
             }),
@@ -4412,6 +4502,16 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             `${item.quantity}x ${item.service.name} (${item.serviceType})`
           ).join(', ');
           
+          // Prepare items_json for structured storage
+          const itemsJson = this.selectedItems.map(item => ({
+            serviceId: item.service.id,
+            serviceName: item.service.name,
+            quantity: item.quantity,
+            serviceType: item.serviceType,
+            price: item.price,
+            totalPrice: item.quantity * item.price
+          }));
+          
           const response = await fetch(`${environment.apiUrl}/laundry-customers`, {
         method: 'POST',
         headers: {
@@ -4425,6 +4525,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
               address: customerData.address,
               status: customerData.status || 'received',
               items: itemsDescription,
+              items_json: itemsJson,
               service_type: this.selectedItems.map(item => item.serviceType).join(', '),
               total_amount: this.totalAmount * 1.05 // Include tax
             }),
@@ -4929,6 +5030,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
           expectedDeliveryDate: c.expected_delivery_date,
           deliveryDate: c.delivery_date,
           items: c.items || '',
+          items_json: c.items_json || null,
           serviceType: c.service_type || '',
           totalAmount: c.total_amount || 0,
           paidAmount: c.paid_amount || 0,
@@ -4941,6 +5043,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         // Update filtered customers to show API data
         this.filteredCustomers = [...this.customers];
         console.log('Loaded customers from API:', this.customers.length);
+        if (this.customers.length > 0) {
+          console.log('Sample customer:', this.customers[0]);
+          console.log('Sample customer items_json:', this.customers[0].items_json);
+        }
       } else {
         console.error('Failed to load customers:', response.statusText);
         this.toastService.error('Failed to load customers');
@@ -5123,8 +5229,8 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.customerForm.markAsTouched();
     this.customerForm.updateValueAndValidity();
     
-    // Clear cart initially - user can add items if needed
-    this.clearCart();
+    // Populate the cart with existing items if any
+    this.populateCartFromCustomerDetails();
     
     // Reset search and filter terms for services
     this.serviceSearchTerm = '';
@@ -5277,14 +5383,17 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.draggedOrder.status = targetColumnId;
 
     try {
-      const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.draggedOrder.id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: targetColumnId }),
-        credentials: 'include'
-      });
+          const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.draggedOrder.id}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              status: targetColumnId,
+              oldStatus: originalStatus
+            }),
+            credentials: 'include'
+          });
 
         if (response.ok) {
           this.toastService.success(`Order moved to ${this.getStatusDisplayName(targetColumnId)} successfully!`);
@@ -5368,7 +5477,28 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     // Clear existing cart
     this.clearCart();
     
-    // If customer has items, try to parse them and add to cart
+    
+    // First try to load from items_json (structured data)
+    if (this.selectedCustomerForDetails.items_json && Array.isArray(this.selectedCustomerForDetails.items_json)) {
+      this.selectedCustomerForDetails.items_json.forEach((itemData: any) => {
+        // Find the service in our services array
+        const service = this.services.find(s => s.id === itemData.serviceId);
+        if (service) {
+          // Create item with correct quantity directly
+          const newItem = {
+            service: service,
+            serviceType: itemData.serviceType || 'laundry',
+            quantity: itemData.quantity,
+            price: itemData.price || this.getServicePriceByType(service, itemData.serviceType || 'laundry')
+          };
+          this.selectedItems.push(newItem);
+        }
+      });
+      this.calculateTotal();
+      return;
+    }
+    
+    // Fallback: If customer has items as text, try to parse them and add to cart
     if (this.selectedCustomerForDetails.items) {
       const items = this.selectedCustomerForDetails.items.split(',');
       items.forEach((item: string) => {
@@ -5497,10 +5627,16 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     }
   }
 
-  async deleteCustomer() {
-    if (confirm(`Are you sure you want to delete the order for ${this.selectedCustomerForDetails.name}? This action cannot be undone.`)) {
+  async deleteCustomer(customerId?: string) {
+    const customerToDelete = customerId ? this.customers.find(c => c.id === customerId) : this.selectedCustomerForDetails;
+    if (!customerToDelete) {
+      this.toastService.error('Customer not found');
+      return;
+    }
+    
+    if (confirm(`Are you sure you want to delete the order for ${customerToDelete.name}? This action cannot be undone.`)) {
       try {
-        const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.selectedCustomerForDetails.id}`, {
+        const response = await fetch(`${environment.apiUrl}/laundry-customers/${customerToDelete.id}`, {
           method: 'DELETE',
           credentials: 'include'
         });

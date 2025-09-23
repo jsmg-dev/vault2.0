@@ -166,9 +166,7 @@ declare var Chart: any;
           <div class="filter-options">
             <select [(ngModel)]="customerFilter" (change)="filterCustomers()">
               <option value="">All Customers</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="vip">VIP</option>
+              <option *ngFor="let status of statuses" [value]="status.id">{{ status.name }}</option>
             </select>
           </div>
         </div>
@@ -197,7 +195,7 @@ declare var Chart: any;
                 <td>{{ customer.address }}</td>
                 <td>
                   <span class="status-badge" [class]="'status-' + customer.status.toLowerCase()">
-                    {{ customer.status }}
+                    {{ getStatusDisplayName(customer.status) }}
                   </span>
                 </td>
                 <td>{{ customer.totalOrders }}</td>
@@ -775,6 +773,7 @@ declare var Chart: any;
                       formControlName="name"
                       placeholder="Enter full name"
                       required
+                      [disabled]="isViewMode"
                     >
                   </div>
                   <div class="form-group">
@@ -785,6 +784,7 @@ declare var Chart: any;
                       formControlName="phone"
                       placeholder="Enter phone number"
                       required
+                      [disabled]="isViewMode"
                     >
                   </div>
                   <div class="form-group">
@@ -794,6 +794,7 @@ declare var Chart: any;
                       id="customerEmail" 
                       formControlName="email"
                       placeholder="Enter email address"
+                      [disabled]="isViewMode"
                     >
                   </div>
                   <div class="form-group">
@@ -803,11 +804,12 @@ declare var Chart: any;
                       formControlName="address"
                       placeholder="Enter full address"
                       rows="3"
+                      [disabled]="isViewMode"
                     ></textarea>
                   </div>
               <div class="form-group">
                 <label for="customerStatus">Status</label>
-                <select id="customerStatus" formControlName="status">
+                <select id="customerStatus" formControlName="status" [disabled]="isViewMode">
                         <option value="received">Received</option>
                       <option value="inProcess">In process</option>
                       <option value="readyForDelivery">Ready For Delivery</option>
@@ -817,6 +819,43 @@ declare var Chart: any;
               </div>
                 </form>
                   </div>
+
+              <!-- Additional Customer Information (Read-only) -->
+              <div class="customer-info-section" *ngIf="selectedCustomerForDetails">
+                <h4><i class="fas fa-info-circle"></i> Order Information</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <label>Order Date:</label>
+                    <span>{{ selectedCustomerForDetails.createdDate || 'N/A' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Expected Delivery:</label>
+                    <span>{{ selectedCustomerForDetails.expectedDeliveryDate || 'N/A' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Current Status:</label>
+                    <span class="status-badge" [class]="'status-' + selectedCustomerForDetails.status?.toLowerCase()">
+                      {{ getStatusDisplayName(selectedCustomerForDetails.status) }}
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <label>Total Amount:</label>
+                    <span class="amount">₹{{ selectedCustomerForDetails.totalAmount || 0 }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Paid Amount:</label>
+                    <span class="amount paid">₹{{ selectedCustomerForDetails.paidAmount || 0 }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Balance Amount:</label>
+                    <span class="amount balance">₹{{ selectedCustomerForDetails.balanceAmount || 0 }}</span>
+                  </div>
+                  <div class="info-item full-width" *ngIf="selectedCustomerForDetails.specialInstructions">
+                    <label>Special Instructions:</label>
+                    <span class="instructions">{{ selectedCustomerForDetails.specialInstructions }}</span>
+                  </div>
+                </div>
+              </div>
 
               <!-- Selected Items Cart -->
               <div class="cart-section">
@@ -876,11 +915,11 @@ declare var Chart: any;
 
               <div class="form-actions">
                 <button type="button" class="btn secondary" (click)="closeCustomerDetailsModal()">
-                  Cancel
+                  {{ isViewMode ? 'Close' : 'Cancel' }}
                 </button>
-                <button type="button" class="btn primary" (click)="submitCustomer()" [disabled]="selectedItems.length === 0">
-                  <i class="fas fa-save"></i>
-                  {{ editingCustomer ? 'Update Customer' : 'Update Customer & Order' }}
+                <button type="button" class="btn primary" (click)="handleCustomerAction()" [disabled]="!isViewMode && selectedItems.length === 0">
+                  <i class="fas" [class.fa-edit]="isViewMode" [class.fa-save]="!isViewMode"></i>
+                  {{ isViewMode ? 'Edit Customer' : (editingCustomer ? 'Update Customer' : 'Create Customer') }}
                 </button>
               </div>
             </div>
@@ -2994,6 +3033,73 @@ declare var Chart: any;
       overflow-y: auto;
     }
 
+    .customer-info-section {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .customer-info-section h4 {
+      margin: 0 0 15px 0;
+      color: #374151;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-item.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .info-item label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-item span {
+      font-size: 14px;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .info-item .amount {
+      font-weight: 600;
+      color: #059669;
+    }
+
+    .info-item .amount.paid {
+      color: #059669;
+    }
+
+    .info-item .amount.balance {
+      color: #dc2626;
+    }
+
+    .info-item .instructions {
+      font-style: italic;
+      color: #6b7280;
+      background: #ffffff;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+    }
+
     .services-section h4,
     .customer-details h4,
     .cart-section h4 {
@@ -3670,7 +3776,8 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     { id: 'inProcess', name: 'In Process', color: '#ffc107' },
     { id: 'readyForDelivery', name: 'Ready for Delivery', color: '#17a2b8' },
     { id: 'delivered', name: 'Delivered', color: '#28a745' },
-    { id: 'cancelled', name: 'Cancelled', color: '#dc3545' }
+    { id: 'cancelled', name: 'Cancelled', color: '#dc3545' },
+    { id: 'billed', name: 'Billed', color: '#6f42c1' }
   ];
   allStatuses = this.statuses.map(s => s.id);
 
@@ -3691,6 +3798,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   // Customer Details Modal
   showCustomerDetailsModal: boolean = false;
   selectedCustomerForDetails: any = null;
+  isViewMode: boolean = false;
 
   services = [
     // Men's Services - Comprehensive Collection
@@ -4366,11 +4474,14 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   }
 
   async submitCustomer() {
+    console.log('=== SUBMIT CUSTOMER DEBUG ===');
     console.log('Form valid:', this.customerForm.valid);
     console.log('Form errors:', this.customerForm.errors);
     console.log('Form value:', this.customerForm.value);
     console.log('Editing customer:', this.editingCustomer);
     console.log('Form status:', this.customerForm.status);
+    console.log('Is view mode:', this.isViewMode);
+    console.log('Selected items:', this.selectedItems);
     
     // Force form validation
     this.customerForm.markAllAsTouched();
@@ -4382,6 +4493,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     // Allow updates even if form validation fails, as long as we have the required data
     const customerData = this.customerForm.value;
     const hasRequiredData = customerData.name && customerData.phone;
+    
+    console.log('Customer data:', customerData);
+    console.log('Has required data:', hasRequiredData);
+    console.log('Will proceed with update:', this.customerForm.valid || (this.editingCustomer && hasRequiredData));
     
     if (this.customerForm.valid || (this.editingCustomer && hasRequiredData)) {
       try {
@@ -4401,6 +4516,21 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             totalPrice: item.quantity * item.price
           }));
           
+          console.log('=== UPDATE API CALL ===');
+          console.log('Customer ID:', this.editingCustomer.id);
+          console.log('API URL:', `${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`);
+          console.log('Request body:', {
+            name: customerData.name,
+            phone: customerData.phone,
+            alt_phone: customerData.altPhone,
+            email: customerData.email,
+            address: customerData.address,
+            status: customerData.status || 'received',
+            items: itemsDescription,
+            items_json: itemsJson,
+            service_type: this.selectedItems.map(item => item.serviceType).join(', '),
+            total_amount: this.totalAmount * 1.05
+          });
           
           const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`, {
             method: 'PUT',
@@ -4422,13 +4552,20 @@ export class LaundryComponent implements OnInit, AfterViewInit {
           credentials: 'include'
         });
 
+        console.log('=== API RESPONSE ===');
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
         if (response.ok) {
+            const responseData = await response.json();
+            console.log('Response data:', responseData);
             this.toastService.success('Customer updated successfully!');
             this.closeCustomerDetailsModal();
             await this.loadCustomers();
             this.filteredCustomers = [...this.customers];
         } else {
             const error = await response.json();
+            console.log('Error response:', error);
             this.toastService.error(error.error || 'Failed to update customer');
           }
       } else {
@@ -4490,6 +4627,27 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
   viewCustomer(customerId: string) {
     console.log('View customer:', customerId);
+    const customer = this.customers.find(c => c.id === customerId);
+    if (customer) {
+      console.log('Found customer:', customer);
+      console.log('Customer items_json:', customer.items_json);
+      console.log('Customer items:', customer.items);
+      this.selectedCustomerForDetails = customer;
+      this.isViewMode = true;
+      
+      // Populate the form with customer data for viewing
+      this.customerForm.patchValue({
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email || '',
+        address: customer.address || '',
+        status: customer.status || 'received'
+      });
+      
+      this.showCustomerDetailsModal = true;
+    } else {
+      this.toastService.error('Customer not found');
+    }
   }
 
 
@@ -5471,6 +5629,12 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             this.editingCustomer.status = targetColumnId;
             this.customerForm.patchValue({ status: targetColumnId });
           }
+          
+          // If status changed to 'billed', refresh bills
+          if (targetColumnId === 'billed') {
+            await this.loadBills();
+            this.toastService.success('Bill has been automatically generated!');
+          }
         } else {
         // Revert the change on failure
         this.draggedOrder.status = originalStatus;
@@ -5504,6 +5668,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.showCustomerDetailsModal = false;
     this.selectedCustomerForDetails = null;
     this.editingCustomer = null;
+    this.isViewMode = false;
     this.clearCart();
     // Reset search and filter terms
     this.serviceSearchTerm = '';
@@ -5514,6 +5679,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   editCustomerFromDetails() {
     // Keep the modal open and populate the form
     this.editingCustomer = this.selectedCustomerForDetails;
+    this.isViewMode = false; // Enable editing
     this.customerForm.patchValue({
       name: this.selectedCustomerForDetails.name,
       phone: this.selectedCustomerForDetails.phone,
@@ -5530,29 +5696,236 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.populateCartFromCustomerDetails();
   }
 
+  handleCustomerAction() {
+    if (this.isViewMode) {
+      // Switch to edit mode
+      this.editCustomerFromDetails();
+    } else if (this.editingCustomer) {
+      // Update existing customer using simplified method (same as Laundry board)
+      this.updateCustomerDetails();
+    } else {
+      // Create new customer using simplified method (same as Laundry board)
+      this.createCustomerDetails();
+    }
+  }
+
+  // New simplified update method using the same API as Laundry board
+  async updateCustomerDetails() {
+    console.log('=== UPDATE CUSTOMER DETAILS (Simplified) ===');
+    console.log('Customer ID:', this.editingCustomer.id);
+    console.log('Form data:', this.customerForm.value);
+    console.log('Selected items:', this.selectedItems);
+
+    if (!this.editingCustomer || !this.editingCustomer.id) {
+      this.toastService.error('No customer selected for update');
+      return;
+    }
+
+    try {
+      const customerData = this.customerForm.value;
+      
+      // Prepare items data
+      const itemsDescription = this.selectedItems.map(item => 
+        `${item.quantity}x ${item.service.name} (${item.serviceType})`
+      ).join(', ');
+      
+      const itemsJson = this.selectedItems.map(item => ({
+        serviceId: item.service.id,
+        serviceName: item.service.name,
+        quantity: item.quantity,
+        serviceType: item.serviceType,
+        price: item.price,
+        totalPrice: item.quantity * item.price
+      }));
+
+      console.log('=== SIMPLIFIED UPDATE API CALL ===');
+      console.log('API URL:', `${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`);
+      console.log('Request body:', {
+        name: customerData.name,
+        phone: customerData.phone,
+        alt_phone: customerData.altPhone || '',
+        email: customerData.email || '',
+        address: customerData.address || '',
+        status: customerData.status || 'received',
+        items: itemsDescription,
+        items_json: itemsJson,
+        service_type: this.selectedItems.map(item => item.serviceType).join(', '),
+        total_amount: this.totalAmount * 1.05
+      });
+
+      const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: customerData.name,
+          phone: customerData.phone,
+          alt_phone: customerData.altPhone || '',
+          email: customerData.email || '',
+          address: customerData.address || '',
+          status: customerData.status || 'received',
+          items: itemsDescription,
+          items_json: itemsJson,
+          service_type: this.selectedItems.map(item => item.serviceType).join(', '),
+          total_amount: this.totalAmount * 1.05
+        }),
+        credentials: 'include'
+      });
+
+      console.log('=== SIMPLIFIED API RESPONSE ===');
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Response data:', responseData);
+        this.toastService.success('Customer updated successfully!');
+        this.closeCustomerDetailsModal();
+        await this.loadCustomers();
+        this.filteredCustomers = [...this.customers];
+      } else {
+        const error = await response.json();
+        console.log('Error response:', error);
+        this.toastService.error(error.error || 'Failed to update customer');
+      }
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      this.toastService.error('Error updating customer');
+    }
+  }
+
+  // New simplified create method using the same API as Laundry board
+  async createCustomerDetails() {
+    console.log('=== CREATE CUSTOMER DETAILS (Simplified) ===');
+    console.log('Form data:', this.customerForm.value);
+    console.log('Selected items:', this.selectedItems);
+
+    try {
+      const customerData = this.customerForm.value;
+      
+      // Prepare items data
+      const itemsDescription = this.selectedItems.map(item => 
+        `${item.quantity}x ${item.service.name} (${item.serviceType})`
+      ).join(', ');
+      
+      const itemsJson = this.selectedItems.map(item => ({
+        serviceId: item.service.id,
+        serviceName: item.service.name,
+        quantity: item.quantity,
+        serviceType: item.serviceType,
+        price: item.price,
+        totalPrice: item.quantity * item.price
+      }));
+
+      console.log('=== SIMPLIFIED CREATE API CALL ===');
+      console.log('API URL:', `${environment.apiUrl}/laundry-customers`);
+      console.log('Request body:', {
+        name: customerData.name,
+        phone: customerData.phone,
+        alt_phone: customerData.altPhone || '',
+        email: customerData.email || '',
+        address: customerData.address || '',
+        status: customerData.status || 'received',
+        items: itemsDescription,
+        items_json: itemsJson,
+        service_type: this.selectedItems.map(item => item.serviceType).join(', '),
+        total_amount: this.totalAmount * 1.05
+      });
+
+      const response = await fetch(`${environment.apiUrl}/laundry-customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: customerData.name,
+          phone: customerData.phone,
+          alt_phone: customerData.altPhone || '',
+          email: customerData.email || '',
+          address: customerData.address || '',
+          status: customerData.status || 'received',
+          items: itemsDescription,
+          items_json: itemsJson,
+          service_type: this.selectedItems.map(item => item.serviceType).join(', '),
+          total_amount: this.totalAmount * 1.05
+        }),
+        credentials: 'include'
+      });
+
+      console.log('=== SIMPLIFIED CREATE API RESPONSE ===');
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Response data:', responseData);
+        this.toastService.success('Customer created successfully!');
+        this.closeCustomerModal();
+        this.customerForm.reset();
+        await this.loadCustomers();
+        this.filteredCustomers = [...this.customers];
+      } else {
+        const error = await response.json();
+        console.log('Error response:', error);
+        this.toastService.error(error.error || 'Failed to create customer');
+      }
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      this.toastService.error('Error creating customer');
+    }
+  }
+
   populateCartFromCustomerDetails() {
     // Clear existing cart
     this.clearCart();
     
+    console.log('Populating cart from customer details:', this.selectedCustomerForDetails);
+    console.log('Items JSON:', this.selectedCustomerForDetails.items_json);
     
     // First try to load from items_json (structured data)
-    if (this.selectedCustomerForDetails.items_json && Array.isArray(this.selectedCustomerForDetails.items_json)) {
-      this.selectedCustomerForDetails.items_json.forEach((itemData: any) => {
-        // Find the service in our services array
-        const service = this.services.find(s => s.id === itemData.serviceId);
-        if (service) {
-          // Create item with correct quantity directly
-          const newItem = {
-            service: service,
-            serviceType: itemData.serviceType || 'laundry',
-            quantity: itemData.quantity,
-            price: itemData.price || this.getServicePriceByType(service, itemData.serviceType || 'laundry')
-          };
-          this.selectedItems.push(newItem);
+    if (this.selectedCustomerForDetails.items_json) {
+      let itemsJsonData = null;
+      
+      // Parse JSON string if it's a string
+      if (typeof this.selectedCustomerForDetails.items_json === 'string') {
+        try {
+          itemsJsonData = JSON.parse(this.selectedCustomerForDetails.items_json);
+          console.log('Parsed items_json:', itemsJsonData);
+        } catch (error) {
+          console.error('Error parsing items_json:', error);
+          itemsJsonData = null;
         }
-      });
-      this.calculateTotal();
-      return;
+      } else if (Array.isArray(this.selectedCustomerForDetails.items_json)) {
+        itemsJsonData = this.selectedCustomerForDetails.items_json;
+      }
+      
+      // Process the parsed data
+      if (itemsJsonData && Array.isArray(itemsJsonData) && itemsJsonData.length > 0) {
+        itemsJsonData.forEach((itemData: any) => {
+          console.log('Processing item:', itemData);
+          // Find the service in our services array
+          const service = this.services.find(s => s.id === itemData.serviceId);
+          if (service) {
+            // Create item with correct quantity directly
+            const itemPrice = itemData.price || this.getServicePriceByType(service, itemData.serviceType || 'laundry');
+            const newItem = {
+              service: service,
+              serviceType: itemData.serviceType || 'laundry',
+              quantity: itemData.quantity,
+              price: itemPrice,
+              totalPrice: itemPrice * itemData.quantity
+            };
+            this.selectedItems.push(newItem);
+            console.log('Added item to cart:', newItem);
+          } else {
+            console.warn('Service not found for item:', itemData);
+          }
+        });
+        this.calculateTotal();
+        console.log('Cart populated with', this.selectedItems.length, 'items');
+        return;
+      }
     }
     
     // Fallback: If customer has items as text, try to parse them and add to cart
@@ -5610,6 +5983,12 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             this.selectedCustomerForDetails.status = statusObj.id;
             await this.loadCustomers();
             this.filteredCustomers = [...this.customers];
+            
+            // If status changed to 'billed', refresh bills
+            if (statusObj.id === 'billed') {
+              await this.loadBills();
+              this.toastService.success('Bill has been automatically generated!');
+            }
     } else {
             const error = await response.json();
             this.toastService.error(error.error || 'Failed to update order status');
@@ -5673,6 +6052,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
           this.selectedCustomerForDetails.status = 'billed';
           await this.loadCustomers();
           this.filteredCustomers = [...this.customers];
+          
+          // Refresh bills to show the auto-generated bill
+          await this.loadBills();
+          this.toastService.success('Bill has been automatically generated!');
         } else {
           const error = await response.json();
           this.toastService.error(error.error || 'Failed to move order to billed status');

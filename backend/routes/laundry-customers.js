@@ -215,6 +215,88 @@ router.put('/:id/status', async (req, res) => {
 
     const updatedCustomer = result.rows[0];
 
+    // Auto-generate bill when status changes to 'billed'
+    if (status === 'billed' && currentCustomer.status !== 'billed') {
+      try {
+        // Generate unique bill number
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 1000);
+        const bill_no = `BILL-${timestamp}-${random}`;
+
+        const totalAmount = updatedCustomer.total_amount || 0;
+        const paidAmount = updatedCustomer.paid_amount || 0;
+        const balanceAmount = totalAmount - paidAmount;
+        const paymentStatus = paidAmount === 0 ? 'pending' : 
+                              paidAmount < totalAmount ? 'partial' : 'paid';
+
+        // Prepare items data
+        let itemsData = null;
+        if (updatedCustomer.items_json) {
+          try {
+            itemsData = typeof updatedCustomer.items_json === 'string' 
+              ? JSON.parse(updatedCustomer.items_json) 
+              : updatedCustomer.items_json;
+          } catch (jsonError) {
+            console.error('Error parsing items_json for bill:', jsonError);
+            itemsData = null;
+          }
+        }
+
+        // Insert bill into database
+        const billResult = await db.query(`
+          INSERT INTO billing (
+            bill_no, customer_id, customer_name, customer_phone, customer_address,
+            bill_date, due_date, bill_type, items, subtotal, total_amount, paid_amount, 
+            balance_amount, payment_status, notes, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          RETURNING *
+        `, [
+          bill_no, updatedCustomer.id, updatedCustomer.name, updatedCustomer.phone, updatedCustomer.address,
+          new Date().toISOString().split('T')[0], // bill_date
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // due_date (7 days from now)
+          'laundry', 
+          JSON.stringify(itemsData), totalAmount, totalAmount,
+          paidAmount, balanceAmount, paymentStatus, 
+          `Auto-generated bill for laundry order - ${updatedCustomer.special_instructions || 'No special instructions'}`, 
+          'system'
+        ]);
+
+        console.log(`✅ Auto-generated bill for customer ${updatedCustomer.name}: ${bill_no}`);
+        
+        // Insert bill items if items data exists
+        if (itemsData && Array.isArray(itemsData) && itemsData.length > 0) {
+          for (const item of itemsData) {
+            await db.query(`
+              INSERT INTO billing_items (
+                billing_id, item_name, item_description, quantity, unit_price, total_price, service_type
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `, [
+              billResult.rows[0].id, 
+              item.name || item.serviceName || item.item_name || 'Service Item',
+              item.description || item.item_description || '',
+              item.quantity || 1, 
+              item.price || item.unit_price || item.totalPrice || 0,
+              item.totalPrice || (item.quantity * item.price) || 0,
+              item.serviceType || item.service_type || 'laundry'
+            ]);
+          }
+        }
+
+        // Insert payment record if paid_amount > 0
+        if (paidAmount > 0) {
+          await db.query(`
+            INSERT INTO billing_payments (
+              billing_id, payment_amount, payment_method, payment_reference, notes, created_by
+            ) VALUES ($1, $2, $3, $4, $5, $6)
+          `, [billResult.rows[0].id, paidAmount, 'cash', `PAY-${bill_no}`, 'Auto-generated payment record', 'system']);
+        }
+
+      } catch (billError) {
+        console.error('Failed to auto-generate bill for laundry customer:', billError);
+        // Don't fail the status update if bill generation fails
+      }
+    }
+
     // Send WhatsApp notification if status changed
     if (status !== oldStatus && status !== currentCustomer.status) {
       try {

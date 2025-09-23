@@ -215,6 +215,17 @@
 .policies-table td.actions {
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+.policies-table td.actions input[type="checkbox"] {
+  margin-right: 4px;
+}
+
+.policies-table th.col-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 @media (max-width: 1200px) {

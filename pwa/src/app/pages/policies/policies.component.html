@@ -23,10 +23,10 @@
         <table class="policies-table">
         <thead>
           <tr>
-            <th>
+            <th class="col-actions">
               <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
+              Actions
             </th>
-            <th class="col-actions">Actions</th>
             <th>Policy No</th>
             <th>Name</th>
             <th>DOB</th>
@@ -61,10 +61,8 @@
         </thead>
         <tbody>
           <tr *ngFor="let policy of policies" [class.selected]="selectedPolicies.includes(policy.id)">
-            <td>
-              <input type="checkbox" [checked]="selectedPolicies.includes(policy.id)" (change)="toggleSelection(policy.id)" />
-            </td>
             <td class="actions">
+              <input type="checkbox" [checked]="selectedPolicies.includes(policy.id)" (change)="toggleSelection(policy.id)" />
               <button class="btn-icon btn-edit" (click)="openForm(policy)" title="Edit">
                 <i class="fas fa-edit"></i>
               </button>
@@ -215,13 +213,17 @@
           </div>
           <div class="form-group">
             <label for="mode_of_payment">Payment Mode</label>
-            <select id="mode_of_payment" name="mode_of_payment" [(ngModel)]="policyForm.mode_of_payment">
+            <select id="mode_of_payment" name="mode_of_payment" [(ngModel)]="policyForm.mode_of_payment" (change)="onPaymentModeChange()">
               <option value="">Select Mode</option>
               <option value="Monthly">Monthly</option>
               <option value="Quarterly">Quarterly</option>
               <option value="Half Yearly">Half Yearly</option>
               <option value="Yearly">Yearly</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label for="deposit_date">Deposit Date</label>
+            <input type="date" id="deposit_date" name="deposit_date" [(ngModel)]="policyForm.deposit_date" (change)="onDepositDateChange()">
           </div>
           <div class="form-group">
             <label for="next_premium_date">Next Premium Date</label>

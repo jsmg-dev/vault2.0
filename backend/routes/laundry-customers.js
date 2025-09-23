@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query, one, many } = require('../db');
 const whatsappNotificationService = require('../services/whatsappNotificationService');
+const db = require('../db');
 
 // Get all laundry customers
 router.get('/', async (req, res) => {
@@ -60,6 +61,30 @@ router.post('/', async (req, res) => {
     // Calculate balance amount
     const balance_amount = total_amount ? total_amount - (req.body.paid_amount || 0) : 0;
 
+    // Ensure items_json is valid JSON or null
+    let validItemsJson = null;
+    if (items_json && items_json !== '' && items_json !== '[]' && items_json !== '{}') {
+      try {
+        // If it's already a string, parse it to validate
+        if (typeof items_json === 'string') {
+          const parsed = JSON.parse(items_json);
+          // Only store if it's not empty
+          if (parsed && (Array.isArray(parsed) ? parsed.length > 0 : Object.keys(parsed).length > 0)) {
+            validItemsJson = items_json;
+          }
+        } else {
+          // If it's an object, stringify it
+          if (Array.isArray(items_json) ? items_json.length > 0 : Object.keys(items_json).length > 0) {
+            validItemsJson = JSON.stringify(items_json);
+          }
+        }
+      } catch (jsonError) {
+        console.error('Invalid JSON in items_json:', items_json);
+        console.error('JSON Error:', jsonError.message);
+        validItemsJson = null;
+      }
+    }
+
     const result = await query(`
       INSERT INTO laundry_customers (
         name, phone, alt_phone, address, email, status, 
@@ -69,7 +94,7 @@ router.post('/', async (req, res) => {
       RETURNING *
     `, [
       name, phone, alt_phone, address, email, status,
-      expected_delivery_date, items, items_json, service_type,
+      expected_delivery_date, items, validItemsJson, service_type,
       total_amount, req.body.paid_amount || 0, balance_amount, special_instructions
     ]);
 
@@ -105,6 +130,25 @@ router.put('/:id', async (req, res) => {
     // Calculate balance amount
     const balance_amount = total_amount ? total_amount - (paid_amount || 0) : 0;
 
+    // Ensure items_json is valid JSON
+    let validItemsJson = null;
+    if (items_json) {
+      try {
+        // If it's already a string, parse it to validate
+        if (typeof items_json === 'string') {
+          JSON.parse(items_json);
+          validItemsJson = items_json;
+        } else {
+          // If it's an object, stringify it
+          validItemsJson = JSON.stringify(items_json);
+        }
+      } catch (jsonError) {
+        console.error('Invalid JSON in items_json (UPDATE):', items_json);
+        console.error('JSON Error:', jsonError.message);
+        validItemsJson = null;
+      }
+    }
+
     const result = await query(`
       UPDATE laundry_customers SET
         name = COALESCE($1, name),
@@ -127,7 +171,7 @@ router.put('/:id', async (req, res) => {
       RETURNING *
     `, [
       name, phone, alt_phone, address, email, status,
-      expected_delivery_date, delivery_date, items, items_json, service_type,
+      expected_delivery_date, delivery_date, items, validItemsJson, service_type,
       total_amount, paid_amount, balance_amount, special_instructions, id
     ]);
 

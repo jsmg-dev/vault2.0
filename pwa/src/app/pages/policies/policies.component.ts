@@ -45,6 +45,7 @@ export class PoliciesComponent implements OnInit {
     start_date: '',
     end_date: '',
     mode_of_payment: '',
+    deposit_date: '',
     next_premium_date: '',
     sum_assured: '',
     policy_term: '',
@@ -255,5 +256,43 @@ export class PoliciesComponent implements OnInit {
 
   onSidenavToggle(collapsed: boolean) {
     this.sidenavCollapsed = collapsed;
+  }
+
+  // Deposit Date and Payment Mode change handlers
+  onDepositDateChange() {
+    this.calculateNextPremiumDate();
+  }
+
+  onPaymentModeChange() {
+    this.calculateNextPremiumDate();
+  }
+
+  calculateNextPremiumDate() {
+    if (!this.policyForm.deposit_date || !this.policyForm.mode_of_payment) {
+      return;
+    }
+
+    const depositDate = new Date(this.policyForm.deposit_date);
+    let nextPremiumDate = new Date(depositDate);
+
+    switch (this.policyForm.mode_of_payment) {
+      case 'Monthly':
+        nextPremiumDate.setMonth(nextPremiumDate.getMonth() + 1);
+        break;
+      case 'Quarterly':
+        nextPremiumDate.setMonth(nextPremiumDate.getMonth() + 3);
+        break;
+      case 'Half Yearly':
+        nextPremiumDate.setMonth(nextPremiumDate.getMonth() + 6);
+        break;
+      case 'Yearly':
+        nextPremiumDate.setFullYear(nextPremiumDate.getFullYear() + 1);
+        break;
+      default:
+        return;
+    }
+
+    // Format the date as YYYY-MM-DD for the input field
+    this.policyForm.next_premium_date = nextPremiumDate.toISOString().split('T')[0];
   }
 }

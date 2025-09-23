@@ -19,6 +19,7 @@ router.post('/add', async (req, res) => {
     start_date,
     end_date,
     mode_of_payment,
+    deposit_date,
     next_premium_date,
     sum_assured,
     policy_term,
@@ -57,6 +58,7 @@ router.post('/add', async (req, res) => {
     start_date: toNull(start_date),
     end_date: toNull(end_date),
     mode_of_payment: toNull(mode_of_payment),
+    deposit_date: deposit_date && deposit_date.trim() !== '' ? deposit_date : null,
     next_premium_date: toNull(next_premium_date),
     sum_assured: toNum(sum_assured),
     policy_term: toNum(policy_term),
@@ -80,14 +82,14 @@ router.post('/add', async (req, res) => {
   const sql = `
     INSERT INTO lic_policy_details (
       policy_no, fullname, dob, gender, marital_status, aadhaar_pan, email, mobile, address,
-      plan_name, start_date, end_date, mode_of_payment, next_premium_date, sum_assured,
+      plan_name, start_date, end_date, mode_of_payment, deposit_date, next_premium_date, sum_assured,
       policy_term, premium_term, premium, maturity_value, nominee_name, nominee_relation,
       height_cm, weight_kg, health_lifestyle, bank_account, ifsc_code, bank_name,
       agent_code, branch_code, status, payment_status, created_at
     ) VALUES (
       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
       $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-      $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,NOW()
+      $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,NOW()
     )
     RETURNING id;
   `;
@@ -95,7 +97,7 @@ router.post('/add', async (req, res) => {
   try {
     const result = await db.query(sql, [
       payload.policy_no, payload.fullname, payload.dob, payload.gender, payload.marital_status, payload.aadhaar_pan, payload.email, payload.mobile, payload.address,
-      payload.plan_name, payload.start_date, payload.end_date, payload.mode_of_payment, payload.next_premium_date, payload.sum_assured,
+      payload.plan_name, payload.start_date, payload.end_date, payload.mode_of_payment, payload.deposit_date, payload.next_premium_date, payload.sum_assured,
       payload.policy_term, payload.premium_term, payload.premium, payload.maturity_value, payload.nominee_name, payload.nominee_relation,
       payload.height_cm, payload.weight_kg, payload.health_lifestyle, payload.bank_account, payload.ifsc_code, payload.bank_name,
       payload.agent_code, payload.branch_code, payload.status, payload.payment_status
@@ -113,6 +115,7 @@ router.get('/list', async (req, res) => {
     const result = await db.query(
       `SELECT * FROM lic_policy_details ORDER BY created_at DESC`
     );
+    console.log('LIST Policies - Sample policy deposit_date:', result.rows[0]?.deposit_date);
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Failed to fetch policies:", err.message);
@@ -123,6 +126,9 @@ router.get('/list', async (req, res) => {
 // === Update Policy ===
 router.put('/update/:id', async (req, res) => {
   const id = req.params.id;
+  console.log('UPDATE Policy - ID:', id);
+  console.log('UPDATE Policy - Raw Deposit Date:', req.body.deposit_date);
+  console.log('UPDATE Policy - Deposit Date Type:', typeof req.body.deposit_date);
   const {
     policy_no,
     fullname,
@@ -137,6 +143,7 @@ router.put('/update/:id', async (req, res) => {
     start_date,
     end_date,
     mode_of_payment,
+    deposit_date,
     next_premium_date,
     sum_assured,
     policy_term,
@@ -173,6 +180,7 @@ router.put('/update/:id', async (req, res) => {
     start_date: toNull(start_date),
     end_date: toNull(end_date),
     mode_of_payment: toNull(mode_of_payment),
+    deposit_date: deposit_date && deposit_date.trim() !== '' ? deposit_date : null,
     next_premium_date: toNull(next_premium_date),
     sum_assured: toNum(sum_assured),
     policy_term: toNum(policy_term),
@@ -197,22 +205,25 @@ router.put('/update/:id', async (req, res) => {
     UPDATE lic_policy_details SET 
       policy_no=$1, fullname=$2, dob=$3, gender=$4, marital_status=$5,
       aadhaar_pan=$6, email=$7, mobile=$8, address=$9, plan_name=$10,
-      start_date=$11, end_date=$12, mode_of_payment=$13, next_premium_date=$14,
-      sum_assured=$15, policy_term=$16, premium_term=$17, premium=$18,
-      maturity_value=$19, nominee_name=$20, nominee_relation=$21, height_cm=$22,
-      weight_kg=$23, health_lifestyle=$24, bank_account=$25, ifsc_code=$26,
-      bank_name=$27, agent_code=$28, branch_code=$29, status=$30, payment_status=$31
-    WHERE id=$32
+      start_date=$11, end_date=$12, mode_of_payment=$13, deposit_date=$14, next_premium_date=$15,
+      sum_assured=$16, policy_term=$17, premium_term=$18, premium=$19,
+      maturity_value=$20, nominee_name=$21, nominee_relation=$22, height_cm=$23,
+      weight_kg=$24, health_lifestyle=$25, bank_account=$26, ifsc_code=$27,
+      bank_name=$28, agent_code=$29, branch_code=$30, status=$31, payment_status=$32
+    WHERE id=$33
   `;
 
   try {
-    const result = await db.query(sql, [
+    const queryParams = [
       payload.policy_no, payload.fullname, payload.dob, payload.gender, payload.marital_status, payload.aadhaar_pan, payload.email, payload.mobile, payload.address,
-      payload.plan_name, payload.start_date, payload.end_date, payload.mode_of_payment, payload.next_premium_date, payload.sum_assured,
+      payload.plan_name, payload.start_date, payload.end_date, payload.mode_of_payment, payload.deposit_date, payload.next_premium_date, payload.sum_assured,
       payload.policy_term, payload.premium_term, payload.premium, payload.maturity_value, payload.nominee_name, payload.nominee_relation,
       payload.height_cm, payload.weight_kg, payload.health_lifestyle, payload.bank_account, payload.ifsc_code, payload.bank_name,
       payload.agent_code, payload.branch_code, payload.status, payload.payment_status, id
-    ]);
+    ];
+    console.log('Query parameters for deposit_date (position 14):', queryParams[13]);
+    console.log('Payload deposit_date:', payload.deposit_date);
+    const result = await db.query(sql, queryParams);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Policy not found" });

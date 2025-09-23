@@ -3774,73 +3774,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     { id: 'CG004', name: 'Girl Frock', description: 'Wash & Iron for Girl Frocks', price: 18, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Frock', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' }
   ];
 
-  bills = [
-    { 
-      id: 'B001', 
-      customer: 'John Doe', 
-      amount: 450, 
-      status: 'Pending', 
-      dueDate: '2024-01-20',
-      phone: '+91 98765 43210',
-      items: '2x Men Shirt (Laundry), 1x Men Blazer (Dry Clean), 1x Men Trousers (Ironing)',
-      serviceType: 'Laundry, Dry Clean, Ironing',
-      notes: 'Handle with care',
-      createdDate: '2024-01-15',
-      selectedItems: []
-    },
-    { 
-      id: 'B002', 
-      customer: 'Jane Smith', 
-      amount: 320, 
-      status: 'Paid', 
-      dueDate: '2024-01-18',
-      phone: '+91 98765 43211',
-      items: '3x Women Dress (Dry Clean), 2x Women Blouse (Laundry)',
-      serviceType: 'Dry Clean, Laundry',
-      notes: '',
-      createdDate: '2024-01-13',
-      selectedItems: []
-    },
-    { 
-      id: 'B003', 
-      customer: 'Mike Johnson', 
-      amount: 180, 
-      status: 'Pending', 
-      dueDate: '2024-01-22',
-      phone: '+91 98765 43212',
-      items: '1x Men Suit (Dry Clean), 2x Men Shirt (Laundry)',
-      serviceType: 'Dry Clean, Laundry',
-      notes: 'Express service required',
-      createdDate: '2024-01-17',
-      selectedItems: []
-    },
-    { 
-      id: 'B004', 
-      customer: 'Sarah Wilson', 
-      amount: 250, 
-      status: 'Paid', 
-      dueDate: '2024-01-15',
-      phone: '+91 98765 43213',
-      items: '2x Women Kurta (Laundry), 1x Women Saree (Dry Clean)',
-      serviceType: 'Laundry, Dry Clean',
-      notes: '',
-      createdDate: '2024-01-10',
-      selectedItems: []
-    },
-    { 
-      id: 'B005', 
-      customer: 'David Brown', 
-      amount: 380, 
-      status: 'Pending', 
-      dueDate: '2024-01-25',
-      phone: '+91 98765 43214',
-      items: '1x Men Coat (Dry Clean), 3x Men Shirt (Laundry), 2x Men Pants (Ironing)',
-      serviceType: 'Dry Clean, Laundry, Ironing',
-      notes: 'Fragile items',
-      createdDate: '2024-01-20',
-      selectedItems: []
-    }
-  ];
+  bills: any[] = [];
 
   newOrderForm: FormGroup;
   customerForm: FormGroup;
@@ -3888,9 +3822,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     // Initialize price properties for all services
     this.initializeServicePrices();
     
-    // Load customers and services from API first
+    // Load customers, services, and bills from API first
     await this.loadCustomers();
     await this.loadServices();
+    await this.loadBills();
     
     // Initialize filtered services after data is loaded
     this.filterServices();
@@ -4671,11 +4606,41 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     alert('Bill printed successfully!');
   }
 
-  markPaid(billId: string) {
+  async markPaid(billId: string) {
     const bill = this.bills.find(b => b.id === billId);
-    if (bill) {
-      bill.status = 'Paid';
-      alert('Bill marked as paid!');
+    if (bill && bill.databaseId) {
+      try {
+        const response = await fetch(`${environment.apiUrl}/billing/${bill.databaseId}/payment`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            payment_amount: bill.amount,
+            payment_method: 'cash',
+            payment_reference: `PAY-${billId}`,
+            notes: 'Marked as paid from frontend',
+            created_by: 'user'
+          })
+        });
+
+        if (response.ok) {
+          bill.status = 'Paid';
+          bill.paidAmount = bill.amount;
+          bill.balanceAmount = 0;
+          alert('Bill marked as paid!');
+          // Reload bills to get updated data
+          await this.loadBills();
+        } else {
+          throw new Error('Failed to update payment');
+        }
+      } catch (error) {
+        console.error('Error marking bill as paid:', error);
+        alert('Error updating payment. Please try again.');
+      }
+    } else {
+      alert('Bill not found or not saved to database!');
     }
   }
 
@@ -4918,7 +4883,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     }
   }
 
-  submitBill() {
+  async submitBill() {
     // console.log('=== BILL SUBMISSION DEBUG ===');
     // console.log('Form valid:', this.billForm.valid);
     // console.log('Form errors:', this.billForm.errors);
@@ -4957,6 +4922,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       // Create new bill
       const newBill = {
         id: newBillId,
+        databaseId: null,
         customer: formValue.customerName,
         amount: this.billTotalAmount,
         status: 'Pending',
@@ -4966,24 +4932,73 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         serviceType: Array.isArray(formValue.serviceType) ? formValue.serviceType.join(', ') : formValue.serviceType,
         notes: formValue.notes,
         createdDate: new Date().toISOString().split('T')[0],
-        selectedItems: this.selectedBillItems.slice()
+        selectedItems: this.selectedBillItems.slice(),
+        paidAmount: 0,
+        balanceAmount: this.billTotalAmount
       };
       
-      // Add to bills array
-      this.bills.unshift(newBill as any);
-      
-      console.log('New bill created:', newBill);
-      console.log('Total bills now:', this.bills.length);
-      
-      // Show success message first
-      alert('Bill generated successfully! Bill ID: ' + newBillId);
-      
-      // Close modal after a small delay to ensure UI updates
-      setTimeout(() => {
-        this.closeBillModal();
-        // Force change detection to update the bills table
-        this.bills = [...this.bills];
-      }, 100);
+      // Save bill to database first
+      try {
+        const billData = {
+          customer_name: formValue.customerName,
+          customer_phone: formValue.customerPhone,
+          bill_date: new Date().toISOString().split('T')[0],
+          due_date: formValue.dueDate,
+          bill_type: 'laundry',
+          items: this.selectedBillItems,
+          subtotal: this.billTotalAmount,
+          total_amount: this.billTotalAmount,
+          paid_amount: 0,
+          notes: formValue.notes,
+          created_by: 'user'
+        };
+
+        console.log('Saving bill to database:', billData);
+        
+        const response = await fetch(`${environment.apiUrl}/billing/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(billData)
+        });
+
+        console.log('Billing API Response Status:', response.status);
+        console.log('Billing API Response OK:', response.ok);
+        
+        if (response.ok) {
+          const savedBill = await response.json();
+          console.log('Bill saved to database:', savedBill);
+          
+          // Update the bill with database ID
+          newBill.id = savedBill.bill_no;
+          newBill.databaseId = savedBill.id;
+          
+          // Add to bills array
+          this.bills.unshift(newBill as any);
+          
+          console.log('New bill created:', newBill);
+          console.log('Total bills now:', this.bills.length);
+          
+          // Show success message
+          alert('Bill generated successfully! Bill ID: ' + savedBill.bill_no);
+          
+          // Close modal after a small delay to ensure UI updates
+          setTimeout(() => {
+            this.closeBillModal();
+            // Force change detection to update the bills table
+            this.bills = [...this.bills];
+          }, 100);
+        } else {
+          const errorText = await response.text();
+          console.error('Billing API Error Response:', errorText);
+          throw new Error(`Failed to save bill to database: ${response.status} - ${errorText}`);
+        }
+      } catch (error) {
+        console.error('Error saving bill to database:', error);
+        alert('Error saving bill to database. Please try again.');
+      }
     } else {
       let errorMessage = 'Please fix the following issues:\n';
       
@@ -5054,6 +5069,48 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     } catch (error) {
       console.error('Error loading customers:', error);
       this.toastService.error('Error loading customers');
+    }
+  }
+
+  // Load bills from API
+  async loadBills() {
+    try {
+      console.log('Loading bills from:', `${environment.apiUrl}/billing`);
+      const response = await fetch(`${environment.apiUrl}/billing`, {
+        credentials: 'include'
+      });
+      console.log('Bills response status:', response.status);
+      if (response.ok) {
+        const bills = await response.json();
+        // Transform API data to match frontend format
+        this.bills = bills.map((b: any) => ({
+          id: b.bill_no,
+          databaseId: b.id,
+          customer: b.customer_name,
+          phone: b.customer_phone,
+          amount: b.total_amount,
+          status: b.payment_status === 'paid' ? 'Paid' : 
+                  b.payment_status === 'partial' ? 'Partial' : 'Pending',
+          dueDate: b.due_date || b.bill_date,
+          items: typeof b.items === 'string' ? b.items : JSON.stringify(b.items),
+          serviceType: b.bill_type,
+          notes: b.notes,
+          createdDate: b.bill_date,
+          paidAmount: b.paid_amount,
+          balanceAmount: b.balance_amount,
+          selectedItems: typeof b.items === 'object' ? b.items : []
+        }));
+        console.log('Loaded bills from API:', this.bills.length);
+        if (this.bills.length > 0) {
+          console.log('Sample bill:', this.bills[0]);
+        }
+      } else {
+        console.error('Failed to load bills:', response.statusText);
+        this.toastService.error('Failed to load bills');
+      }
+    } catch (error) {
+      console.error('Error loading bills:', error);
+      this.toastService.error('Error loading bills');
     }
   }
 

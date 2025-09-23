@@ -51,6 +51,7 @@ export class PoliciesComponent implements OnInit {
     start_date: '',
     end_date: '',
     mode_of_payment: '',
+    deposit_date: '',
     next_premium_date: '',
     sum_assured: '',
     policy_term: '',
@@ -85,6 +86,8 @@ export class PoliciesComponent implements OnInit {
   loadPolicies() {
     this.http.get<any[]>(`${environment.apiUrl}/policies/list`).subscribe({
       next: (data) => {
+        console.log('Received policies data:', data[0]);
+        console.log('Sample deposit_date:', data[0]?.deposit_date);
         // Ensure each policy has a payment_status field
         this.policies = data.map(policy => ({
           ...policy,
@@ -144,6 +147,7 @@ export class PoliciesComponent implements OnInit {
         dob: formatDate(policy.dob),
         start_date: formatDate(policy.start_date),
         end_date: formatDate(policy.end_date),
+        deposit_date: formatDate(policy.deposit_date),
         next_premium_date: formatDate(policy.next_premium_date)
       };
       
@@ -178,6 +182,7 @@ export class PoliciesComponent implements OnInit {
       start_date: '',
       end_date: '',
       mode_of_payment: '',
+      deposit_date: '',
       next_premium_date: '',
       sum_assured: '',
       policy_term: '',
@@ -245,6 +250,8 @@ export class PoliciesComponent implements OnInit {
       : `${environment.apiUrl}/policies/update/${this.editingPolicy.id}`;
     const method = useAdd ? 'post' : 'put';
     
+    console.log('Sending policy data:', this.policyForm);
+    console.log('Deposit date being sent:', this.policyForm.deposit_date);
     this.http[method](url, this.policyForm).subscribe({
       next: (response: any) => {
         if (response && (response.success || response.policy_id)) {
@@ -374,5 +381,43 @@ export class PoliciesComponent implements OnInit {
   clearGlobalSearch() {
     this.globalSearchTerm = '';
     this.filteredPolicies = [...this.policies];
+  }
+
+  // Deposit Date and Payment Mode change handlers
+  onDepositDateChange() {
+    this.calculateNextPremiumDate();
+  }
+
+  onPaymentModeChange() {
+    this.calculateNextPremiumDate();
+  }
+
+  calculateNextPremiumDate() {
+    if (!this.policyForm.deposit_date || !this.policyForm.mode_of_payment) {
+      return;
+    }
+
+    const depositDate = new Date(this.policyForm.deposit_date);
+    let nextPremiumDate = new Date(depositDate);
+
+    switch (this.policyForm.mode_of_payment) {
+      case 'Monthly':
+        nextPremiumDate.setMonth(nextPremiumDate.getMonth() + 1);
+        break;
+      case 'Quarterly':
+        nextPremiumDate.setMonth(nextPremiumDate.getMonth() + 3);
+        break;
+      case 'Half Yearly':
+        nextPremiumDate.setMonth(nextPremiumDate.getMonth() + 6);
+        break;
+      case 'Yearly':
+        nextPremiumDate.setFullYear(nextPremiumDate.getFullYear() + 1);
+        break;
+      default:
+        return;
+    }
+
+    // Format the date as YYYY-MM-DD for the input field
+    this.policyForm.next_premium_date = nextPremiumDate.toISOString().split('T')[0];
   }
 }

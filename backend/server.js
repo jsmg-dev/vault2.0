@@ -21,6 +21,7 @@ const laundryCustomerRoutes = require('./routes/laundry-customers'); // new laun
 const laundryServiceRoutes = require('./routes/laundry-services');
 const whatsappConfigRoutes = require('./routes/whatsapp-config'); // new laundry service routes
 const whatsappNotificationRoutes = require('./routes/whatsapp-notifications'); // new WhatsApp notification routes
+const billingRoutes = require('./routes/billing'); // new billing routes
 
 const app = express();
 const port = config.server.port;
@@ -57,6 +58,7 @@ app.use('/laundry-customers', laundryCustomerRoutes);
 app.use('/laundry-services', laundryServiceRoutes);
 app.use('/whatsapp', whatsappConfigRoutes);
 app.use('/whatsapp-notifications', whatsappNotificationRoutes);
+app.use('/billing', billingRoutes);
 
 // Bootstrap users table + seed admin (Postgres)
 (async () => {

@@ -40,7 +40,7 @@ declare var Chart: any;
             (click)="navigateToBoard()"
           >
             <i class="fas fa-columns"></i>
-            Laundry Board
+            ClothAura Board
           </button>
         <button 
           class="tab-btn" 
@@ -83,22 +83,18 @@ declare var Chart: any;
             <div class="card customers">
               <h3>Total Customers</h3>
               <p>{{ customers.length | number }}</p>
-              <i class="fas fa-users"></i>
             </div>
             <div class="card deposits">
               <h3>Pending Orders</h3>
               <p>{{ pendingOrders | number }}</p>
-              <i class="fas fa-clock"></i>
             </div>
             <div class="card loans">
               <h3>Completed Today</h3>
               <p>{{ completedOrders | number }}</p>
-              <i class="fas fa-check-circle"></i>
             </div>
             <div class="card earnings">
               <h3>Today's Revenue</h3>
               <p>₹ {{ todayRevenue | number }}</p>
-              <i class="fas fa-rupee-sign"></i>
             </div>
           </div>
 
@@ -246,9 +242,6 @@ declare var Chart: any;
                     <i class="fas fa-chevron-down dropdown-arrow"></i>
                 </div>
               </div>
-                <button class="btn secondary" (click)="debugPrices()" style="margin-left: 10px;">
-                  <i class="fas fa-bug"></i> Debug Prices
-                </button>
                 </div>
           <button class="btn primary" (click)="openServiceModal()">
             <i class="fas fa-plus"></i>
@@ -355,7 +348,7 @@ declare var Chart: any;
       <div class="tab-content" *ngIf="activeTab === 'board'">
         <div class="laundry-board-container">
           <div class="board-header">
-            <h2><i class="fas fa-columns"></i> Laundry Board</h2>
+            <h2><i class="fas fa-columns"></i> ClothAura Board</h2>
           <div class="header-actions">
               <input 
                 type="text" 
@@ -437,7 +430,7 @@ declare var Chart: any;
       <div class="modal" [class.active]="showNewOrderModal" (click)="closeModal($event)">
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>New Laundry Order</h3>
+            <h3>New ClothAura Order</h3>
             <button class="close-btn" (click)="closeNewOrderModal()">
               <i class="fas fa-times"></i>
             </button>
@@ -1275,6 +1268,8 @@ declare var Chart: any;
       overflow-x: auto;
       overflow-y: hidden;
       box-sizing: border-box;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     /* Override main layout page-content padding */
@@ -1343,8 +1338,8 @@ declare var Chart: any;
 
     /* Dashboard Content Styles (same as main dashboard) */
     .dashboard-content {
-      padding: 20px;
-      padding-bottom: 40px;
+      padding: 10px;
+      padding-bottom: 20px;
       overflow: visible;
       box-sizing: border-box;
     }
@@ -1352,46 +1347,70 @@ declare var Chart: any;
     .card-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
+      gap: 15px;
+      margin-bottom: 20px;
     }
 
     .card {
-      padding: 20px;
-      border-radius: 12px;
-      color: white;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: 0.3s ease;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     .card:hover {
       transform: translateY(-4px);
-    }
-
-    .card.customers {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    }
-
-    .card.deposits {
-      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    }
-
-    .card.loans {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-
-    .card.earnings {
-      background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
     }
 
     .card h3 {
-      margin-bottom: 10px;
-      font-size: 20px;
+      margin: 0 0 8px 0;
+      font-size: 13px;
       font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
+
+    .card p {
+      margin: 0 0 12px 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+
+    .card.customers {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border-color: rgba(99, 102, 241, 0.2);
+    }
+
+
+    .card.deposits {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%);
+      border-color: rgba(245, 158, 11, 0.2);
+    }
+
+
+    .card.loans {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+
+    .card.earnings {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.1) 100%);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
 
     .card p {
       font-size: 28px;
@@ -1399,38 +1418,42 @@ declare var Chart: any;
       margin-bottom: 10px;
     }
 
-    .card i {
-      font-size: 30px;
-      opacity: 0.9;
-    }
 
     .charts {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin-bottom: 30px;
+      gap: 20px;
+      margin-bottom: 20px;
     }
 
     .chart-box {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 18px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       overflow: visible;
-      border: 1px solid #e2e8f0;
+      transition: all 0.3s ease;
+    }
+
+    .chart-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
     }
 
     .chart-box h4 {
-      margin-bottom: 10px;
-      font-size: 18px;
+      margin-bottom: 12px;
+      font-size: 16px;
       font-weight: 600;
       text-align: center;
-      color: #1f2937;
+      color: #374151;
+      letter-spacing: 0.5px;
     }
 
     canvas {
       width: 100% !important;
-      max-height: 300px;
+      max-height: 250px;
     }
 
 
@@ -1438,11 +1461,13 @@ declare var Chart: any;
     .tab-navigation {
       display: flex;
       gap: 5px;
-      margin-bottom: 30px;
-      background: white;
-      border-radius: 12px;
-      padding: 5px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       overflow-x: auto;
       min-width: 0;
       width: 100%;
@@ -1454,30 +1479,31 @@ declare var Chart: any;
       padding: 15px 20px;
       border: none;
       background: transparent;
-      border-radius: 8px;
+      border-radius: 12px;
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-weight: 600;
-      color: #6b7280;
+      font-weight: 500;
+      color: #64748b;
       font-size: 14px;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .tab-btn:hover {
-      background: #f3f4f6;
-      color: #374151;
+      background: rgba(241, 245, 249, 0.8);
+      color: #475569;
       transform: translateY(-1px);
     }
 
     .tab-btn.active {
-      background: #3b82f6;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transform: translateY(-1px);
     }
 
     .tab-btn i {
@@ -3734,7 +3760,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   userRole = 'admin'; // Default role, you can get this from auth service
   sidenavCollapsed = false;
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Laundry Management', route: '/laundry', active: true }
+    { label: 'ClothAura', route: '/laundry', active: true }
   ];
   
   // Search and filter
@@ -3968,12 +3994,28 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   }
 
   initCharts() {
-    // Prepare data for charts - Laundry specific data
-    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const orderCounts = [12, 18, 15, 22, 25, 28]; // Sample laundry orders per month
-    
-    // Bar Chart - Orders Per Month
-    new Chart(this.barChartRef.nativeElement, {
+    try {
+      console.log('Initializing ClothAura Dashboard charts...');
+      
+      // Check if Chart is available
+      if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded');
+        return;
+      }
+      
+      // Check if chart elements exist
+      if (!this.barChartRef || !this.pieChartRef || !this.lineChartRef) {
+        console.error('Chart elements not found');
+        return;
+      }
+      
+      // Prepare data for charts - Laundry specific data
+      const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      const orderCounts = [12, 18, 15, 22, 25, 28]; // Sample laundry orders per month
+      
+      // Bar Chart - Orders Per Month
+      console.log('Creating bar chart...');
+      new Chart(this.barChartRef.nativeElement, {
       type: 'bar',
       data: {
         labels: monthLabels,
@@ -3981,20 +4023,20 @@ export class LaundryComponent implements OnInit, AfterViewInit {
           label: 'Orders',
           data: orderCounts,
           backgroundColor: [
-            'rgba(59, 130, 246, 0.8)',
+            'rgba(99, 102, 241, 0.6)',
+            'rgba(16, 185, 129, 0.6)',
+            'rgba(245, 158, 11, 0.6)',
+            'rgba(139, 92, 246, 0.6)',
+            'rgba(239, 68, 68, 0.6)',
+            'rgba(236, 72, 153, 0.6)'
+          ],
+          borderColor: [
+            'rgba(99, 102, 241, 0.8)',
             'rgba(16, 185, 129, 0.8)',
             'rgba(245, 158, 11, 0.8)',
             'rgba(139, 92, 246, 0.8)',
             'rgba(239, 68, 68, 0.8)',
             'rgba(236, 72, 153, 0.8)'
-          ],
-          borderColor: [
-            'rgba(59, 130, 246, 1)',
-            'rgba(16, 185, 129, 1)',
-            'rgba(245, 158, 11, 1)',
-            'rgba(139, 92, 246, 1)',
-            'rgba(239, 68, 68, 1)',
-            'rgba(236, 72, 153, 1)'
           ],
           borderWidth: 2
         }]
@@ -4005,10 +4047,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         plugins: {
           legend: {
             labels: {
-              color: '#374151',
+              color: '#64748b',
               font: {
                 size: 14,
-                weight: 'bold'
+                weight: '500'
               }
             }
           }
@@ -4016,27 +4058,27 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         scales: {
           x: {
             ticks: {
-              color: '#374151',
+              color: '#64748b',
               font: {
                 size: 12,
-                weight: 'bold'
+                weight: '500'
               }
             },
             grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
+              color: 'rgba(148, 163, 184, 0.1)'
             }
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: '#374151',
+              color: '#64748b',
               font: {
                 size: 12,
-                weight: 'bold'
+                weight: '500'
               }
             },
             grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
+              color: 'rgba(148, 163, 184, 0.1)'
             }
           }
         }
@@ -4047,12 +4089,12 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     const serviceLabels = ['Wash & Fold', 'Dry Cleaning', 'Ironing', 'Express Service'];
     const serviceCounts = [45, 25, 20, 10]; // Sample service distribution
     const colors = [
-      'rgba(59, 130, 246, 0.8)',
-      'rgba(16, 185, 129, 0.8)', 
-      'rgba(245, 158, 11, 0.8)',
-      'rgba(139, 92, 246, 0.8)',
-      'rgba(239, 68, 68, 0.8)',
-      'rgba(236, 72, 153, 0.8)'
+      'rgba(99, 102, 241, 0.7)',
+      'rgba(16, 185, 129, 0.7)', 
+      'rgba(245, 158, 11, 0.7)',
+      'rgba(139, 92, 246, 0.7)',
+      'rgba(239, 68, 68, 0.7)',
+      'rgba(236, 72, 153, 0.7)'
     ];
     
     new Chart(this.pieChartRef.nativeElement, {
@@ -4072,10 +4114,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         plugins: {
           legend: {
             labels: {
-              color: '#374151',
+              color: '#64748b',
               font: {
                 size: 14,
-                weight: 'bold'
+                weight: '500'
               }
             }
           }
@@ -4091,12 +4133,12 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         datasets: [{
           label: 'Laundry Revenue (in ₹)',
           data: [8500, 12000, 10500, 15000, 13500, 18000],
-          borderColor: 'rgba(139, 92, 246, 1)',
-          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderColor: 'rgba(99, 102, 241, 0.8)',
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
           fill: true,
           tension: 0.4,
           borderWidth: 3,
-          pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+          pointBackgroundColor: 'rgba(99, 102, 241, 0.8)',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 2,
           pointRadius: 6
@@ -4108,10 +4150,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         plugins: {
           legend: {
             labels: {
-              color: '#374151',
+              color: '#64748b',
               font: {
                 size: 14,
-                weight: 'bold'
+                weight: '500'
               }
             }
           }
@@ -4119,36 +4161,50 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         scales: {
           x: {
             ticks: {
-              color: '#374151',
+              color: '#64748b',
               font: {
                 size: 12,
-                weight: 'bold'
+                weight: '500'
               }
             },
             grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
+              color: 'rgba(148, 163, 184, 0.1)'
             }
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: '#374151',
+              color: '#64748b',
               font: {
                 size: 12,
-                weight: 'bold'
+                weight: '500'
               }
             },
             grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
+              color: 'rgba(148, 163, 184, 0.1)'
             }
           }
         }
       }
     });
+    
+    console.log('ClothAura Dashboard charts initialized successfully!');
+    } catch (error) {
+      console.error('Error initializing ClothAura Dashboard charts:', error);
+    }
   }
 
   setActiveTab(tab: string) {
+    console.log('Switching to tab:', tab);
     this.activeTab = tab;
+    
+    // If switching to dashboard, reinitialize charts after a delay
+    if (tab === 'dashboard') {
+      console.log('Loading ClothAura Dashboard...');
+      setTimeout(() => {
+        this.initCharts();
+      }, 300);
+    }
   }
 
   navigateToBoard() {
@@ -4266,46 +4322,10 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     // console.log('Price updated for', service.name, ':', service[this.getServicePriceProperty()]);
   }
 
-  // Debug method to check prices
-  debugPrices() {
-    // console.log('=== DEBUG PRICES ===');
-    // console.log('Selected service type:', this.selectedServiceType);
-    // console.log('Selected service for:', this.selectedServiceFor);
-    // console.log('Filtered services count:', this.filteredServices.length);
-    
-    if (this.filteredServices.length > 0) {
-      const firstService = this.filteredServices[0];
-      // console.log('First service:', firstService.name);
-      // console.log('Base price:', firstService.price);
-      // console.log('Laundry price:', firstService.laundryPrice);
-      // console.log('Dry clean price:', firstService.dryCleanPrice);
-      // console.log('Ironing price:', firstService.ironingPrice);
-      // console.log('Current displayed price:', this.getServicePrice(firstService));
-    }
-    // console.log('=== END DEBUG ===');
-  }
 
   getServiceColor(category: string, clothType: string): string {
-    // Color coding based on category and service type
-    if (category === 'Men') {
-      return '#3b82f6'; // Blue for men's services
-    } else if (category === 'Women') {
-      return '#f472b6'; // Pink for women's services
-    } else if (category === 'Children') {
-      if (clothType.includes('Boy')) {
-        return '#f59e0b'; // Orange for boy's clothes
-      } else {
-        return '#ec4899'; // Pink for girl's clothes
-      }
-    }
-    
-    // Check if it's a dry clean service
-    if (clothType.includes('Suit') || clothType.includes('Blazer') || clothType.includes('Coat') || 
-        clothType.includes('Waistcoat') || clothType.includes('Formal Dress') || clothType.includes('Saree')) {
-      return '#10b981'; // Green for dry clean services
-    }
-    
-    return '#6b7280'; // Default gray
+    // Return white background for all cloth images
+    return '#ffffff';
   }
 
   getServiceEmoji(clothType: string): string {
@@ -5262,6 +5282,15 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         if (this.bills.length > 0) {
           console.log('Sample bill:', this.bills[0]);
         }
+        
+        // Force change detection to update the billing grid
+        console.log('Billing grid should now show', this.bills.length, 'bills');
+        console.log('Bills array:', this.bills);
+        
+        // Force Angular change detection
+        setTimeout(() => {
+          console.log('After timeout - Bills array length:', this.bills.length);
+        }, 100);
       } else {
         console.error('Failed to load bills:', response.statusText);
         this.toastService.error('Failed to load bills');
@@ -5632,8 +5661,11 @@ export class LaundryComponent implements OnInit, AfterViewInit {
           
           // If status changed to 'billed', refresh bills
           if (targetColumnId === 'billed') {
-            await this.loadBills();
-            this.toastService.success('Bill has been automatically generated!');
+            console.log('Status changed to billed - waiting 1 second before loading bills...');
+            setTimeout(async () => {
+              await this.loadBills();
+              this.toastService.success('Bill has been automatically generated!');
+            }, 1000);
           }
         } else {
         // Revert the change on failure
@@ -5781,6 +5813,16 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         const responseData = await response.json();
         console.log('Response data:', responseData);
         this.toastService.success('Customer updated successfully!');
+        
+        // Check if status was changed to 'billed' and refresh bills
+        if (customerData.status === 'billed') {
+          console.log('Customer updated to billed status - waiting 1 second before loading bills...');
+          setTimeout(async () => {
+            await this.loadBills();
+            this.toastService.success('Bill has been automatically generated!');
+          }, 1000);
+        }
+        
         this.closeCustomerDetailsModal();
         await this.loadCustomers();
         this.filteredCustomers = [...this.customers];
@@ -5861,6 +5903,16 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         const responseData = await response.json();
         console.log('Response data:', responseData);
         this.toastService.success('Customer created successfully!');
+        
+        // Check if status is 'billed' and refresh bills
+        if (customerData.status === 'billed') {
+          console.log('Customer created with billed status - waiting 1 second before loading bills...');
+          setTimeout(async () => {
+            await this.loadBills();
+            this.toastService.success('Bill has been automatically generated!');
+          }, 1000);
+        }
+        
         this.closeCustomerModal();
         this.customerForm.reset();
         await this.loadCustomers();
@@ -5874,6 +5926,42 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       console.error('Error creating customer:', error);
       this.toastService.error('Error creating customer');
     }
+  }
+
+  // Handle status change from dropdown
+  async onStatusChange(event: any) {
+    const newStatus = event.target.value;
+    console.log('Status changed to:', newStatus);
+    
+    // If status changed to 'billed', show a confirmation and trigger auto-bill generation
+    if (newStatus === 'billed') {
+      const confirmed = confirm('Changing status to "Billed" will automatically generate a bill. Continue?');
+      if (confirmed) {
+        // The status change will be handled by the form submission
+        // The backend will auto-generate the bill when the status is updated
+        console.log('Status change to billed confirmed - bill will be auto-generated');
+      } else {
+        // Revert the dropdown selection
+        event.target.value = this.customerForm.get('status')?.value || 'received';
+        return;
+      }
+    }
+  }
+
+  // Manual method to refresh billing grid (for testing)
+  async refreshBillingGrid() {
+    console.log('=== MANUAL BILLING GRID REFRESH ===');
+    await this.loadBills();
+    console.log('Billing grid refreshed manually');
+  }
+
+  // Method to check billing grid state (for testing)
+  checkBillingGridState() {
+    console.log('=== BILLING GRID STATE CHECK ===');
+    console.log('Bills array length:', this.bills.length);
+    console.log('Bills array:', this.bills);
+    console.log('Active tab:', this.activeTab);
+    console.log('Show bill modal:', this.showBillModal);
   }
 
   populateCartFromCustomerDetails() {
@@ -5986,8 +6074,11 @@ export class LaundryComponent implements OnInit, AfterViewInit {
             
             // If status changed to 'billed', refresh bills
             if (statusObj.id === 'billed') {
-              await this.loadBills();
-              this.toastService.success('Bill has been automatically generated!');
+              console.log('Status updated to billed via prompt - waiting 1 second before loading bills...');
+              setTimeout(async () => {
+                await this.loadBills();
+                this.toastService.success('Bill has been automatically generated!');
+              }, 1000);
             }
     } else {
             const error = await response.json();
@@ -6054,8 +6145,11 @@ export class LaundryComponent implements OnInit, AfterViewInit {
           this.filteredCustomers = [...this.customers];
           
           // Refresh bills to show the auto-generated bill
-          await this.loadBills();
-          this.toastService.success('Bill has been automatically generated!');
+          console.log('Move to billed - waiting 1 second before loading bills...');
+          setTimeout(async () => {
+            await this.loadBills();
+            this.toastService.success('Bill has been automatically generated!');
+          }, 1000);
         } else {
           const error = await response.json();
           this.toastService.error(error.error || 'Failed to move order to billed status');

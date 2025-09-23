@@ -86,7 +86,7 @@ export class MainLayoutComponent {
     { label: 'Deposits', icon: 'fas fa-piggy-bank', route: '/deposits', roles: ['admin', 'user'] },
     { label: 'LIC Policies', icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'user', 'lic'] },
     { label: 'EMI Calculator', icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
-    { label: 'Laundry', icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'user', 'laundry'] },
+    { label: 'ClothAura', icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'user', 'laundry'] },
     { label: 'Reports', icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
     { label: 'User Management', icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] }
   ];

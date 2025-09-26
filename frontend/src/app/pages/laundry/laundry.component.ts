@@ -1169,96 +1169,96 @@ declare var Chart: any;
       <div class="modal" [class.active]="showViewBillModal" (click)="closeModal($event)">
         <div class="modal-content view-bill-modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>Bill Details - {{ selectedBillForView?.id }}</h3>
+            <h3>Bill Preview - {{ selectedBillForView?.id }}</h3>
             <button class="close-btn" (click)="closeViewBillModal()">
               <i class="fas fa-times"></i>
             </button>
           </div>
           <div class="modal-body" *ngIf="selectedBillForView">
-            <div class="bill-details">
-              <div class="bill-info-section">
-                <h4><i class="fas fa-user"></i> Customer Information</h4>
-                <div class="info-grid">
-                  <div class="info-item">
-                    <label>Customer Name:</label>
-                    <span>{{ selectedBillForView.customer }}</span>
-                  </div>
-                  <div class="info-item">
-                    <label>Phone:</label>
-                    <span>{{ selectedBillForView.phone }}</span>
+            <div class="bill-preview">
+              <!-- Bill Header -->
+              <div class="bill-header">
+                <div class="company-info">
+                  <h2>{{ billingConfig.company_name || 'ClothAura' }}</h2>
+                  <p *ngIf="billingConfig.company_address">{{ billingConfig.company_address }}</p>
+                  <p *ngIf="billingConfig.company_phone">{{ billingConfig.company_phone }}</p>
+                  <p *ngIf="billingConfig.company_email">{{ billingConfig.company_email }}</p>
+                  <p *ngIf="billingConfig.company_website">{{ billingConfig.company_website }}</p>
+                  <p *ngIf="billingConfig.tax_id"><strong>GST:</strong> {{ billingConfig.tax_id }}</p>
+                </div>
+                <div class="bill-details">
+                  <h1>BILL</h1>
+                  <div class="bill-meta">
+                    <p><strong>Bill #:</strong> {{ selectedBillForView.id }}</p>
+                    <p><strong>Date:</strong> {{ selectedBillForView.createdDate || getCurrentDate() }}</p>
+                    <p><strong>Due Date:</strong> {{ selectedBillForView.dueDate }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="bill-info-section">
-                <h4><i class="fas fa-list"></i> Bill Information</h4>
-                <div class="info-grid">
-                  <div class="info-item">
-                    <label>Bill ID:</label>
-                    <span>{{ selectedBillForView.id }}</span>
-                  </div>
-                  <div class="info-item">
-                    <label>Status:</label>
-                    <span class="status-badge" [class]="'status-' + selectedBillForView.status.toLowerCase()">
-                      {{ selectedBillForView.status }}
-                    </span>
-                  </div>
-                  <div class="info-item">
-                    <label>Service Type:</label>
-                    <span>{{ selectedBillForView.serviceType }}</span>
-                  </div>
-                  <div class="info-item">
-                    <label>Due Date:</label>
-                    <span>{{ selectedBillForView.dueDate }}</span>
-                  </div>
-                  <div class="info-item">
-                    <label>Created Date:</label>
-                    <span>{{ selectedBillForView.createdDate }}</span>
-                  </div>
+              <!-- Customer Information -->
+              <div class="customer-info">
+                <h3>Bill To:</h3>
+                <p><strong>{{ selectedBillForView.customer }}</strong></p>
+                <p>{{ selectedBillForView.phone || 'N/A' }}</p>
+                <p>{{ selectedBillForView.customerAddress || 'N/A' }}</p>
+              </div>
+
+              <!-- Bill Items -->
+              <div class="bill-items">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th>Qty</th>
+                      <th>Rate</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of getBillItemsForView(selectedBillForView); else simpleItemRow">
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>₹{{ item.unitPrice || item.price }}</td>
+                      <td>₹{{ item.totalPrice || (item.quantity * (item.unitPrice || item.price)) }}</td>
+                    </tr>
+                    <ng-template #simpleItemRow>
+                      <tr>
+                        <td>{{ selectedBillForView.serviceType || 'Laundry Service' }}</td>
+                        <td>1</td>
+                        <td>₹{{ selectedBillForView.amount * 0.85 | number:'1.2-2' }}</td>
+                        <td>₹{{ selectedBillForView.amount * 0.85 | number:'1.2-2' }}</td>
+                      </tr>
+                    </ng-template>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Bill Summary -->
+              <div class="bill-summary">
+                <div class="summary-row">
+                  <span>Subtotal:</span>
+                  <span>₹{{ selectedBillForView.amount * 0.85 | number:'1.2-2' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span>Tax ({{ billingConfig.tax_rate || 18 }}%):</span>
+                  <span>₹{{ selectedBillForView.amount * 0.15 | number:'1.2-2' }}</span>
+                </div>
+                <div class="summary-row total">
+                  <span><strong>Total:</strong></span>
+                  <span><strong>₹{{ selectedBillForView.amount | number:'1.2-2' }}</strong></span>
                 </div>
               </div>
 
-              <div class="bill-info-section">
-                <h4><i class="fas fa-shopping-cart"></i> Items & Services</h4>
-                <div class="items-list">
-                  <div class="items-breakdown" *ngIf="getBillItemsBreakdown(selectedBillForView).length > 0; else simpleItems">
-                    <div class="item-row header">
-                      <div class="item-name">Item</div>
-                      <div class="service-type">Service Type</div>
-                      <div class="quantity">Qty</div>
-                      <div class="unit-price">Unit Price</div>
-                      <div class="total-price">Total</div>
-                    </div>
-                    <div class="item-row" *ngFor="let item of getBillItemsBreakdown(selectedBillForView)">
-                      <div class="item-name">{{ item.name }}</div>
-                      <div class="service-type">
-                        <span class="service-badge" [class]="'service-' + item.serviceType.toLowerCase().replace(' ', '-')">
-                          {{ item.serviceType }}
-                        </span>
-                      </div>
-                      <div class="quantity">{{ item.quantity }}</div>
-                      <div class="unit-price">₹{{ item.unitPrice }}</div>
-                      <div class="total-price">₹{{ item.totalPrice }}</div>
-                    </div>
-                  </div>
-                  <ng-template #simpleItems>
-                    <p>{{ selectedBillForView.items }}</p>
-                  </ng-template>
-                </div>
+              <!-- Payment Terms -->
+              <div class="payment-terms" *ngIf="billingConfig.payment_terms">
+                <h4>Payment Terms:</h4>
+                <p>{{ billingConfig.payment_terms }}</p>
               </div>
 
-              <div class="bill-info-section">
-                <h4><i class="fas fa-rupee-sign"></i> Amount</h4>
-                <div class="amount-display">
-                  <span class="total-amount">₹{{ selectedBillForView.amount }}</span>
-                </div>
-              </div>
-
-              <div class="bill-info-section" *ngIf="selectedBillForView.notes">
-                <h4><i class="fas fa-sticky-note"></i> Notes</h4>
-                <div class="notes-content">
-                  <p>{{ selectedBillForView.notes }}</p>
-                </div>
+              <!-- Footer -->
+              <div class="bill-footer">
+                <p>Thank you for choosing {{ billingConfig.company_name || 'ClothAura' }}!</p>
               </div>
             </div>
 
@@ -4199,6 +4199,150 @@ declare var Chart: any;
       border-bottom: 1px solid #f0f0f0;
     }
 
+    /* Bill Preview Styles for View Modal */
+    .view-bill-modal .bill-preview {
+      padding: 25px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: white;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .view-bill-modal .bill-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .view-bill-modal .company-info h2 {
+      margin: 0 0 8px 0;
+      color: #667eea;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .view-bill-modal .company-info p {
+      margin: 3px 0;
+      color: #6c757d;
+      font-size: 12px;
+    }
+
+    .view-bill-modal .bill-details h1 {
+      margin: 0 0 10px 0;
+      color: #495057;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .view-bill-modal .bill-meta p {
+      margin: 3px 0;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: right;
+    }
+
+    .view-bill-modal .customer-info {
+      margin-bottom: 25px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+
+    .view-bill-modal .customer-info h3 {
+      margin: 0 0 8px 0;
+      color: #495057;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .view-bill-modal .customer-info p {
+      margin: 3px 0;
+      color: #6c757d;
+      font-size: 12px;
+    }
+
+    .view-bill-modal .bill-items {
+      margin-bottom: 25px;
+    }
+
+    .view-bill-modal .bill-items table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e9ecef;
+    }
+
+    .view-bill-modal .bill-items th,
+    .view-bill-modal .bill-items td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
+      font-size: 12px;
+    }
+
+    .view-bill-modal .bill-items th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .view-bill-modal .bill-items td {
+      color: #6c757d;
+    }
+
+    .view-bill-modal .bill-summary {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+
+    .view-bill-modal .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .view-bill-modal .summary-row.total {
+      border-top: 2px solid #e9ecef;
+      padding-top: 6px;
+      margin-top: 6px;
+      font-size: 14px;
+    }
+
+    .view-bill-modal .payment-terms {
+      margin-bottom: 15px;
+      padding: 12px;
+      background: #e3f2fd;
+      border-radius: 6px;
+      border-left: 4px solid #2196f3;
+    }
+
+    .view-bill-modal .payment-terms h4 {
+      margin: 0 0 5px 0;
+      color: #1976d2;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .view-bill-modal .payment-terms p {
+      margin: 0;
+      color: #1976d2;
+      font-size: 11px;
+    }
+
+    .view-bill-modal .bill-footer {
+      text-align: center;
+      padding-top: 15px;
+      border-top: 1px solid #e9ecef;
+      color: #6c757d;
+      font-size: 11px;
+    }
+
   `]
 })
 export class LaundryComponent implements OnInit, AfterViewInit {
@@ -4219,6 +4363,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   billTotalAmount = 0; // Total amount for the bill
   selectedBillForView: any = null; // Bill selected for viewing
   billItemsBreakdownCache: Map<string, any[]> = new Map(); // Cache for bill items breakdown
+  billingConfig: any = {}; // Billing configuration for company details
   editingCustomer: any = null;
   editingService: any = null;
   
@@ -4479,6 +4624,9 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     
     // Initialize price properties for all services
     this.initializeServicePrices();
+    
+    // Load billing configuration for company details
+    await this.loadBillingConfig();
     
     // Load customers, services, and bills from API first
     await this.loadCustomers();
@@ -5177,6 +5325,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       console.log('Customer items_json:', customer.items_json);
       console.log('Customer items:', customer.items);
       this.selectedCustomerForDetails = customer;
+      this.editingCustomer = customer; // Set editing customer for updates
       this.isViewMode = true;
       
       // Populate the form with customer data for viewing
@@ -5187,6 +5336,18 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         address: customer.address || '',
         status: customer.status || 'received'
       });
+      
+      // Mark form as valid since we're populating with existing data
+      this.customerForm.markAsTouched();
+      this.customerForm.updateValueAndValidity();
+      
+      // Populate the cart with existing items if any (same as ClothAura board)
+      this.populateCartFromCustomerDetails();
+      
+      // Reset search and filter terms for services
+      this.serviceSearchTerm = '';
+      this.cartServiceTypeFilter = '';
+      this.selectedServiceFor = ''; // Reset to show all services
       
       this.showCustomerDetailsModal = true;
     } else {
@@ -5308,6 +5469,49 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     alert('Bill printed successfully!');
   }
 
+  getCurrentDate(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  async loadBillingConfig() {
+    try {
+      const response = await fetch(`${environment.apiUrl}/billing-config`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        this.billingConfig = await response.json();
+      } else {
+        console.error('Failed to load billing config');
+        // Set default values if API fails
+        this.billingConfig = {
+          company_name: 'ClothAura',
+          company_address: '123 Laundry Street, City, 123456',
+          company_phone: '+91-9876543210',
+          company_email: 'contact@clothaura.com',
+          company_website: 'www.clothaura.com',
+          tax_id: 'GST123456789',
+          tax_rate: 18,
+          payment_terms: 'Payment due within 30 days'
+        };
+      }
+    } catch (error) {
+      console.error('Error loading billing config:', error);
+      // Set default values if API fails
+      this.billingConfig = {
+        company_name: 'ClothAura',
+        company_address: '123 Laundry Street, City, 123456',
+        company_phone: '+91-9876543210',
+        company_email: 'contact@clothaura.com',
+        company_website: 'www.clothaura.com',
+        tax_id: 'GST123456789',
+        tax_rate: 18,
+        payment_terms: 'Payment due within 30 days'
+      };
+    }
+  }
+
   async markPaid(billId: string) {
     const bill = this.bills.find(b => b.id === billId);
     if (bill && bill.databaseId) {
@@ -5366,6 +5570,24 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.selectedBillForView = null;
     // Clear cache to free memory
     this.billItemsBreakdownCache.clear();
+  }
+
+  getBillItemsForView(bill: any): any[] {
+    if (!bill) return [];
+    
+    // First, try to use selectedItems if available (most accurate)
+    if (bill.selectedItems && Array.isArray(bill.selectedItems) && bill.selectedItems.length > 0) {
+      return bill.selectedItems.map((item: any) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.price,
+        totalPrice: item.totalPrice,
+        serviceType: item.serviceType
+      }));
+    }
+    
+    // Fallback to getBillItemsBreakdown for parsing string items
+    return this.getBillItemsBreakdown(bill);
   }
 
   getBillItemsBreakdown(bill: any): any[] {
@@ -5576,13 +5798,88 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         this.billForm.patchValue({
           customerPhone: selectedCustomer.phone
         });
+        
+        // Auto-populate items from customer
+        this.populateBillItemsFromCustomer(selectedCustomer);
       }
     } else {
-      // Clear phone number if no customer selected
+      // Clear phone number and items if no customer selected
       this.billForm.patchValue({
         customerPhone: ''
       });
+      this.selectedBillItems = [];
+      this.calculateBillTotal();
     }
+  }
+
+  populateBillItemsFromCustomer(customer: any) {
+    // Clear existing items
+    this.selectedBillItems = [];
+    
+    // Try to get items from items_json first (structured data)
+    if (customer.items_json && Array.isArray(customer.items_json)) {
+      customer.items_json.forEach((item: any) => {
+        this.selectedBillItems.push({
+          name: item.name || item.service?.name,
+          quantity: item.quantity || 1,
+          price: item.price || item.service?.price || 25,
+          totalPrice: (item.quantity || 1) * (item.price || item.service?.price || 25),
+          serviceType: item.serviceType || item.service_type || 'laundry',
+          service: item.service || { name: item.name, price: item.price || 25 }
+        });
+      });
+    } else if (customer.items && typeof customer.items === 'string') {
+      // Parse items string format: "2x Men Shirt (Laundry), 1x Men Coat (Dry Clean)"
+      const itemsString = customer.items;
+      const itemMatches = itemsString.match(/(\d+)x\s+([^(]+)\s*\(([^)]+)\)/g);
+      
+      if (itemMatches) {
+        itemMatches.forEach((match: string) => {
+          const parts = match.match(/(\d+)x\s+([^(]+)\s*\(([^)]+)\)/);
+          if (parts) {
+            const quantity = parseInt(parts[1]);
+            const name = parts[2].trim();
+            const serviceType = parts[3].trim();
+            
+            // Find matching service to get price
+            const service = this.services.find(s => 
+              s.name.toLowerCase().includes(name.toLowerCase()) || 
+              name.toLowerCase().includes(s.name.toLowerCase())
+            );
+            
+            // Get price based on service type
+            let unitPrice = 25; // Default price
+            if (service) {
+              if (serviceType.toLowerCase().includes('laundry')) {
+                unitPrice = service.laundryPrice || service.price;
+              } else if (serviceType.toLowerCase().includes('dry clean') || serviceType.toLowerCase().includes('dry-clean')) {
+                unitPrice = service.dryCleanPrice || service.price;
+              } else if (serviceType.toLowerCase().includes('ironing') || serviceType.toLowerCase().includes('iron')) {
+                unitPrice = service.ironingPrice || service.price;
+              } else {
+                unitPrice = service.price;
+              }
+            }
+            
+            const totalPrice = quantity * unitPrice;
+            
+            this.selectedBillItems.push({
+              name,
+              quantity,
+              price: unitPrice,
+              totalPrice,
+              serviceType,
+              service: service || { name, price: unitPrice }
+            });
+          }
+        });
+      }
+    }
+    
+    // Calculate total after populating items
+    this.calculateBillTotal();
+    
+    console.log('Auto-populated bill items for customer:', customer.name, this.selectedBillItems);
   }
 
   async submitBill() {

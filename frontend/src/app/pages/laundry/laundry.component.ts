@@ -416,12 +416,33 @@ declare var Chart: any;
 
       <!-- Settings Tab -->
       <div class="tab-content" *ngIf="activeTab === 'whatsapp'">
-        <div class="whatsapp-config-placeholder">
+        <div class="settings-content">
           <h2><i class="fas fa-cog"></i> Settings</h2>
-          <p>System settings and configuration options will be available here.</p>
-          <div class="config-section">
-            <h3>General Settings</h3>
-            <p>Configure system preferences and notification settings.</p>
+          
+          <div class="settings-grid">
+            <div class="settings-card">
+              <h3><i class="fas fa-receipt"></i> Bill Setup</h3>
+              <p>Configure bill layout and required fields</p>
+              <button class="btn-primary" (click)="openBillSetupModal()">
+                <i class="fas fa-cog"></i> Configure
+              </button>
+            </div>
+            
+            <div class="settings-card">
+              <h3><i class="fas fa-bell"></i> Notifications</h3>
+              <p>Manage notification preferences</p>
+              <button class="btn-secondary" disabled>
+                <i class="fas fa-cog"></i> Coming Soon
+              </button>
+            </div>
+            
+            <div class="settings-card">
+              <h3><i class="fas fa-palette"></i> Appearance</h3>
+              <p>Customize theme and colors</p>
+              <button class="btn-secondary" disabled>
+                <i class="fas fa-cog"></i> Coming Soon
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1252,6 +1273,234 @@ declare var Chart: any;
                 <i class="fas fa-check"></i> Mark as Paid
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bill Setup Modal -->
+      <div *ngIf="showBillSetupModal" class="modal-overlay" (click)="closeBillSetupModal()">
+        <div class="modal-content bill-setup-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3><i class="fas fa-receipt"></i> Bill Setup Configuration</h3>
+            <button class="close-btn" (click)="closeBillSetupModal()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="bill-setup-content">
+              <!-- Left Side - All Configuration Sections -->
+              <div class="config-sections-left">
+                <!-- Layout Configuration -->
+                <div class="config-section">
+                  <h4><i class="fas fa-layout"></i> Layout</h4>
+                  <div class="form-group">
+                    <label>Bill Template Style</label>
+                    <select [(ngModel)]="billConfig.templateStyle">
+                      <option value="modern">Modern</option>
+                      <option value="classic">Classic</option>
+                      <option value="minimal">Minimal</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Company Logo Position</label>
+                    <select [(ngModel)]="billConfig.logoPosition">
+                      <option value="top-left">Top Left</option>
+                      <option value="top-center">Top Center</option>
+                      <option value="top-right">Top Right</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Bill Number Format</label>
+                    <input type="text" [(ngModel)]="billConfig.billNumberFormat" placeholder="e.g., BILL-{YYYY}-{MM}-{###}">
+                  </div>
+                </div>
+
+                <!-- Required Fields Configuration -->
+                <div class="config-section">
+                  <h4><i class="fas fa-list-check"></i> Fields</h4>
+                  <div class="fields-grid">
+                    <div class="field-item" *ngFor="let field of billFields">
+                      <label class="field-checkbox">
+                        <input type="checkbox" [(ngModel)]="field.required" [id]="'field-' + field.id">
+                        <span class="checkmark"></span>
+                        <div class="field-info">
+                          <strong>{{ field.name }}</strong>
+                          <small>{{ field.description }}</small>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Company Details Configuration -->
+                <div class="config-section company-section">
+                  <h4><i class="fas fa-building"></i> Company</h4>
+                  <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" [(ngModel)]="companyDetails.companyName">
+                  </div>
+                  <div class="form-group">
+                    <label>Tagline</label>
+                    <input type="text" [(ngModel)]="companyDetails.tagline">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Address Line 1</label>
+                    <input type="text" [(ngModel)]="companyDetails.address.line1">
+                  </div>
+                  <div class="form-group">
+                    <label>Address Line 2</label>
+                    <input type="text" [(ngModel)]="companyDetails.address.line2">
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>City</label>
+                      <input type="text" [(ngModel)]="companyDetails.address.city">
+                    </div>
+                    <div class="form-group">
+                      <label>State</label>
+                      <input type="text" [(ngModel)]="companyDetails.address.state">
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Pincode</label>
+                      <input type="text" [(ngModel)]="companyDetails.address.pincode">
+                    </div>
+                    <div class="form-group">
+                      <label>Country</label>
+                      <input type="text" [(ngModel)]="companyDetails.address.country">
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Phone</label>
+                      <input type="text" [(ngModel)]="companyDetails.contact.phone">
+                    </div>
+                    <div class="form-group">
+                      <label>Email</label>
+                      <input type="text" [(ngModel)]="companyDetails.contact.email">
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Website</label>
+                    <input type="text" [(ngModel)]="companyDetails.contact.website">
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>GST Number</label>
+                      <input type="text" [(ngModel)]="companyDetails.business.gstNumber">
+                    </div>
+                    <div class="form-group">
+                      <label>PAN Number</label>
+                      <input type="text" [(ngModel)]="companyDetails.business.panNumber">
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>License Number</label>
+                    <input type="text" [(ngModel)]="companyDetails.business.licenseNumber">
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>WhatsApp</label>
+                      <input type="text" [(ngModel)]="companyDetails.social.whatsapp">
+                    </div>
+                    <div class="form-group">
+                      <label>Instagram</label>
+                      <input type="text" [(ngModel)]="companyDetails.social.instagram">
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Facebook</label>
+                    <input type="text" [(ngModel)]="companyDetails.social.facebook">
+                  </div>
+                </div>
+
+                <!-- Additional Settings -->
+                <div class="config-section">
+                  <h4><i class="fas fa-cog"></i> Settings</h4>
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="billConfig.showTaxBreakdown">
+                      <span class="checkmark"></span>
+                      Show Tax Breakdown
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="billConfig.showCompanyDetails">
+                      <span class="checkmark"></span>
+                      Show Company Details
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label>Tax Rate (%)</label>
+                    <input type="number" [(ngModel)]="billConfig.taxRate" min="0" max="100" step="0.01">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Side - Preview Section -->
+              <div class="preview-section">
+                <h4><i class="fas fa-eye"></i> Preview</h4>
+                <div class="bill-preview">
+                  <div class="preview-header">
+                    <h2>{{ companyDetails.companyName || 'ClothAura Laundry Services' }}</h2>
+                    <p>{{ companyDetails.tagline || 'Professional Laundry & Dry Cleaning' }}</p>
+                  </div>
+                  <div class="preview-section" *ngIf="billConfig.showCompanyDetails">
+                    <h4>Company Details</h4>
+                    <p>
+                      <span *ngIf="companyDetails.address.line1"><strong>Address:</strong> {{ companyDetails.address.line1 }}<br></span>
+                      <span *ngIf="companyDetails.address.line2">{{ companyDetails.address.line2 }}<br></span>
+                      <span *ngIf="companyDetails.address.city"><strong>City:</strong> {{ companyDetails.address.city }}<br></span>
+                      <span *ngIf="companyDetails.address.state"><strong>State:</strong> {{ companyDetails.address.state }}<br></span>
+                      <span *ngIf="companyDetails.address.pincode"><strong>Pincode:</strong> {{ companyDetails.address.pincode }}<br></span>
+                      <span *ngIf="companyDetails.address.country"><strong>Country:</strong> {{ companyDetails.address.country }}<br></span>
+                      <span *ngIf="companyDetails.contact.phone"><strong>Phone:</strong> {{ companyDetails.contact.phone }}<br></span>
+                      <span *ngIf="companyDetails.contact.email"><strong>Email:</strong> {{ companyDetails.contact.email }}<br></span>
+                      <span *ngIf="companyDetails.contact.website"><strong>Website:</strong> {{ companyDetails.contact.website }}<br></span>
+                      <span *ngIf="companyDetails.business.gstNumber"><strong>GST:</strong> {{ companyDetails.business.gstNumber }}<br></span>
+                      <span *ngIf="companyDetails.business.panNumber"><strong>PAN:</strong> {{ companyDetails.business.panNumber }}<br></span>
+                    </p>
+                  </div>
+                  <div class="preview-section">
+                    <h4>Customer Information</h4>
+                    <p>Name: John Doe<br>
+                    Phone: +91 9876543210</p>
+                  </div>
+                  <div class="preview-section">
+                    <h4>Items</h4>
+                    <div class="preview-items">
+                      <div class="preview-item">2x Men Shirt (Laundry) - ₹200</div>
+                      <div class="preview-item">1x Men Coat (Dry Clean) - ₹150</div>
+                    </div>
+                  </div>
+                  <div class="preview-section" *ngIf="billConfig.showTaxBreakdown">
+                    <h4>Tax Breakdown</h4>
+                    <p>Subtotal: ₹350<br>
+                    Tax ({{ billConfig.taxRate }}%): ₹{{ (350 * billConfig.taxRate / 100).toFixed(2) }}<br>
+                    <strong>Total: ₹{{ (350 + (350 * billConfig.taxRate / 100)).toFixed(2) }}</strong></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" (click)="closeBillSetupModal()" class="btn-secondary">Cancel</button>
+            <button type="button" (click)="saveBillSetup()" class="btn-primary">
+              <i class="fas fa-save"></i> Save Configuration
+            </button>
           </div>
         </div>
       </div>
@@ -3734,6 +3983,222 @@ declare var Chart: any;
       font-size: 14px;
     }
 
+    /* Bill Setup Modal Styles */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .settings-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+    
+    .settings-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .settings-card h3 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+    
+    .settings-card h3 i {
+      margin-right: 10px;
+      color: #007bff;
+    }
+    
+    .settings-card p {
+      color: #666;
+      margin-bottom: 15px;
+    }
+    
+    .btn-primary, .btn-secondary {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #545b62;
+    }
+    
+    .btn-secondary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    /* Bill Setup Modal */
+    .bill-setup-modal {
+      width: 1200px;
+      height: 800px;
+    }
+    
+    .bill-setup-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      height: 100%;
+    }
+    
+    .config-sections-left {
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    
+    .config-section {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .config-section h4 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+    
+    .config-section h4 i {
+      margin-right: 8px;
+      color: #007bff;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    
+    .field-item {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 10px;
+    }
+    
+    .field-checkbox {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .field-checkbox input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    
+    .field-info strong {
+      display: block;
+      color: #333;
+    }
+    
+    .field-info small {
+      color: #666;
+    }
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .checkbox-label input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    
+    .preview-section {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .preview-section h4 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+    
+    .bill-preview {
+      font-family: Arial, sans-serif;
+    }
+    
+    .preview-header h2 {
+      color: #333;
+      margin-bottom: 5px;
+      font-size: 1.5rem;
+    }
+    
+    .preview-header p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+    
+    .preview-section p {
+      color: #333;
+      line-height: 1.5;
+    }
+    
+    .preview-items {
+      margin-top: 10px;
+    }
+    
+    .preview-item {
+      padding: 5px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
   `]
 })
 export class LaundryComponent implements OnInit, AfterViewInit {
@@ -3746,6 +4211,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   showServiceModal = false;
   showBillModal = false;
   showViewBillModal = false;
+  showBillSetupModal = false;
   selectedServiceType = 'laundry'; // Default to laundry
   selectedServiceFor = 'man'; // Default to man
   filteredServices: any[] = []; // Filtered services based on dropdown selections
@@ -3789,6 +4255,56 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     { id: 'L003', customer: 'Mike Johnson', items: '10 Shirts', status: 'Completed', amount: 200, date: '2024-01-14' },
     { id: 'L004', customer: 'Sarah Wilson', items: '3 Dresses', status: 'Pending', amount: 180, date: '2024-01-14' },
     { id: 'L005', customer: 'David Brown', items: '1 Coat', status: 'Processing', amount: 120, date: '2024-01-13' }
+  ];
+
+  // Bill Setup Configuration
+  billConfig = {
+    templateStyle: 'modern',
+    logoPosition: 'top-left',
+    billNumberFormat: 'BILL-{YYYY}-{MM}-{###}',
+    showTaxBreakdown: true,
+    showCompanyDetails: true,
+    taxRate: 5.0
+  };
+
+  companyDetails = {
+    companyName: 'ClothAura Laundry Services',
+    tagline: 'Professional Laundry & Dry Cleaning',
+    address: {
+      line1: '123 Business Street',
+      line2: 'Suite 100',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      pincode: '400001',
+      country: 'India'
+    },
+    contact: {
+      phone: '+91 98765 43210',
+      email: 'info@clothaura.com',
+      website: 'www.clothaura.com'
+    },
+    business: {
+      gstNumber: '27ABCDE1234F1Z5',
+      panNumber: 'ABCDE1234F',
+      licenseNumber: 'LAUNDRY/2024/001'
+    },
+    social: {
+      whatsapp: '+91 98765 43210',
+      instagram: '@clothaura_official',
+      facebook: 'ClothAura Laundry'
+    }
+  };
+
+  billFields = [
+    { id: 'customerName', name: 'Customer Name', description: 'Customer full name', required: true },
+    { id: 'customerPhone', name: 'Phone Number', description: 'Customer contact number', required: true },
+    { id: 'customerEmail', name: 'Email Address', description: 'Customer email (optional)', required: false },
+    { id: 'customerAddress', name: 'Address', description: 'Customer address (optional)', required: false },
+    { id: 'serviceType', name: 'Service Type', description: 'Type of service (laundry, dry clean, etc.)', required: true },
+    { id: 'items', name: 'Items', description: 'List of items and quantities', required: true },
+    { id: 'amount', name: 'Amount', description: 'Total bill amount', required: true },
+    { id: 'dueDate', name: 'Due Date', description: 'Payment due date', required: true },
+    { id: 'notes', name: 'Additional Notes', description: 'Additional notes (optional)', required: false }
   ];
 
   customers: any[] = [];
@@ -3953,6 +4469,14 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
   async ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';
+    
+    // Check for tab query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'whatsapp') {
+      this.activeTab = 'whatsapp';
+    }
+    
     // Initialize price properties for all services
     this.initializeServicePrices();
     
@@ -6188,6 +6712,51 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         console.error('Error deleting order:', error);
         this.toastService.error('Error deleting order');
       }
+    }
+  }
+
+  // Bill Setup Methods
+  openBillSetupModal() {
+    // Navigate to billing configuration page
+    this.router.navigate(['/billing-config']);
+  }
+
+  closeBillSetupModal() {
+    this.showBillSetupModal = false;
+  }
+
+  loadBillSetupConfig() {
+    try {
+      const savedConfig = localStorage.getItem('clothaura-bill-config');
+      if (savedConfig) {
+        this.billConfig = { ...this.billConfig, ...JSON.parse(savedConfig) };
+      }
+      
+      const savedFields = localStorage.getItem('clothaura-bill-fields');
+      if (savedFields) {
+        this.billFields = JSON.parse(savedFields);
+      }
+
+      const savedCompanyDetails = localStorage.getItem('clothaura-company-details');
+      if (savedCompanyDetails) {
+        this.companyDetails = { ...this.companyDetails, ...JSON.parse(savedCompanyDetails) };
+      }
+    } catch (error) {
+      console.error('Error loading bill setup configuration:', error);
+    }
+  }
+
+  saveBillSetup() {
+    try {
+      localStorage.setItem('clothaura-bill-config', JSON.stringify(this.billConfig));
+      localStorage.setItem('clothaura-bill-fields', JSON.stringify(this.billFields));
+      localStorage.setItem('clothaura-company-details', JSON.stringify(this.companyDetails));
+      
+      this.toastService.success('Bill setup configuration saved successfully!');
+      this.closeBillSetupModal();
+    } catch (error) {
+      console.error('Error saving bill setup configuration:', error);
+      this.toastService.error('Failed to save bill setup configuration');
     }
   }
 

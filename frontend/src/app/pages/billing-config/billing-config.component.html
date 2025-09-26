@@ -1,0 +1,389 @@
+<app-main-layout 
+  [userRole]="userRole" 
+  [sidenavCollapsed]="sidenavCollapsed"
+  [breadcrumbItems]="breadcrumbItems">
+  
+  <div class="billing-config-container">
+    <div class="config-layout">
+      <!-- Left Side - Configuration Form -->
+      <div class="config-form-section">
+        <div class="form-header">
+          <div class="header-content">
+            <div class="header-text">
+              <h2><i class="fas fa-cog"></i> Billing Configuration</h2>
+              <p>Configure your billing settings and invoice templates</p>
+            </div>
+            <button class="btn-close" (click)="closeConfiguration()" title="Close">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
+          <!-- Company Information Section -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('company')">
+              <h3><i class="fas fa-building"></i> Company Information</h3>
+              <i class="fas fa-chevron-down" [class.rotated]="showCompanyInfo"></i>
+            </div>
+            <div class="section-content" [class.collapsed]="!showCompanyInfo">
+              <div class="form-grid">
+                <div class="form-group" [class.has-error]="isSubmitted && validationErrors['company_name']">
+                  <label for="company_name">Company Name *</label>
+                  <input 
+                    type="text" 
+                    id="company_name" 
+                    name="company_name" 
+                    [(ngModel)]="billingConfig.company_name" 
+                    (ngModelChange)="onConfigChange()"
+                    required>
+                  <small class="error" *ngIf="isSubmitted && validationErrors['company_name']">
+                    {{ validationErrors['company_name'] }}
+                  </small>
+                </div>
+
+                <div class="form-group">
+                  <label for="company_address">Company Address</label>
+                  <textarea 
+                    id="company_address" 
+                    name="company_address" 
+                    [(ngModel)]="billingConfig.company_address"
+                    (ngModelChange)="onConfigChange()"
+                    rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="company_phone">Phone Number</label>
+                  <input 
+                    type="text" 
+                    id="company_phone" 
+                    name="company_phone" 
+                    [(ngModel)]="billingConfig.company_phone"
+                    (ngModelChange)="onConfigChange()">
+                </div>
+
+                <div class="form-group">
+                  <label for="company_email">Email Address</label>
+                  <input 
+                    type="email" 
+                    id="company_email" 
+                    name="company_email" 
+                    [(ngModel)]="billingConfig.company_email"
+                    (ngModelChange)="onConfigChange()">
+                </div>
+
+                <div class="form-group">
+                  <label for="company_website">Website</label>
+                  <input 
+                    type="url" 
+                    id="company_website" 
+                    name="company_website" 
+                    [(ngModel)]="billingConfig.company_website"
+                    (ngModelChange)="onConfigChange()">
+                </div>
+
+                <div class="form-group">
+                  <label for="tax_id">Tax ID / GST Number</label>
+                  <input 
+                    type="text" 
+                    id="tax_id" 
+                    name="tax_id" 
+                    [(ngModel)]="billingConfig.tax_id"
+                    (ngModelChange)="onConfigChange()">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Invoice Settings Section -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('invoice')">
+              <h3><i class="fas fa-file-invoice"></i> Invoice Settings</h3>
+              <i class="fas fa-chevron-down" [class.rotated]="showInvoiceSettings"></i>
+            </div>
+            <div class="section-content" [class.collapsed]="!showInvoiceSettings">
+              <div class="form-grid">
+                <div class="form-group" [class.has-error]="isSubmitted && validationErrors['currency']">
+                  <label for="currency">Currency *</label>
+                  <select 
+                    id="currency" 
+                    name="currency" 
+                    [(ngModel)]="billingConfig.currency"
+                    (ngModelChange)="onConfigChange()"
+                    required>
+                    <option value="INR">Indian Rupee (INR)</option>
+                    <option value="USD">US Dollar (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="GBP">British Pound (GBP)</option>
+                  </select>
+                  <small class="error" *ngIf="isSubmitted && validationErrors['currency']">
+                    {{ validationErrors['currency'] }}
+                  </small>
+                </div>
+
+                <div class="form-group" [class.has-error]="isSubmitted && validationErrors['currency_symbol']">
+                  <label for="currency_symbol">Currency Symbol *</label>
+                  <input 
+                    type="text" 
+                    id="currency_symbol" 
+                    name="currency_symbol" 
+                    [(ngModel)]="billingConfig.currency_symbol"
+                    (ngModelChange)="onConfigChange()"
+                    maxlength="5"
+                    required>
+                  <small class="error" *ngIf="isSubmitted && validationErrors['currency_symbol']">
+                    {{ validationErrors['currency_symbol'] }}
+                  </small>
+                </div>
+
+                <div class="form-group" [class.has-error]="isSubmitted && validationErrors['tax_rate']">
+                  <label for="tax_rate">Tax Rate (%)</label>
+                  <input 
+                    type="number" 
+                    id="tax_rate" 
+                    name="tax_rate" 
+                    [(ngModel)]="billingConfig.tax_rate"
+                    (ngModelChange)="onConfigChange()"
+                    min="0" 
+                    max="100" 
+                    step="0.01">
+                  <small class="error" *ngIf="isSubmitted && validationErrors['tax_rate']">
+                    {{ validationErrors['tax_rate'] }}
+                  </small>
+                </div>
+
+                <div class="form-group">
+                  <label for="invoice_prefix">Invoice Prefix</label>
+                  <input 
+                    type="text" 
+                    id="invoice_prefix" 
+                    name="invoice_prefix" 
+                    [(ngModel)]="billingConfig.invoice_prefix"
+                    (ngModelChange)="onConfigChange()">
+                </div>
+
+                <div class="form-group" [class.has-error]="isSubmitted && validationErrors['due_days']">
+                  <label for="due_days">Payment Due Days</label>
+                  <input 
+                    type="number" 
+                    id="due_days" 
+                    name="due_days" 
+                    [(ngModel)]="billingConfig.due_days"
+                    (ngModelChange)="onConfigChange()"
+                    min="0">
+                  <small class="error" *ngIf="isSubmitted && validationErrors['due_days']">
+                    {{ validationErrors['due_days'] }}
+                  </small>
+                </div>
+
+                <div class="form-group">
+                  <label for="payment_terms">Payment Terms</label>
+                  <textarea 
+                    id="payment_terms" 
+                    name="payment_terms" 
+                    [(ngModel)]="billingConfig.payment_terms"
+                    (ngModelChange)="onConfigChange()"
+                    rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="footer_text">Footer Text</label>
+                  <textarea 
+                    id="footer_text" 
+                    name="footer_text" 
+                    [(ngModel)]="billingConfig.footer_text"
+                    (ngModelChange)="onConfigChange()"
+                    rows="2"></textarea>
+                </div>
+              </div>
+
+              <!-- Display Options -->
+              <div class="display-options">
+                <h4>Display Options</h4>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="billingConfig.show_company_logo"
+                      (ngModelChange)="onConfigChange()"
+                      name="show_company_logo">
+                    <span class="checkmark"></span>
+                    Show Company Logo
+                  </label>
+                  
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="billingConfig.show_tax_breakdown"
+                      (ngModelChange)="onConfigChange()"
+                      name="show_tax_breakdown">
+                    <span class="checkmark"></span>
+                    Show Tax Breakdown
+                  </label>
+                  
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="billingConfig.show_payment_terms"
+                      (ngModelChange)="onConfigChange()"
+                      name="show_payment_terms">
+                    <span class="checkmark"></span>
+                    Show Payment Terms
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Automation Settings Section -->
+          <div class="form-section">
+            <div class="section-header" (click)="toggleSection('automation')">
+              <h3><i class="fas fa-robot"></i> Automation Settings</h3>
+              <i class="fas fa-chevron-down" [class.rotated]="showAutomation"></i>
+            </div>
+            <div class="section-content" [class.collapsed]="!showAutomation">
+              <div class="automation-options">
+                <h4>Auto-send Notifications</h4>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="billingConfig.auto_send_email"
+                      (ngModelChange)="onConfigChange()"
+                      name="auto_send_email">
+                    <span class="checkmark"></span>
+                    Auto-send Email Notifications
+                  </label>
+                  
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="billingConfig.auto_send_sms"
+                      (ngModelChange)="onConfigChange()"
+                      name="auto_send_sms">
+                    <span class="checkmark"></span>
+                    Auto-send SMS Notifications
+                  </label>
+                  
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="billingConfig.auto_send_whatsapp"
+                      (ngModelChange)="onConfigChange()"
+                      name="auto_send_whatsapp">
+                    <span class="checkmark"></span>
+                    Auto-send WhatsApp Notifications
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="resetForm()" [disabled]="isSubmitting">
+              <i class="fas fa-undo"></i> Reset
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+              <i class="fas fa-save" *ngIf="!isSubmitting"></i>
+              <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+              {{ isSubmitting ? 'Saving...' : 'Save Configuration' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right Side - Preview -->
+      <div class="preview-section">
+        <div class="preview-header">
+          <h3><i class="fas fa-eye"></i> Invoice Preview</h3>
+          <p>Live preview of your invoice template</p>
+        </div>
+
+        <div class="invoice-preview" *ngIf="previewData.invoice">
+          <!-- Invoice Header -->
+          <div class="invoice-header">
+            <div class="company-info" *ngIf="previewData.config?.show_company_logo">
+              <h2>{{ previewData.config?.company_name || 'Your Company' }}</h2>
+              <p *ngIf="previewData.config?.company_address">{{ previewData.config.company_address }}</p>
+              <p *ngIf="previewData.config?.company_phone">{{ previewData.config.company_phone }}</p>
+              <p *ngIf="previewData.config?.company_email">{{ previewData.config.company_email }}</p>
+            </div>
+            <div class="invoice-details">
+              <h1>INVOICE</h1>
+              <div class="invoice-meta">
+                <p><strong>Invoice #:</strong> {{ previewData.invoice.invoice_number }}</p>
+                <p><strong>Date:</strong> {{ previewData.invoice.date }}</p>
+                <p><strong>Due Date:</strong> {{ previewData.invoice.due_date }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Information -->
+          <div class="customer-info">
+            <h3>Bill To:</h3>
+            <p><strong>{{ previewData.invoice.customer.name }}</strong></p>
+            <p>{{ previewData.invoice.customer.phone }}</p>
+            <p>{{ previewData.invoice.customer.address }}</p>
+          </div>
+
+          <!-- Invoice Items -->
+          <div class="invoice-items">
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of previewData.invoice.items">
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ formatCurrency(item.price) }}</td>
+                  <td>{{ formatCurrency(item.total) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Invoice Summary -->
+          <div class="invoice-summary">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span>{{ formatCurrency(previewData.invoice.subtotal) }}</span>
+            </div>
+            <div class="summary-row" *ngIf="previewData.config?.show_tax_breakdown">
+              <span>Tax ({{ previewData.invoice.tax_rate }}%):</span>
+              <span>{{ formatCurrency(previewData.invoice.tax_amount) }}</span>
+            </div>
+            <div class="summary-row total">
+              <span><strong>Total:</strong></span>
+              <span><strong>{{ formatCurrency(previewData.invoice.total_amount) }}</strong></span>
+            </div>
+          </div>
+
+          <!-- Payment Terms -->
+          <div class="payment-terms" *ngIf="previewData.config?.show_payment_terms && previewData.config?.payment_terms">
+            <h4>Payment Terms:</h4>
+            <p>{{ previewData.config.payment_terms }}</p>
+          </div>
+
+          <!-- Footer -->
+          <div class="invoice-footer" *ngIf="previewData.config?.footer_text">
+            <p>{{ previewData.config.footer_text }}</p>
+          </div>
+        </div>
+
+        <!-- Preview Controls -->
+        <div class="preview-controls">
+          <button type="button" class="btn btn-outline" (click)="generatePreview()">
+            <i class="fas fa-refresh"></i> Refresh Preview
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-main-layout>

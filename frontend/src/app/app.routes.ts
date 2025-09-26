@@ -12,6 +12,7 @@ import { LicDashboardComponent } from './pages/lic-dashboard/lic-dashboard.compo
 import { LicProductsComponent } from './pages/lic-products/lic-products.component';
 import { LicPremiumCalculatorComponent } from './pages/lic-premium-calculator/lic-premium-calculator.component';
 import { LaundryComponent } from './pages/laundry/laundry.component';
+import { BillingConfigComponent } from './pages/billing-config/billing-config.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -27,6 +28,7 @@ export const routes: Routes = [
   { path: 'policies', component: PoliciesComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'lic'] } },
   { path: 'calculator', component: EmiCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
   { path: 'laundry', component: LaundryComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'laundry'] } },
+  { path: 'billing-config', component: BillingConfigComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
 
   { path: '**', redirectTo: 'login' }
 ];

@@ -8,6 +8,7 @@ import { ReportsComponent } from './pages/reports/reports.component';
 import { UsersComponent } from './pages/users/users.component';
 import { PoliciesComponent } from './pages/policies/policies.component';
 import { EmiCalculatorComponent } from './pages/calculator/emi-calculator.component';
+import { BillingConfigComponent } from './pages/billing-config/billing-config.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: 'users', component: UsersComponent, canActivate: [authGuard], data: { roles: ['admin'] } },
   { path: 'policies', component: PoliciesComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'lic'] } },
   { path: 'calculator', component: EmiCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
+  { path: 'billing-config', component: BillingConfigComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
 
   { path: '**', redirectTo: 'login' }
 ];

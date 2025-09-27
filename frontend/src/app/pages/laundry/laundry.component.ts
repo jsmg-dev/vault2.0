@@ -1628,8 +1628,8 @@ declare var Chart: any;
     .card h3 {
       margin: 0 0 8px 0;
       font-size: 13px;
-      font-weight: 600;
-      color: #64748b;
+      font-weight: 700;
+      color: #1f2937;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -1643,31 +1643,31 @@ declare var Chart: any;
 
 
     .card.customers {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-      border-color: rgba(99, 102, 241, 0.2);
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+      border-color: rgba(79, 70, 229, 0.3);
     }
 
 
     .card.deposits {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%);
-      border-color: rgba(245, 158, 11, 0.2);
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(234, 179, 8, 0.15) 100%);
+      border-color: rgba(217, 119, 6, 0.3);
     }
 
 
     .card.loans {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
-      border-color: rgba(16, 185, 129, 0.2);
+      background: linear-gradient(135deg, rgba(5, 150, 105, 0.15) 0%, rgba(21, 128, 61, 0.15) 100%);
+      border-color: rgba(5, 150, 105, 0.3);
     }
 
 
     .card.earnings {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.1) 100%);
-      border-color: rgba(239, 68, 68, 0.2);
+      background: linear-gradient(135deg, rgba(185, 28, 28, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+      border-color: rgba(185, 28, 28, 0.3);
     }
 
 
     .card p {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: bold;
       margin-bottom: 10px;
     }

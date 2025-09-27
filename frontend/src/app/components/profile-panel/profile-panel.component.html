@@ -1,0 +1,114 @@
+<div class="profile-panel-overlay" [class.open]="isOpen" (click)="closePanel()">
+  <div class="profile-panel" [class.open]="isOpen" (click)="$event.stopPropagation()">
+    <div class="profile-panel-header">
+      <h2><i class="fas fa-user"></i> Profile</h2>
+      <button class="close-btn" (click)="closePanel()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="profile-panel-content">
+      <div class="profile-avatar-section">
+        <div class="profile-avatar-container">
+          <div class="profile-avatar" [class.has-image]="profilePicPreview">
+            <img *ngIf="profilePicPreview" [src]="profilePicPreview" alt="Profile Picture" class="profile-image">
+            <i *ngIf="!profilePicPreview" class="fas fa-user-circle"></i>
+          </div>
+          <div class="profile-pic-actions">
+            <input 
+              #profilePicInput
+              type="file" 
+              accept="image/*" 
+              (change)="onFileSelected($event)"
+              style="display: none;"
+            >
+            <button 
+              class="btn btn-sm btn-secondary" 
+              (click)="triggerFileInput()"
+              title="Upload Profile Picture"
+            >
+              <i class="fas fa-camera"></i>
+            </button>
+            <button 
+              *ngIf="selectedFile || profilePicPreview" 
+              class="btn btn-sm btn-primary" 
+              (click)="uploadProfilePic()"
+              [disabled]="isUploading"
+              title="Save Profile Picture"
+            >
+              <i class="fas fa-save" *ngIf="!isUploading"></i>
+              <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
+            </button>
+            <button 
+              *ngIf="selectedFile || profilePicPreview" 
+              class="btn btn-sm btn-danger" 
+              (click)="removeProfilePic()"
+              [disabled]="isUploading"
+              title="Remove Profile Picture"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="profile-info">
+          <h3>{{ userProfile?.username || 'User Profile' }}</h3>
+          <div class="role-badge" [class]="getRoleBadgeClass(userProfile?.role || '')">
+            {{ getRoleDisplayName(userProfile?.role || '') }}
+          </div>
+        </div>
+      </div>
+
+
+      <div class="profile-info-section">
+        <h4><i class="fas fa-info-circle"></i> Account Information</h4>
+        
+        <div class="info-item">
+          <label>Full Name</label>
+          <span>{{ userProfile?.name || 'N/A' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Username</label>
+          <span>{{ userProfile?.username || 'N/A' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Email</label>
+          <span>{{ userProfile?.email || 'N/A' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Phone</label>
+          <span>{{ userProfile?.phone || 'N/A' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Address</label>
+          <span>{{ userProfile?.address || 'N/A' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>User ID</label>
+          <span>{{ userProfile?.id || 'N/A' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Role</label>
+          <span class="role-badge" [class]="getRoleBadgeClass(userProfile?.role || '')">
+            {{ getRoleDisplayName(userProfile?.role || '') }}
+          </span>
+        </div>
+
+        <div class="info-item">
+          <label>Account Created</label>
+          <span>{{ userProfile?.created_at ? (userProfile?.created_at | date:'medium') : 'N/A' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Last Login</label>
+          <span>{{ userProfile?.last_login ? (userProfile?.last_login | date:'medium') : 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

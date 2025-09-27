@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -13,7 +13,7 @@ import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component
   templateUrl: './emi-calculator.component.html',
   styleUrls: ['./emi-calculator.component.css']
 })
-export class EmiCalculatorComponent {
+export class EmiCalculatorComponent implements OnInit {
   amount: number = 0;
   rate: number = 0;
   months: number = 0;
@@ -26,6 +26,10 @@ export class EmiCalculatorComponent {
   breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Loan EMI Calculator', route: '/calculator' }
   ];
+
+  ngOnInit() {
+    this.userRole = sessionStorage.getItem('role') || '';
+  }
 
   calculateEMI() {
     let emi = 0, n = 0, r = 0;

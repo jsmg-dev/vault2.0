@@ -7,7 +7,13 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT,
     username TEXT UNIQUE,
     password TEXT,
-    role TEXT
+    role TEXT,
+    email TEXT,
+    phone TEXT,
+    address TEXT,
+    profile_pic TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    last_login TIMESTAMP
 );
 
 -- Customers table (assuming this exists based on the queries)

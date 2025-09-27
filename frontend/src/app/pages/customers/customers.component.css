@@ -1,24 +1,20 @@
 .customers-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .page-header {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
+  margin-bottom: 0;
+  padding: 5px 10px;
+  background: #f3f4f6;
+  border-radius: 8px 8px 0 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #e5e7eb;
 }
 
 
-.header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
 
 /* Header styles are now handled by the header component */
 
@@ -184,13 +180,14 @@
 
 /* Table Container */
 .table-container {
-  background: white;
+  background: #f3f4f6;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden; /* Let table-wrapper handle scrolling */
   height: calc(100vh - 200px); /* Fill remaining page height */
   display: flex;
   flex-direction: column;
+  margin-top: 0;
 }
 
 .table-wrapper {
@@ -220,7 +217,7 @@
 }
 
 .table-header {
-  padding: 24px;
+  padding: 15px 20px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -238,6 +235,20 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: space-between;
+}
+
+.search-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .search-input {
@@ -274,14 +285,14 @@
 }
 
 .customers-table th {
-  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  background: #6b7280;
   font-weight: 600;
-  color: #0f172a;
+  color: #ffffff;
   font-size: 14px;
   position: sticky;
   top: 0;
   z-index: 10;
-  border: 1px solid #94a3b8;
+  border: 1px solid #6b7280;
 }
 
 .customers-table td {
@@ -578,7 +589,7 @@
   }
   
   .header-actions {
-    justify-content: center;
+    justify-content: flex-end;
     flex-wrap: wrap;
   }
   

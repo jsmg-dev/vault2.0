@@ -15,6 +15,15 @@ import { LanguageService, Language } from '../../services/language.service';
       <div class="header-actions">
         <ng-content select="[slot=actions]"></ng-content>
         
+        <!-- Profile Icon -->
+        <button 
+          class="profile-button" 
+          (click)="toggleProfile()" 
+          title="Profile"
+        >
+          <i class="fas fa-user"></i>
+        </button>
+        
         <!-- Language Toggle -->
         <div class="language-toggle">
           <button 
@@ -49,8 +58,8 @@ import { LanguageService, Language } from '../../services/language.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
-      padding: 20px;
+      margin-bottom: 5px;
+      padding: 8px 15px;
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -127,17 +136,43 @@ import { LanguageService, Language } from '../../services/language.service';
       font-weight: 600;
       text-transform: uppercase;
     }
+
+    .profile-button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-button:hover {
+      background: #2563eb;
+    }
+
+    .profile-button i {
+      font-size: 16px;
+    }
   `]
 })
 export class HeaderComponent {
   @Input() breadcrumbItems: BreadcrumbItem[] = [];
   @Output() fullscreenToggle = new EventEmitter<void>();
   @Output() logoutEvent = new EventEmitter<void>();
+  @Output() profileToggle = new EventEmitter<void>();
 
   constructor(private languageService: LanguageService) {}
 
   toggleFullscreen() {
     this.fullscreenToggle.emit();
+  }
+
+  toggleProfile() {
+    this.profileToggle.emit();
   }
 
   logout() {

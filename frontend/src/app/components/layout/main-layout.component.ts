@@ -5,13 +5,14 @@ import { SidenavComponent, NavItem } from '../sidenav/sidenav.component';
 import { HeaderComponent } from '../header/header.component';
 import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
 import { AiChatbotComponent } from '../../pages/ai-chatbot/ai-chatbot.component';
+import { ProfilePanelComponent } from '../profile-panel/profile-panel.component';
 import { LanguageService } from '../../services/language.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SidenavComponent, HeaderComponent, AiChatbotComponent],
+  imports: [CommonModule, RouterModule, SidenavComponent, HeaderComponent, AiChatbotComponent, ProfilePanelComponent],
   template: `
     <div class="main-layout">
       <app-sidenav 
@@ -26,6 +27,7 @@ import { Subscription } from 'rxjs';
           [breadcrumbItems]="breadcrumbItems"
           (fullscreenToggle)="onFullscreenToggle()"
           (logoutEvent)="onLogout()"
+          (profileToggle)="onProfileToggle()"
         ></app-header>
 
         <div class="page-content">
@@ -35,6 +37,12 @@ import { Subscription } from 'rxjs';
       
       <!-- Global AI Chatbot Widget -->
       <app-ai-chatbot></app-ai-chatbot>
+      
+      <!-- Profile Panel -->
+      <app-profile-panel 
+        [isOpen]="isProfileOpen" 
+        (close)="onProfileClose()"
+      ></app-profile-panel>
     </div>
   `,
   styles: [`
@@ -79,29 +87,37 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   @Output() logoutEvent = new EventEmitter<void>();
 
   private languageSubscription: Subscription = new Subscription();
+  isProfileOpen = false;
 
   // Centralized navigation items
-  navItems: NavItem[] = [
-    { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-tachometer-alt', route: '/dashboard', roles: ['admin', 'user'] },
-    { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-chart-line', route: '/lic-dashboard', roles: ['admin', 'lic'] },
-    { label: this.languageService.translate('nav.product_details'), icon: 'fas fa-shield-alt', route: '/lic-products', roles: ['admin', 'lic'] },
-    { label: this.languageService.translate('nav.premium_calculator'), icon: 'fas fa-calculator', route: '/lic-premium-calculator', roles: ['admin', 'lic'] },
-    { label: this.languageService.translate('nav.customers'), icon: 'fas fa-users', route: '/customers', roles: ['admin', 'user'] },
-    { label: this.languageService.translate('nav.deposits'), icon: 'fas fa-piggy-bank', route: '/deposits', roles: ['admin', 'user'] },
-    { label: this.languageService.translate('nav.policies'), icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'lic'] },
-    { label: this.languageService.translate('nav.emi_calculator'), icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
-    { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
-    { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
-    { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] }
-  ];
+  navItems: NavItem[] = [];
 
   constructor(private languageService: LanguageService) {}
 
   ngOnInit() {
+    // Initialize navigation items
+    this.initializeNavigationItems();
+    
     // Subscribe to language changes to update navigation labels
     this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
       this.updateNavigationLabels();
     });
+  }
+
+  private initializeNavigationItems() {
+    this.navItems = [
+      { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-tachometer-alt', route: '/dashboard', roles: ['admin', 'user'] },
+      { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-chart-line', route: '/lic-dashboard', roles: ['admin', 'lic'] },
+      { label: this.languageService.translate('nav.product_details'), icon: 'fas fa-shield-alt', route: '/lic-products', roles: ['admin', 'lic'] },
+      { label: this.languageService.translate('nav.premium_calculator'), icon: 'fas fa-calculator', route: '/lic-premium-calculator', roles: ['admin', 'lic'] },
+      { label: this.languageService.translate('nav.customers'), icon: 'fas fa-users', route: '/customers', roles: ['admin', 'user'] },
+      { label: this.languageService.translate('nav.deposits'), icon: 'fas fa-piggy-bank', route: '/deposits', roles: ['admin', 'user'] },
+      { label: this.languageService.translate('nav.policies'), icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'lic'] },
+      { label: this.languageService.translate('nav.emi_calculator'), icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
+      { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
+      { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
+      { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
+    ];
   }
 
   ngOnDestroy() {
@@ -120,7 +136,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       { label: this.languageService.translate('nav.emi_calculator'), icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
-      { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] }
+      { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
     ];
   }
 
@@ -135,5 +151,13 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   onLogout() {
     this.logoutEvent.emit();
+  }
+
+  onProfileToggle() {
+    this.isProfileOpen = true;
+  }
+
+  onProfileClose() {
+    this.isProfileOpen = false;
   }
 }

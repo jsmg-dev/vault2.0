@@ -71,7 +71,7 @@ export interface NavItem {
     }
 
     .sidenav-header {
-      height: 150px;
+      height: 140px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -108,10 +108,10 @@ export interface NavItem {
     }
 
     .powered-by span {
-      font-size: 10px;
+      font-size: 8px;
       color: rgba(255, 255, 255, 0.7);
       font-weight: 500;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
 
     .powered-by.hidden {

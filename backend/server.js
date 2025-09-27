@@ -46,6 +46,7 @@ app.use(express.json());
 
 // Static file serving for uploads
 app.use('/uploads', express.static('uploads'));
+app.use('/uploads/profile', express.static('uploads/profile'));
 
 // Mount routes
 app.use('/auth', authRoutes);
@@ -71,8 +72,25 @@ app.use('/billing-config', billingConfigRoutes);
         name TEXT,
         username TEXT UNIQUE,
         password TEXT,
-        role TEXT
+        role TEXT,
+        email TEXT,
+        phone TEXT,
+        address TEXT,
+        profile_pic TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        last_login TIMESTAMP
       );
+    `);
+
+    // Add new columns if they don't exist (for existing databases)
+    await db.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS email TEXT,
+      ADD COLUMN IF NOT EXISTS phone TEXT,
+      ADD COLUMN IF NOT EXISTS address TEXT,
+      ADD COLUMN IF NOT EXISTS profile_pic TEXT,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+      ADD COLUMN IF NOT EXISTS last_login TIMESTAMP;
     `);
 
     const countRes = await db.query(`SELECT COUNT(*)::int AS cnt FROM users;`);

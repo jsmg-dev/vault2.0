@@ -28,6 +28,7 @@ export class LanguageService {
       'nav.user_management': 'User Management',
       'nav.product_details': 'Product Details',
       'nav.premium_calculator': 'Premium Calculator',
+      'nav.profile': 'Profile',
       
       // Common
       'common.add': 'Add',
@@ -251,6 +252,7 @@ export class LanguageService {
       'nav.user_management': 'उपयोगकर्ता प्रबंधन',
       'nav.product_details': 'उत्पाद विवरण',
       'nav.premium_calculator': 'प्रीमियम कैलकुलेटर',
+      'nav.profile': 'प्रोफाइल',
       
       // Common
       'common.add': 'जोड़ें',

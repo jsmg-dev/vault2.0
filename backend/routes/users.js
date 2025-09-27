@@ -1,7 +1,39 @@
 // routes/users.js
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 const db = require('../db'); // PostgreSQL pool
+
+// Configure multer for profile picture uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/profile');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `profile-${req.params.id}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
 
 // ✅ Create a new user (form or API)
 router.post('/create', async (req, res) => {
@@ -124,6 +156,116 @@ router.delete('/delete/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting user:', err.message);
     res.status(500).json({ error: 'Failed to delete user: ' + err.message });
+  }
+});
+
+// ✅ Get user profile
+router.get('/profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const query = `
+      SELECT id, name, username, role, email, phone, address, created_at, last_login
+      FROM users 
+      WHERE id = $1
+    `;
+
+    const result = await db.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error fetching user profile:', err.message);
+    res.status(500).json({ error: 'Database error: ' + err.message });
+  }
+});
+
+// ✅ Update user profile
+router.put('/profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, username, email, phone, address } = req.body;
+
+    const toNull = (v) =>
+      v === undefined || v === null || v === '' ? null : v;
+
+    const query = `
+      UPDATE users SET
+        name = $1,
+        username = $2,
+        email = $3,
+        phone = $4,
+        address = $5
+      WHERE id = $6
+      RETURNING id, name, username, role, email, phone, address, created_at, last_login
+    `;
+
+    const result = await db.query(query, [
+      toNull(name),
+      toNull(username),
+      toNull(email),
+      toNull(phone),
+      toNull(address),
+      id
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error updating profile:', err.message);
+    res.status(500).json({ error: 'Database error: ' + err.message });
+  }
+});
+
+// Upload profile picture
+router.post('/upload-profile-pic/:id', upload.single('profile_pic'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Update user record with profile picture filename
+    const updateQuery = `
+      UPDATE users 
+      SET profile_pic = $1 
+      WHERE id = $2 
+      RETURNING profile_pic
+    `;
+    
+    const result = await db.query(updateQuery, [req.file.filename, userId]);
+    
+    if (result.rows.length === 0) {
+      // Delete uploaded file if user not found
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Profile picture uploaded successfully',
+      filename: result.rows[0].profile_pic
+    });
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    
+    // Delete uploaded file on error
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({ error: 'Failed to upload profile picture' });
   }
 });
 

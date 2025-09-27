@@ -1,24 +1,8 @@
 .deposits-container {
-  padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 0;
 }
 
 
-.header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
 
 /* Header styles are now handled by the header component */
 
@@ -217,13 +201,14 @@
 
 /* Table Container */
 .table-container {
-  background: white;
+  background: #f3f4f6;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow-x: auto; /* Horizontal scroll for wide tables */
   height: calc(100vh - 200px); /* Fill remaining page height */
   display: flex;
   flex-direction: column;
+  margin-top: 0;
 }
 
 .table-wrapper {
@@ -233,7 +218,7 @@
 }
 
 .table-header {
-  padding: 24px;
+  padding: 15px 20px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -251,6 +236,20 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: space-between;
+}
+
+.search-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .search-input {
@@ -285,11 +284,11 @@
 }
 
 .deposits-table th {
-  background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+  background: #6b7280;
   font-weight: 600;
   color: #ffffff;
   font-size: 14px;
-  border: 1px solid #10b981;
+  border: 1px solid #6b7280;
 }
 
 .deposits-table td {

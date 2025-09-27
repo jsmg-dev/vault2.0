@@ -90,20 +90,20 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           label: 'Customers',
           data: monthCounts.length > 0 ? monthCounts : [0, 0, 0, 0, 0, 0],
           backgroundColor: [
+            'rgba(34, 197, 94, 0.8)',
             'rgba(59, 130, 246, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
             'rgba(139, 92, 246, 0.8)',
-            'rgba(239, 68, 68, 0.8)',
-            'rgba(236, 72, 153, 0.8)'
+            'rgba(236, 72, 153, 0.8)',
+            'rgba(34, 197, 94, 0.6)',
+            'rgba(59, 130, 246, 0.6)'
           ],
           borderColor: [
+            'rgba(34, 197, 94, 1)',
             'rgba(59, 130, 246, 1)',
-            'rgba(16, 185, 129, 1)',
-            'rgba(245, 158, 11, 1)',
             'rgba(139, 92, 246, 1)',
-            'rgba(239, 68, 68, 1)',
-            'rgba(236, 72, 153, 1)'
+            'rgba(236, 72, 153, 1)',
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(59, 130, 246, 0.8)'
           ],
           borderWidth: 2
         }]
@@ -156,12 +156,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const loanTypeLabels = Object.keys(this.loanTypeDistribution);
     const loanTypeCounts = Object.values(this.loanTypeDistribution);
     const colors = [
-      'rgba(59, 130, 246, 0.8)',
-      'rgba(16, 185, 129, 0.8)', 
-      'rgba(245, 158, 11, 0.8)',
+      'rgba(34, 197, 94, 0.8)',
+      'rgba(59, 130, 246, 0.8)', 
       'rgba(139, 92, 246, 0.8)',
-      'rgba(239, 68, 68, 0.8)',
-      'rgba(236, 72, 153, 0.8)'
+      'rgba(236, 72, 153, 0.8)',
+      'rgba(34, 197, 94, 0.6)',
+      'rgba(59, 130, 246, 0.6)'
     ];
     
     new Chart(this.pieChartRef.nativeElement, {
@@ -201,12 +201,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         datasets: [{
           label: 'Revenue (in ₹)',
           data: [20000, 25000, 27000, 30000, 28000, 35000],
-          borderColor: 'rgba(139, 92, 246, 1)',
-          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderColor: 'rgba(34, 197, 94, 1)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
           fill: true,
           tension: 0.4,
           borderWidth: 3,
-          pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+          pointBackgroundColor: 'rgba(34, 197, 94, 1)',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 2,
           pointRadius: 6

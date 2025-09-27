@@ -1,12 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ToastService } from '../../services/toast.service';
+import { LanguageService } from '../../services/language.service';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 import { environment } from '../../../environments/environment';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-billing-config',
@@ -15,7 +17,7 @@ import { environment } from '../../../environments/environment';
   templateUrl: './billing-config.component.html',
   styleUrls: ['./billing-config.component.css']
 })
-export class BillingConfigComponent implements OnInit {
+export class BillingConfigComponent implements OnInit, OnDestroy {
   billingConfig: any = {};
   previewData: any = {};
   isSubmitting = false;
@@ -25,8 +27,10 @@ export class BillingConfigComponent implements OnInit {
   userRole: string = '';
   sidenavCollapsed = false;
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Configure', route: '/billing-config' }
+    { label: this.languageService.translate('clothaura.configure'), route: '/billing-config' }
   ];
+
+  private languageSubscription: Subscription = new Subscription();
 
   // Form sections
   showCompanyInfo = true;
@@ -43,12 +47,32 @@ export class BillingConfigComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private languageService: LanguageService
   ) {}
 
   ngOnInit() {
+    // Subscribe to language changes
+    this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
+      this.updateBreadcrumbItems();
+    });
+    
     this.loadBillingConfig();
     this.generatePreview();
+  }
+
+  ngOnDestroy() {
+    this.languageSubscription.unsubscribe();
+  }
+
+  private updateBreadcrumbItems() {
+    this.breadcrumbItems = [
+      { label: this.languageService.translate('clothaura.configure'), route: '/billing-config' }
+    ];
+  }
+
+  translate(key: string): string {
+    return this.languageService.translate(key);
   }
 
   loadBillingConfig() {

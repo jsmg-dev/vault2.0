@@ -33,12 +33,18 @@ export class LoginComponent {
       console.log(data);
       const role = data?.user?.role || data?.role || 'user';
       const userId = data?.user?.id || data?.id;
+      console.log('Login - role from response:', role);
+      console.log('Login - role type:', typeof role);
+      console.log('Login - role === clothAura:', role === 'clothAura');
       sessionStorage.setItem('role', role);
       sessionStorage.setItem('userId', userId);
+      console.log('Login - role stored in sessionStorage:', sessionStorage.getItem('role'));
       
       // Redirect based on user role
       if (role === 'lic') {
         this.router.navigateByUrl('/lic-dashboard');
+      } else if (role === 'clothAura') {
+        this.router.navigateByUrl('/laundry');
       } else {
         this.router.navigateByUrl('/dashboard');
       }

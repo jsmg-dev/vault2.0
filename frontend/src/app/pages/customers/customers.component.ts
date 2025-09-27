@@ -1,12 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../services/toast.service';
+import { LanguageService } from '../../services/language.service';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { NavItem } from '../../components/sidenav/sidenav.component';
 import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-customers',
@@ -15,7 +17,7 @@ import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component
   templateUrl: './customers.component.html',
   styleUrl: './customers.component.css'
 })
-export class CustomersComponent implements OnInit {
+export class CustomersComponent implements OnInit, OnDestroy {
   customers: any[] = [];
   filteredCustomers: any[] = [];
   selectedCustomers: number[] = [];
@@ -40,15 +42,36 @@ export class CustomersComponent implements OnInit {
   userRole: string = '';
   sidenavCollapsed = false;
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Customer Management', route: '/customers' }
+    { label: this.languageService.translate('nav.customers'), route: '/customers' }
   ];
 
-  constructor(private toastService: ToastService) {}
+  private languageSubscription: Subscription = new Subscription();
+
+  constructor(private toastService: ToastService, private languageService: LanguageService) {}
 
   async ngOnInit() {
+    // Subscribe to language changes
+    this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
+      this.updateBreadcrumbItems();
+    });
+    
     this.userRole = sessionStorage.getItem('role') || '';
     await this.loadCustomers();
     this.calculateStats();
+  }
+
+  ngOnDestroy() {
+    this.languageSubscription.unsubscribe();
+  }
+
+  private updateBreadcrumbItems() {
+    this.breadcrumbItems = [
+      { label: this.languageService.translate('nav.customers'), route: '/customers' }
+    ];
+  }
+
+  translate(key: string): string {
+    return this.languageService.translate(key);
   }
 
   async loadCustomers() {

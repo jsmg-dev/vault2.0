@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { LanguageService } from '../../services/language.service';
+import { Subscription } from 'rxjs';
 
 export interface NavItem {
   label: string;
@@ -22,6 +24,9 @@ export interface NavItem {
           class="logo"
           [class.logo-small]="collapsed"
         />
+        <div class="powered-by" [class.hidden]="collapsed">
+          <span>Powered by SBBF</span>
+        </div>
       </div>
       
       <div class="nav-items">
@@ -66,13 +71,15 @@ export interface NavItem {
     }
 
     .sidenav-header {
-      height: 135px;
+      height: 150px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       position: relative;
       box-sizing: border-box;
+      padding: 10px;
     }
 
     .logo {
@@ -83,7 +90,7 @@ export interface NavItem {
       transition: all 0.3s ease;
       max-width: 100%;
       max-height: 100%;
-      margin-right: 35px;
+      margin-bottom: 8px;
     }
 
     .logo.logo-small {
@@ -91,6 +98,25 @@ export interface NavItem {
       height: calc(100% - 4px);
       object-fit: contain;
       object-position: center;
+      margin-bottom: 0;
+    }
+
+    .powered-by {
+      text-align: center;
+      transition: opacity 0.3s ease;
+    }
+
+    .powered-by span {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .powered-by.hidden {
+      opacity: 0;
+      height: 0;
+      overflow: hidden;
     }
 
     .logo-text {
@@ -182,17 +208,45 @@ export interface NavItem {
     }
   `]
 })
-export class SidenavComponent {
+export class SidenavComponent implements OnInit, OnDestroy {
   @Input() collapsed: boolean = false;
   @Input() userRole: string = '';
   @Input() navItems: NavItem[] = [];
   @Output() toggle = new EventEmitter<boolean>();
 
+  private languageSubscription: Subscription = new Subscription();
+
+  constructor(private languageService: LanguageService) {}
+
+  ngOnInit() {
+    // Subscribe to language changes to update navigation labels
+    this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
+      // Navigation items are updated by the parent component (main-layout)
+      // This subscription ensures the component reacts to language changes
+    });
+  }
+
+  ngOnDestroy() {
+    this.languageSubscription.unsubscribe();
+  }
+
   get filteredNavItems(): NavItem[] {
-    if (!this.userRole) return this.navItems;
-    return this.navItems.filter(item => 
-      !item.roles || item.roles.includes(this.userRole)
-    );
+    console.log('Sidenav - userRole:', this.userRole);
+    console.log('Sidenav - navItems:', this.navItems);
+    
+    if (!this.userRole) {
+      console.log('Sidenav - No userRole, returning all items');
+      return this.navItems;
+    }
+    
+    const filtered = this.navItems.filter(item => {
+      const hasAccess = !item.roles || item.roles.includes(this.userRole);
+      console.log(`Sidenav - Item "${item.label}": roles=${item.roles}, hasAccess=${hasAccess}`);
+      return hasAccess;
+    });
+    
+    console.log('Sidenav - filtered items:', filtered);
+    return filtered;
   }
 
   toggleCollapse() {

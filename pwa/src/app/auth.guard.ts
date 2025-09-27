@@ -11,7 +11,14 @@ export const authGuard: CanActivateFn = (route) => {
     return false;
   }
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-    router.navigateByUrl('/dashboard');
+    // Redirect based on user role
+    if (role === 'lic') {
+      router.navigateByUrl('/lic-dashboard');
+    } else if (role === 'clothAura') {
+      router.navigateByUrl('/laundry');
+    } else {
+      router.navigateByUrl('/dashboard');
+    }
     return false;
   }
   return true;

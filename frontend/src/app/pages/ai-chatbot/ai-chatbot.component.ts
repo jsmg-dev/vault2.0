@@ -927,7 +927,8 @@ I can help you compare policies based on:
   }
 
   private updateChatbotVisibility() {
-    const shouldShow = this.router.url !== '/login';
+    const userRole = sessionStorage.getItem('role') || '';
+    const shouldShow = this.router.url !== '/login' && userRole === 'lic';
     
     if (shouldShow !== this.showChatbot) {
       this.showChatbot = shouldShow;

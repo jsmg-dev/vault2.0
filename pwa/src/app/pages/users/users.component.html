@@ -67,7 +67,7 @@
           <td>{{ user.name || 'N/A' }}</td>
           <td>{{ user.username }}</td>
           <td>
-            <span class="role-badge" [class.role-admin]="user.role === 'admin'" [class.role-user]="user.role === 'user'" [class.role-lic]="user.role === 'lic'">
+            <span class="role-badge" [class.role-admin]="user.role === 'admin'" [class.role-user]="user.role === 'user'" [class.role-lic]="user.role === 'lic'" [class.role-clothaura]="user.role === 'clothAura'">
               {{ user.role || 'user' }}
             </span>
           </td>
@@ -111,6 +111,7 @@
             <option value="admin">Admin</option>
             <option value="user">User</option>
             <option value="lic">LIC</option>
+            <option value="clothAura">ClothAura</option>
           </select>
         </div>
         <div class="form-group">

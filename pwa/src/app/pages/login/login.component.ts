@@ -33,7 +33,15 @@ export class LoginComponent {
       console.log(data);
       const role = data?.user?.role || data?.role || 'user';
       sessionStorage.setItem('role', role);
-      this.router.navigateByUrl('/dashboard');
+      
+      // Redirect based on user role
+      if (role === 'lic') {
+        this.router.navigateByUrl('/lic-dashboard');
+      } else if (role === 'clothAura') {
+        this.router.navigateByUrl('/laundry');
+      } else {
+        this.router.navigateByUrl('/dashboard');
+      }
     } catch (e) {
       this.toastService.error('Invalid credentials');
     }

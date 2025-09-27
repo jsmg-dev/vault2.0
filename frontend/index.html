@@ -163,9 +163,9 @@
   });
 
   new Chart(document.getElementById('pieChart'), {
-    type: 'pie',
+    type: 'doughnut',
     data: { labels: ['Personal Loan','Business Loan','Home Loan','Education Loan'], datasets: [{ data: [300,200,150,100], backgroundColor: ['#004aad','#43a047','#f9a825','#e53935'] }] },
-    options: { responsive: true }
+    options: { responsive: true, cutout: '60%' }
   });
 
   new Chart(document.getElementById('lineChart'), {

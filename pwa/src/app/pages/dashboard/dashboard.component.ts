@@ -103,7 +103,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const colors = ['#004aad', '#43a047', '#f9a825', '#e53935', '#8e24aa'];
     
     new Chart(this.pieChartRef.nativeElement, {
-      type: 'pie',
+      type: 'doughnut',
       data: {
         labels: loanTypeLabels.length > 0 ? loanTypeLabels : ['No Data'],
         datasets: [{
@@ -113,6 +113,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       },
       options: { 
         responsive: true,
+        cutout: '60%',
         plugins: {
           title: {
             display: true,

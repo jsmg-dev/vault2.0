@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,6 +6,8 @@ import { MainLayoutComponent } from '../../components/layout/main-layout.compone
 import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../services/toast.service';
+import { LanguageService } from '../../services/language.service';
+import { Subscription } from 'rxjs';
 
 declare var Chart: any;
 
@@ -72,7 +74,7 @@ declare var Chart: any;
           (click)="setActiveTab('whatsapp')"
         >
           <i class="fas fa-cog"></i>
-          Settings
+          {{ translate('nav.settings') }}
         </button>
       </div>
 
@@ -141,7 +143,6 @@ declare var Chart: any;
       <!-- Customers Tab -->
       <div class="tab-content" *ngIf="activeTab === 'customers'">
         <div class="section-header">
-          <h2><i class="fas fa-users"></i> Customer Management</h2>
           <button class="btn primary" (click)="openCustomerModal()">
             <i class="fas fa-plus"></i>
             Add New Customer
@@ -179,7 +180,7 @@ declare var Chart: any;
                 <th>Address</th>
                 <th>Status</th>
                 <th>Total Orders</th>
-                <th>Actions</th>
+                <th>{{ translate('common.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -196,9 +197,11 @@ declare var Chart: any;
                 </td>
                 <td>{{ customer.totalOrders }}</td>
                 <td>
-                  <button class="btn-small primary" (click)="viewCustomer(customer.id)">View</button>
-                  <button class="btn-small secondary" (click)="editCustomer(customer.id)">Edit</button>
-                  <button class="btn-small danger" (click)="deleteCustomer(customer.id)">Delete</button>
+                  <div class="action-buttons">
+                    <button class="btn-small primary" (click)="viewCustomer(customer.id)">{{ translate('common.view') }}</button>
+                    <button class="btn-small secondary" (click)="editCustomer(customer.id)">{{ translate('common.edit') }}</button>
+                    <button class="btn-small danger" (click)="deleteCustomer(customer.id)">{{ translate('common.delete') }}</button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -262,8 +265,8 @@ declare var Chart: any;
                 </div>
               </div>
               <div class="service-content">
-                <h4>{{ service.name }}</h4>
-                <p>{{ service.description }}</p>
+                <h4>{{ translateServiceName(service.name) }}</h4>
+                <p>{{ translateServiceDescription(service.description) }}</p>
                 <div class="service-details">
                   <span class="cloth-type">{{ service.clothType }}</span>
                   <span class="pickup-status" [class]="service.pickup ? 'pickup-available' : 'pickup-unavailable'">
@@ -305,7 +308,7 @@ declare var Chart: any;
         <div class="section-header">
           <button class="btn primary" (click)="generateBill()">
             <i class="fas fa-file-invoice"></i>
-            Generate Bill
+            {{ translate('clothaura.generate_bill') }}
           </button>
         </div>
 
@@ -319,7 +322,7 @@ declare var Chart: any;
                 <th>Amount</th>
                 <th>Status</th>
                 <th>Due Date</th>
-                <th>Actions</th>
+                <th>{{ translate('common.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -334,9 +337,11 @@ declare var Chart: any;
                 </td>
                 <td>{{ bill.dueDate }}</td>
                 <td>
-                  <button class="btn-small primary" (click)="viewBill(bill.id)">View</button>
-                  <button class="btn-small secondary" (click)="printBill(bill.id)">Print</button>
-                  <button class="btn-small success" (click)="markPaid(bill.id)" *ngIf="bill.status === 'Pending'">Mark Paid</button>
+                  <div class="action-buttons">
+                    <button class="btn-small primary" (click)="viewBill(bill.id)">{{ translate('common.view') }}</button>
+                    <button class="btn-small secondary" (click)="printBill(bill.id)">{{ translate('common.print') }}</button>
+                    <button class="btn-small success" (click)="markPaid(bill.id)" *ngIf="bill.status === 'Pending'">{{ translate('clothaura.mark_paid') }}</button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -417,14 +422,14 @@ declare var Chart: any;
       <!-- Settings Tab -->
       <div class="tab-content" *ngIf="activeTab === 'whatsapp'">
         <div class="settings-content">
-          <h2><i class="fas fa-cog"></i> Settings</h2>
+          <h2><i class="fas fa-cog"></i> {{ translate('nav.settings') }}</h2>
           
           <div class="settings-grid">
             <div class="settings-card">
-              <h3><i class="fas fa-receipt"></i> Bill Setup</h3>
+              <h3><i class="fas fa-receipt"></i> {{ translate('clothaura.bill_setup') }}</h3>
               <p>Configure bill layout and required fields</p>
               <button class="btn-primary" (click)="openBillSetupModal()">
-                <i class="fas fa-cog"></i> Configure
+                <i class="fas fa-cog"></i> {{ translate('clothaura.configure') }}
               </button>
             </div>
             
@@ -573,7 +578,7 @@ declare var Chart: any;
                     </div>
                     </div>
                     <div class="service-info">
-                      <h5>{{ service.name }}</h5>
+                      <h5>{{ translateServiceName(service.name) }}</h5>
                     <p class="service-category">{{ service.category }} - {{ service.clothType }}</p>
                       <div class="service-prices">
                       <span class="price-label">Wash & Iron:</span>
@@ -652,7 +657,7 @@ declare var Chart: any;
                 <div class="cart-items" *ngIf="selectedItems.length > 0; else emptyCart">
                   <div *ngFor="let item of selectedItems; let i = index" class="cart-item">
                     <div class="item-info">
-                      <h6>{{ item.service.name }}</h6>
+                      <h6>{{ translateServiceName(item.service.name) }}</h6>
                       <p>{{ item.service.category }} - {{ item.service.clothType }}</p>
                       <div class="item-details">
                         <select [(ngModel)]="item.serviceType" (change)="updateItemPrice(item)">
@@ -703,11 +708,11 @@ declare var Chart: any;
 
               <div class="form-actions">
                 <button type="button" class="btn secondary" (click)="closeCustomerModal()">
-                  Cancel
+                  {{ translate('clothaura.cancel') }}
                 </button>
                 <button type="button" class="btn primary" (click)="submitCustomer()" [disabled]="selectedItems.length === 0">
                   <i class="fas fa-plus"></i>
-                  {{ editingCustomer ? 'Update Customer' : 'Add Customer & Order' }}
+                  {{ editingCustomer ? translate('clothaura.edit_customer') : translate('clothaura.add_customer') }}
                 </button>
               </div>
             </div>
@@ -758,7 +763,7 @@ declare var Chart: any;
                     </div>
                   </div>
                   <div class="service-info">
-                    <h5>{{ service.name }}</h5>
+                    <h5>{{ translateServiceName(service.name) }}</h5>
                     <p class="service-category">{{ service.category }} - {{ service.clothType }}</p>
                     <div class="service-prices">
                       <span class="price-label">Wash & Iron:</span>
@@ -878,7 +883,7 @@ declare var Chart: any;
                 <div class="cart-items" *ngIf="selectedItems.length > 0; else emptyCart">
                   <div *ngFor="let item of selectedItems; let i = index" class="cart-item">
                     <div class="item-info">
-                      <h6>{{ item.service.name }}</h6>
+                      <h6>{{ translateServiceName(item.service.name) }}</h6>
                       <p>{{ item.service.category }} - {{ item.service.clothType }}</p>
                         <div class="item-details">
                         <select [(ngModel)]="item.serviceType" (change)="updateItemPrice(item)">
@@ -992,10 +997,10 @@ declare var Chart: any;
               </div>
               <div class="form-actions">
                 <button type="button" class="btn secondary" (click)="closeServiceModal()">
-                  Cancel
+                  {{ translate('clothaura.cancel') }}
                 </button>
                 <button type="submit" class="btn primary">
-                  {{ editingService ? 'Update Service' : 'Add Service' }}
+                  {{ editingService ? translate('clothaura.edit_service') : translate('clothaura.add_service') }}
                 </button>
               </div>
             </form>
@@ -1039,7 +1044,7 @@ declare var Chart: any;
                       </div>
                     </div>
                     <div class="cloth-info">
-                      <h5>{{ service.name }}</h5>
+                      <h5>{{ translateServiceName(service.name) }}</h5>
                       <p class="cloth-price">₹{{ getServicePrice(service) }}</p>
                     </div>
                   </div>
@@ -1079,7 +1084,7 @@ declare var Chart: any;
                     <div class="selected-items">
                       <div class="selected-item" *ngFor="let item of selectedBillItems; let i = index">
                         <div class="item-info">
-                          <span class="item-name">{{ item.name }}</span>
+                          <span class="item-name">{{ translateServiceName(item.name) }}</span>
                           <span class="item-service-type">{{ item.serviceType }}</span>
                           <span class="item-unit-price">₹{{ item.price }} each</span>
                         </div>
@@ -1152,10 +1157,10 @@ declare var Chart: any;
                   </div>
                   <div class="form-actions">
                     <button type="button" class="btn secondary" (click)="closeBillModal()">
-                      Cancel
+                      {{ translate('clothaura.cancel') }}
                     </button>
                     <button type="submit" class="btn primary" [disabled]="selectedBillItems.length === 0">
-                      Generate Bill
+                      {{ translate('clothaura.generate_bill') }}
                     </button>
                   </div>
                 </form>
@@ -1216,8 +1221,8 @@ declare var Chart: any;
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let item of getBillItemsForView(selectedBillForView); else simpleItemRow">
-                      <td>{{ item.name }}</td>
+                    <tr *ngFor="let item of billItemsForView; else simpleItemRow">
+                      <td>{{ translateServiceName(item.name) }}</td>
                       <td>{{ item.quantity }}</td>
                       <td>₹{{ item.unitPrice || item.price }}</td>
                       <td>₹{{ item.totalPrice || (item.quantity * (item.unitPrice || item.price)) }}</td>
@@ -1427,7 +1432,7 @@ declare var Chart: any;
 
                 <!-- Additional Settings -->
                 <div class="config-section">
-                  <h4><i class="fas fa-cog"></i> Settings</h4>
+                  <h4><i class="fas fa-cog"></i> {{ translate('nav.settings') }}</h4>
                   <div class="form-group">
                     <label class="checkbox-label">
                       <input type="checkbox" [(ngModel)]="billConfig.showTaxBreakdown">
@@ -1928,6 +1933,34 @@ declare var Chart: any;
       padding: 15px;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
+    }
+
+    /* Action column specific styling */
+    .data-table th:last-child,
+    .data-table td:last-child {
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* Action buttons container */
+    .action-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: nowrap;
+      min-width: 200px;
+    }
+
+    /* Ensure table action buttons are horizontal */
+    .data-table .action-buttons {
+      display: flex !important;
+      flex-direction: row !important;
+      gap: 4px !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-wrap: nowrap !important;
     }
 
     .data-table th {
@@ -2605,13 +2638,16 @@ declare var Chart: any;
     }
 
     .btn-small {
-      padding: 6px 12px;
+      padding: 6px 10px;
       border: none;
       border-radius: 6px;
       font-size: 0.875rem;
       cursor: pointer;
-      margin-right: 8px;
+      margin-right: 0;
       transition: all 0.2s ease;
+      white-space: nowrap;
+      min-width: fit-content;
+      flex-shrink: 0;
     }
 
     .btn-small.primary {
@@ -4345,7 +4381,7 @@ declare var Chart: any;
 
   `]
 })
-export class LaundryComponent implements OnInit, AfterViewInit {
+export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('barChart') barChartRef!: ElementRef;
   @ViewChild('pieChart') pieChartRef!: ElementRef;
   @ViewChild('lineChart') lineChartRef!: ElementRef;
@@ -4364,6 +4400,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   selectedBillForView: any = null; // Bill selected for viewing
   billItemsBreakdownCache: Map<string, any[]> = new Map(); // Cache for bill items breakdown
   billingConfig: any = {}; // Billing configuration for company details
+  billItemsForView: any[] = []; // Cached bill items for view modal
   editingCustomer: any = null;
   editingService: any = null;
   
@@ -4371,7 +4408,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   userRole = 'admin'; // Default role, you can get this from auth service
   sidenavCollapsed = false;
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'ClothAura', route: '/laundry', active: true }
+    { label: this.languageService.translate('nav.clothaura'), route: '/laundry', active: true }
   ];
   
   // Search and filter
@@ -4472,7 +4509,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   selectedItems: any[] = [];
   totalAmount: number = 0;
   serviceSearchTerm: string = '';
-  cartServiceTypeFilter: string = '';
+  cartServiceTypeFilter: string = 'laundry';
   private filterTimeout: any;
   private lastFilterState: string = '';
   private isFiltering: boolean = false;
@@ -4492,81 +4529,81 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     { id: 'M001', name: 'Men Formal Shirt', description: 'Wash & Iron for Men Formal Shirts', price: 25, laundryPrice: 25, dryCleanPrice: 45, ironingPrice: 15, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
     { id: 'M002', name: 'Men Casual Shirt', description: 'Wash & Iron for Men Casual Shirts', price: 22, laundryPrice: 22, dryCleanPrice: 40, ironingPrice: 12, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
     { id: 'M003', name: 'Men T-Shirt', description: 'Wash & Iron for Men T-Shirts', price: 20, laundryPrice: 20, dryCleanPrice: 35, ironingPrice: 10, icon: 'fas fa-tshirt', category: 'Men', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
-    { id: 'M004', name: 'Men Polo Shirt', description: 'Wash & Iron for Men Polo Shirts', price: 23, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Polo Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
-    { id: 'M005', name: 'Men Tank Top', description: 'Wash & Iron for Men Tank Tops', price: 18, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
-    { id: 'M006', name: 'Men Hoodie', description: 'Wash & Iron for Men Hoodies', price: 35, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
-    { id: 'M007', name: 'Men Sweatshirt', description: 'Wash & Iron for Men Sweatshirts', price: 32, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
-    { id: 'M008', name: 'Men Formal Trousers', description: 'Wash & Iron for Men Formal Trousers', price: 30, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
-    { id: 'M009', name: 'Men Casual Trousers', description: 'Wash & Iron for Men Casual Trousers', price: 28, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
-    { id: 'M010', name: 'Men Jeans', description: 'Wash & Iron for Men Jeans', price: 35, icon: 'fas fa-user', category: 'Men', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
-    { id: 'M011', name: 'Men Shorts', description: 'Wash & Iron for Men Shorts', price: 22, icon: 'fas fa-user', category: 'Men', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHORTS' },
-    { id: 'M012', name: 'Men Track Pants', description: 'Wash & Iron for Men Track Pants', price: 25, icon: 'fas fa-user', category: 'Men', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M004', name: 'Men Polo Shirt', description: 'Wash & Iron for Men Polo Shirts', price: 23, laundryPrice: 23, dryCleanPrice: 40, ironingPrice: 12, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Polo Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M005', name: 'Men Tank Top', description: 'Wash & Iron for Men Tank Tops', price: 18, laundryPrice: 18, dryCleanPrice: 30, ironingPrice: 10, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M006', name: 'Men Hoodie', description: 'Wash & Iron for Men Hoodies', price: 35, laundryPrice: 35, dryCleanPrice: 60, ironingPrice: 20, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M007', name: 'Men Sweatshirt', description: 'Wash & Iron for Men Sweatshirts', price: 32, laundryPrice: 32, dryCleanPrice: 55, ironingPrice: 18, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M008', name: 'Men Formal Trousers', description: 'Wash & Iron for Men Formal Trousers', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M009', name: 'Men Casual Trousers', description: 'Wash & Iron for Men Casual Trousers', price: 28, laundryPrice: 28, dryCleanPrice: 45, ironingPrice: 16, icon: 'fas fa-user-tie', category: 'Men', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M010', name: 'Men Jeans', description: 'Wash & Iron for Men Jeans', price: 35, laundryPrice: 35, dryCleanPrice: 60, ironingPrice: 20, icon: 'fas fa-user', category: 'Men', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M011', name: 'Men Shorts', description: 'Wash & Iron for Men Shorts', price: 22, laundryPrice: 22, dryCleanPrice: 35, ironingPrice: 12, icon: 'fas fa-user', category: 'Men', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHORTS' },
+    { id: 'M012', name: 'Men Track Pants', description: 'Wash & Iron for Men Track Pants', price: 25, laundryPrice: 25, dryCleanPrice: 40, ironingPrice: 14, icon: 'fas fa-user', category: 'Men', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
     { id: 'M013', name: 'Men Suit Jacket', description: 'Dry Clean for Men Suit Jackets', price: 80, laundryPrice: 60, dryCleanPrice: 80, ironingPrice: 35, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Suit Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
-    { id: 'M014', name: 'Men Blazer', description: 'Dry Clean for Men Blazers', price: 75, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
-    { id: 'M015', name: 'Men Waistcoat', description: 'Dry Clean for Men Waistcoats', price: 45, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Waistcoat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
-    { id: 'M016', name: 'Men Coat', description: 'Dry Clean for Men Coats', price: 90, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=JACKET' },
-    { id: 'M017', name: 'Men Jacket', description: 'Wash & Iron for Men Jackets', price: 40, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
-    { id: 'M018', name: 'Men Sweater', description: 'Wash & Iron for Men Sweaters', price: 38, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
-    { id: 'M019', name: 'Men Cardigan', description: 'Wash & Iron for Men Cardigans', price: 35, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
-    { id: 'M020', name: 'Men Vest', description: 'Wash & Iron for Men Vests', price: 20, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
-    { id: 'M021', name: 'Men Kurta', description: 'Wash & Iron for Men Kurtas', price: 35, icon: 'fas fa-user', category: 'Men', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
-    { id: 'M022', name: 'Men Pyjama', description: 'Wash & Iron for Men Pyjamas', price: 25, icon: 'fas fa-user', category: 'Men', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
-    { id: 'M023', name: 'Men Lungi', description: 'Wash & Iron for Men Lungis', price: 20, icon: 'fas fa-user', category: 'Men', clothType: 'Lungi', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
-    { id: 'M024', name: 'Men Underwear', description: 'Wash & Iron for Men Underwear', price: 15, icon: 'fas fa-user', category: 'Men', clothType: 'Underwear', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=UNDER' },
-    { id: 'M025', name: 'Men Socks', description: 'Wash & Iron for Men Socks', price: 10, icon: 'fas fa-user', category: 'Men', clothType: 'Socks', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SOCKS' },
+    { id: 'M014', name: 'Men Blazer', description: 'Dry Clean for Men Blazers', price: 75, laundryPrice: 55, dryCleanPrice: 75, ironingPrice: 30, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
+    { id: 'M015', name: 'Men Waistcoat', description: 'Dry Clean for Men Waistcoats', price: 45, laundryPrice: 35, dryCleanPrice: 45, ironingPrice: 20, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Waistcoat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
+    { id: 'M016', name: 'Men Coat', description: 'Dry Clean for Men Coats', price: 90, laundryPrice: 70, dryCleanPrice: 90, ironingPrice: 40, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=JACKET' },
+    { id: 'M017', name: 'Men Jacket', description: 'Wash & Iron for Men Jackets', price: 40, laundryPrice: 40, dryCleanPrice: 65, ironingPrice: 22, icon: 'fas fa-suitcase', category: 'Men', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M018', name: 'Men Sweater', description: 'Wash & Iron for Men Sweaters', price: 38, laundryPrice: 38, dryCleanPrice: 60, ironingPrice: 20, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M019', name: 'Men Cardigan', description: 'Wash & Iron for Men Cardigans', price: 35, laundryPrice: 35, dryCleanPrice: 55, ironingPrice: 18, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=JACKET' },
+    { id: 'M020', name: 'Men Vest', description: 'Wash & Iron for Men Vests', price: 20, laundryPrice: 20, dryCleanPrice: 30, ironingPrice: 10, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M021', name: 'Men Kurta', description: 'Wash & Iron for Men Kurtas', price: 35, laundryPrice: 35, dryCleanPrice: 55, ironingPrice: 18, icon: 'fas fa-user', category: 'Men', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M022', name: 'Men Pyjama', description: 'Wash & Iron for Men Pyjamas', price: 25, laundryPrice: 25, dryCleanPrice: 40, ironingPrice: 14, icon: 'fas fa-user', category: 'Men', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M023', name: 'Men Lungi', description: 'Wash & Iron for Men Lungis', price: 20, laundryPrice: 20, dryCleanPrice: 30, ironingPrice: 10, icon: 'fas fa-user', category: 'Men', clothType: 'Lungi', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=PANTS' },
+    { id: 'M024', name: 'Men Underwear', description: 'Wash & Iron for Men Underwear', price: 15, laundryPrice: 15, dryCleanPrice: 25, ironingPrice: 8, icon: 'fas fa-user', category: 'Men', clothType: 'Underwear', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=UNDER' },
+    { id: 'M025', name: 'Men Socks', description: 'Wash & Iron for Men Socks', price: 10, laundryPrice: 10, dryCleanPrice: 15, ironingPrice: 5, icon: 'fas fa-user', category: 'Men', clothType: 'Socks', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SOCKS' },
     
     // Women's Services - Comprehensive Collection
     { id: 'W001', name: 'Women Blouse', description: 'Wash & Iron for Women Blouses', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Blouse', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W002', name: 'Women Formal Shirt', description: 'Wash & Iron for Women Formal Shirts', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SHIRT' },
-    { id: 'W003', name: 'Women Casual Shirt', description: 'Wash & Iron for Women Casual Shirts', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W004', name: 'Women T-Shirt', description: 'Wash & Iron for Women T-Shirts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W005', name: 'Women Tank Top', description: 'Wash & Iron for Women Tank Tops', price: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W006', name: 'Women Crop Top', description: 'Wash & Iron for Women Crop Tops', price: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Crop Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W007', name: 'Women Hoodie', description: 'Wash & Iron for Women Hoodies', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
-    { id: 'W008', name: 'Women Sweatshirt', description: 'Wash & Iron for Women Sweatshirts', price: 32, icon: 'fas fa-female', category: 'Women', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
-    { id: 'W009', name: 'Women Dress', description: 'Wash & Iron for Women Dresses', price: 50, icon: 'fas fa-venus', category: 'Women', clothType: 'Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W010', name: 'Women Formal Dress', description: 'Dry Clean for Women Formal Dresses', price: 80, icon: 'fas fa-venus', category: 'Women', clothType: 'Formal Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=DRESS' },
-    { id: 'W011', name: 'Women Casual Dress', description: 'Wash & Iron for Women Casual Dresses', price: 45, icon: 'fas fa-venus', category: 'Women', clothType: 'Casual Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W012', name: 'Women Maxi Dress', description: 'Wash & Iron for Women Maxi Dresses', price: 55, icon: 'fas fa-venus', category: 'Women', clothType: 'Maxi Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W013', name: 'Women Skirt', description: 'Wash & Iron for Women Skirts', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W014', name: 'Women Mini Skirt', description: 'Wash & Iron for Women Mini Skirts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'Mini Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W015', name: 'Women Midi Skirt', description: 'Wash & Iron for Women Midi Skirts', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Midi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W016', name: 'Women Maxi Skirt', description: 'Wash & Iron for Women Maxi Skirts', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Maxi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W017', name: 'Women Formal Trousers', description: 'Wash & Iron for Women Formal Trousers', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W018', name: 'Women Casual Trousers', description: 'Wash & Iron for Women Casual Trousers', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W019', name: 'Women Jeans', description: 'Wash & Iron for Women Jeans', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W020', name: 'Women Shorts', description: 'Wash & Iron for Women Shorts', price: 22, icon: 'fas fa-female', category: 'Women', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SHORTS' },
-    { id: 'W021', name: 'Women Track Pants', description: 'Wash & Iron for Women Track Pants', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W022', name: 'Women Leggings', description: 'Wash & Iron for Women Leggings', price: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Leggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W023', name: 'Women Jeggings', description: 'Wash & Iron for Women Jeggings', price: 28, icon: 'fas fa-female', category: 'Women', clothType: 'Jeggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W024', name: 'Women Saree', description: 'Dry Clean for Women Sarees', price: 60, icon: 'fas fa-female', category: 'Women', clothType: 'Saree', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=DRESS' },
-    { id: 'W025', name: 'Women Kurta', description: 'Wash & Iron for Women Kurtas', price: 40, icon: 'fas fa-female', category: 'Women', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W026', name: 'Women Salwar Kameez', description: 'Wash & Iron for Women Salwar Kameez', price: 45, icon: 'fas fa-female', category: 'Women', clothType: 'Salwar Kameez', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W027', name: 'Women Palazzo', description: 'Wash & Iron for Women Palazzos', price: 35, icon: 'fas fa-female', category: 'Women', clothType: 'Palazzo', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W028', name: 'Women Churidar', description: 'Wash & Iron for Women Churidars', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Churidar', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W029', name: 'Women Blazer', description: 'Dry Clean for Women Blazers', price: 70, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
-    { id: 'W030', name: 'Women Jacket', description: 'Wash & Iron for Women Jackets', price: 40, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
-    { id: 'W031', name: 'Women Coat', description: 'Dry Clean for Women Coats', price: 85, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=JACKET' },
-    { id: 'W032', name: 'Women Sweater', description: 'Wash & Iron for Women Sweaters', price: 38, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
-    { id: 'W033', name: 'Women Cardigan', description: 'Wash & Iron for Women Cardigans', price: 35, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
-    { id: 'W034', name: 'Women Vest', description: 'Wash & Iron for Women Vests', price: 25, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
-    { id: 'W035', name: 'Women Nightdress', description: 'Wash & Iron for Women Nightdresses', price: 30, icon: 'fas fa-female', category: 'Women', clothType: 'Nightdress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
-    { id: 'W036', name: 'Women Pyjama', description: 'Wash & Iron for Women Pyjamas', price: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
-    { id: 'W037', name: 'Women Bra', description: 'Wash & Iron for Women Bras', price: 15, icon: 'fas fa-female', category: 'Women', clothType: 'Bra', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=UNDER' },
-    { id: 'W038', name: 'Women Panties', description: 'Wash & Iron for Women Panties', price: 12, icon: 'fas fa-female', category: 'Women', clothType: 'Panties', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=UNDER' },
-    { id: 'W039', name: 'Women Stockings', description: 'Wash & Iron for Women Stockings', price: 10, icon: 'fas fa-female', category: 'Women', clothType: 'Stockings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SOCKS' },
+    { id: 'W002', name: 'Women Formal Shirt', description: 'Wash & Iron for Women Formal Shirts', price: 28, laundryPrice: 28, dryCleanPrice: 45, ironingPrice: 16, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SHIRT' },
+    { id: 'W003', name: 'Women Casual Shirt', description: 'Wash & Iron for Women Casual Shirts', price: 25, laundryPrice: 25, dryCleanPrice: 40, ironingPrice: 14, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W004', name: 'Women T-Shirt', description: 'Wash & Iron for Women T-Shirts', price: 22, laundryPrice: 22, dryCleanPrice: 35, ironingPrice: 12, icon: 'fas fa-female', category: 'Women', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W005', name: 'Women Tank Top', description: 'Wash & Iron for Women Tank Tops', price: 20, laundryPrice: 20, dryCleanPrice: 30, ironingPrice: 10, icon: 'fas fa-female', category: 'Women', clothType: 'Tank Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W006', name: 'Women Crop Top', description: 'Wash & Iron for Women Crop Tops', price: 18, laundryPrice: 18, dryCleanPrice: 28, ironingPrice: 9, icon: 'fas fa-female', category: 'Women', clothType: 'Crop Top', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W007', name: 'Women Hoodie', description: 'Wash & Iron for Women Hoodies', price: 35, laundryPrice: 35, dryCleanPrice: 60, ironingPrice: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Hoodie', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W008', name: 'Women Sweatshirt', description: 'Wash & Iron for Women Sweatshirts', price: 32, laundryPrice: 32, dryCleanPrice: 55, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Sweatshirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W009', name: 'Women Dress', description: 'Wash & Iron for Women Dresses', price: 50, laundryPrice: 50, dryCleanPrice: 80, ironingPrice: 28, icon: 'fas fa-venus', category: 'Women', clothType: 'Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W010', name: 'Women Formal Dress', description: 'Dry Clean for Women Formal Dresses', price: 80, laundryPrice: 60, dryCleanPrice: 80, ironingPrice: 35, icon: 'fas fa-venus', category: 'Women', clothType: 'Formal Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=DRESS' },
+    { id: 'W011', name: 'Women Casual Dress', description: 'Wash & Iron for Women Casual Dresses', price: 45, laundryPrice: 45, dryCleanPrice: 70, ironingPrice: 25, icon: 'fas fa-venus', category: 'Women', clothType: 'Casual Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W012', name: 'Women Maxi Dress', description: 'Wash & Iron for Women Maxi Dresses', price: 55, laundryPrice: 55, dryCleanPrice: 85, ironingPrice: 30, icon: 'fas fa-venus', category: 'Women', clothType: 'Maxi Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W013', name: 'Women Skirt', description: 'Wash & Iron for Women Skirts', price: 25, laundryPrice: 25, dryCleanPrice: 40, ironingPrice: 14, icon: 'fas fa-female', category: 'Women', clothType: 'Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W014', name: 'Women Mini Skirt', description: 'Wash & Iron for Women Mini Skirts', price: 22, laundryPrice: 22, dryCleanPrice: 35, ironingPrice: 12, icon: 'fas fa-female', category: 'Women', clothType: 'Mini Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W015', name: 'Women Midi Skirt', description: 'Wash & Iron for Women Midi Skirts', price: 28, laundryPrice: 28, dryCleanPrice: 45, ironingPrice: 16, icon: 'fas fa-female', category: 'Women', clothType: 'Midi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W016', name: 'Women Maxi Skirt', description: 'Wash & Iron for Women Maxi Skirts', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Maxi Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W017', name: 'Women Formal Trousers', description: 'Wash & Iron for Women Formal Trousers', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Formal Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W018', name: 'Women Casual Trousers', description: 'Wash & Iron for Women Casual Trousers', price: 28, laundryPrice: 28, dryCleanPrice: 45, ironingPrice: 16, icon: 'fas fa-female', category: 'Women', clothType: 'Casual Trousers', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W019', name: 'Women Jeans', description: 'Wash & Iron for Women Jeans', price: 35, laundryPrice: 35, dryCleanPrice: 60, ironingPrice: 20, icon: 'fas fa-female', category: 'Women', clothType: 'Jeans', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W020', name: 'Women Shorts', description: 'Wash & Iron for Women Shorts', price: 22, laundryPrice: 22, dryCleanPrice: 35, ironingPrice: 12, icon: 'fas fa-female', category: 'Women', clothType: 'Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SHORTS' },
+    { id: 'W021', name: 'Women Track Pants', description: 'Wash & Iron for Women Track Pants', price: 25, laundryPrice: 25, dryCleanPrice: 40, ironingPrice: 14, icon: 'fas fa-female', category: 'Women', clothType: 'Track Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W022', name: 'Women Leggings', description: 'Wash & Iron for Women Leggings', price: 20, laundryPrice: 20, dryCleanPrice: 30, ironingPrice: 10, icon: 'fas fa-female', category: 'Women', clothType: 'Leggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W023', name: 'Women Jeggings', description: 'Wash & Iron for Women Jeggings', price: 28, laundryPrice: 28, dryCleanPrice: 45, ironingPrice: 16, icon: 'fas fa-female', category: 'Women', clothType: 'Jeggings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W024', name: 'Women Saree', description: 'Dry Clean for Women Sarees', price: 60, laundryPrice: 45, dryCleanPrice: 60, ironingPrice: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Saree', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=DRESS' },
+    { id: 'W025', name: 'Women Kurta', description: 'Wash & Iron for Women Kurtas', price: 40, laundryPrice: 40, dryCleanPrice: 65, ironingPrice: 22, icon: 'fas fa-female', category: 'Women', clothType: 'Kurta', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W026', name: 'Women Salwar Kameez', description: 'Wash & Iron for Women Salwar Kameez', price: 45, laundryPrice: 45, dryCleanPrice: 70, ironingPrice: 25, icon: 'fas fa-female', category: 'Women', clothType: 'Salwar Kameez', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W027', name: 'Women Palazzo', description: 'Wash & Iron for Women Palazzos', price: 35, laundryPrice: 35, dryCleanPrice: 55, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Palazzo', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W028', name: 'Women Churidar', description: 'Wash & Iron for Women Churidars', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Churidar', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W029', name: 'Women Blazer', description: 'Dry Clean for Women Blazers', price: 70, laundryPrice: 55, dryCleanPrice: 70, ironingPrice: 30, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Blazer', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=SHIRT' },
+    { id: 'W030', name: 'Women Jacket', description: 'Wash & Iron for Women Jackets', price: 40, laundryPrice: 40, dryCleanPrice: 65, ironingPrice: 22, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Jacket', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W031', name: 'Women Coat', description: 'Dry Clean for Women Coats', price: 85, laundryPrice: 65, dryCleanPrice: 85, ironingPrice: 35, icon: 'fas fa-suitcase', category: 'Women', clothType: 'Coat', pickup: true, photo: 'https://via.placeholder.com/80x80/10b981/ffffff?text=JACKET' },
+    { id: 'W032', name: 'Women Sweater', description: 'Wash & Iron for Women Sweaters', price: 38, laundryPrice: 38, dryCleanPrice: 60, ironingPrice: 20, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Sweater', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W033', name: 'Women Cardigan', description: 'Wash & Iron for Women Cardigans', price: 35, laundryPrice: 35, dryCleanPrice: 55, ironingPrice: 18, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Cardigan', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=JACKET' },
+    { id: 'W034', name: 'Women Vest', description: 'Wash & Iron for Women Vests', price: 25, laundryPrice: 25, dryCleanPrice: 40, ironingPrice: 14, icon: 'fas fa-tshirt', category: 'Women', clothType: 'Vest', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=WOMEN' },
+    { id: 'W035', name: 'Women Nightdress', description: 'Wash & Iron for Women Nightdresses', price: 30, laundryPrice: 30, dryCleanPrice: 50, ironingPrice: 18, icon: 'fas fa-female', category: 'Women', clothType: 'Nightdress', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=DRESS' },
+    { id: 'W036', name: 'Women Pyjama', description: 'Wash & Iron for Women Pyjamas', price: 25, laundryPrice: 25, dryCleanPrice: 40, ironingPrice: 14, icon: 'fas fa-female', category: 'Women', clothType: 'Pyjama', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=PANTS' },
+    { id: 'W037', name: 'Women Bra', description: 'Wash & Iron for Women Bras', price: 15, laundryPrice: 15, dryCleanPrice: 25, ironingPrice: 8, icon: 'fas fa-female', category: 'Women', clothType: 'Bra', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=UNDER' },
+    { id: 'W038', name: 'Women Panties', description: 'Wash & Iron for Women Panties', price: 12, laundryPrice: 12, dryCleanPrice: 20, ironingPrice: 6, icon: 'fas fa-female', category: 'Women', clothType: 'Panties', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=UNDER' },
+    { id: 'W039', name: 'Women Stockings', description: 'Wash & Iron for Women Stockings', price: 10, laundryPrice: 10, dryCleanPrice: 15, ironingPrice: 5, icon: 'fas fa-female', category: 'Women', clothType: 'Stockings', pickup: true, photo: 'https://via.placeholder.com/80x80/f472b6/ffffff?text=SOCKS' },
     
     // Children's Services (Boy)
-    { id: 'CB001', name: 'Boy Shirt', description: 'Wash & Iron for Boy Shirts', price: 15, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHIRT' },
-    { id: 'CB002', name: 'Boy Shorts', description: 'Wash & Iron for Boy Shorts', price: 12, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHORTS' },
-    { id: 'CB003', name: 'Boy T-Shirt', description: 'Wash & Iron for Boy T-Shirts', price: 10, icon: 'fas fa-child', category: 'Children', clothType: 'Boy T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHIRT' },
-    { id: 'CB004', name: 'Boy Pants', description: 'Wash & Iron for Boy Pants', price: 18, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=PANTS' },
+    { id: 'CB001', name: 'Boy Shirt', description: 'Wash & Iron for Boy Shirts', price: 15, laundryPrice: 15, dryCleanPrice: 25, ironingPrice: 8, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHIRT' },
+    { id: 'CB002', name: 'Boy Shorts', description: 'Wash & Iron for Boy Shorts', price: 12, laundryPrice: 12, dryCleanPrice: 20, ironingPrice: 6, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Shorts', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHORTS' },
+    { id: 'CB003', name: 'Boy T-Shirt', description: 'Wash & Iron for Boy T-Shirts', price: 10, laundryPrice: 10, dryCleanPrice: 18, ironingPrice: 5, icon: 'fas fa-child', category: 'Children', clothType: 'Boy T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=SHIRT' },
+    { id: 'CB004', name: 'Boy Pants', description: 'Wash & Iron for Boy Pants', price: 18, laundryPrice: 18, dryCleanPrice: 30, ironingPrice: 10, icon: 'fas fa-child', category: 'Children', clothType: 'Boy Pants', pickup: true, photo: 'https://via.placeholder.com/80x80/f59e0b/ffffff?text=PANTS' },
     
     // Children's Services (Girl)
-    { id: 'CG001', name: 'Girl Dress', description: 'Wash & Iron for Girl Dresses', price: 20, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' },
-    { id: 'CG002', name: 'Girl Skirt', description: 'Wash & Iron for Girl Skirts', price: 15, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' },
-    { id: 'CG003', name: 'Girl Top', description: 'Wash & Iron for Girl Tops', price: 12, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Top', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=WOMEN' },
-    { id: 'CG004', name: 'Girl Frock', description: 'Wash & Iron for Girl Frocks', price: 18, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Frock', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' }
+    { id: 'CG001', name: 'Girl Dress', description: 'Wash & Iron for Girl Dresses', price: 20, laundryPrice: 20, dryCleanPrice: 35, ironingPrice: 12, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Dress', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' },
+    { id: 'CG002', name: 'Girl Skirt', description: 'Wash & Iron for Girl Skirts', price: 15, laundryPrice: 15, dryCleanPrice: 25, ironingPrice: 8, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Skirt', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' },
+    { id: 'CG003', name: 'Girl Top', description: 'Wash & Iron for Girl Tops', price: 12, laundryPrice: 12, dryCleanPrice: 20, ironingPrice: 6, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Top', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=WOMEN' },
+    { id: 'CG004', name: 'Girl Frock', description: 'Wash & Iron for Girl Frocks', price: 18, laundryPrice: 18, dryCleanPrice: 30, ironingPrice: 10, icon: 'fas fa-child', category: 'Children', clothType: 'Girl Frock', pickup: true, photo: 'https://via.placeholder.com/80x80/ec4899/ffffff?text=DRESS' }
   ];
 
   bills: any[] = [];
@@ -4576,7 +4613,9 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   serviceForm: FormGroup;
   billForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private router: Router, private toastService: ToastService) {
+  private languageSubscription: Subscription = new Subscription();
+
+  constructor(private fb: FormBuilder, private router: Router, private toastService: ToastService, private languageService: LanguageService) {
     this.newOrderForm = this.fb.group({
       customerName: ['', Validators.required],
       customerPhone: ['', Validators.required],
@@ -4614,6 +4653,14 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
   async ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';
+    console.log('Laundry - userRole from sessionStorage:', this.userRole);
+    console.log('Laundry - userRole type:', typeof this.userRole);
+    console.log('Laundry - userRole === clothAura:', this.userRole === 'clothAura');
+    
+    // Subscribe to language changes
+    this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
+      this.updateBreadcrumbItems();
+    });
     
     // Check for tab query parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -4665,6 +4712,28 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     }, 100);
   }
 
+  ngOnDestroy() {
+    this.languageSubscription.unsubscribe();
+  }
+
+  private updateBreadcrumbItems() {
+    this.breadcrumbItems = [
+      { label: this.languageService.translate('nav.clothaura'), route: '/laundry', active: true }
+    ];
+  }
+
+  translate(key: string): string {
+    return this.languageService.translate(key);
+  }
+
+  translateServiceName(serviceName: string): string {
+    return this.languageService.translateServiceName(serviceName);
+  }
+
+  translateServiceDescription(description: string): string {
+    return this.languageService.translateServiceDescription(description);
+  }
+
   initCharts() {
     try {
       console.log('Initializing ClothAura Dashboard charts...');
@@ -4685,77 +4754,108 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
       const orderCounts = [12, 18, 15, 22, 25, 28]; // Sample laundry orders per month
       
-      // Bar Chart - Orders Per Month
-      console.log('Creating bar chart...');
+      // Bar Chart - Orders Per Month (Corporate Style)
+      console.log('Creating corporate style bar chart...');
+      
       new Chart(this.barChartRef.nativeElement, {
-      type: 'bar',
-      data: {
-        labels: monthLabels,
-        datasets: [{
-          label: 'Orders',
-          data: orderCounts,
-          backgroundColor: [
-            'rgba(99, 102, 241, 0.6)',
-            'rgba(16, 185, 129, 0.6)',
-            'rgba(245, 158, 11, 0.6)',
-            'rgba(139, 92, 246, 0.6)',
-            'rgba(239, 68, 68, 0.6)',
-            'rgba(236, 72, 153, 0.6)'
-          ],
-          borderColor: [
-            'rgba(99, 102, 241, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
-            'rgba(139, 92, 246, 0.8)',
-            'rgba(239, 68, 68, 0.8)',
-            'rgba(236, 72, 153, 0.8)'
-          ],
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: {
-              color: '#64748b',
-              font: {
-                size: 14,
-                weight: '500'
-              }
-            }
-          }
+        type: 'bar',
+        data: {
+          labels: monthLabels,
+          datasets: [{
+            label: 'Orders',
+            data: orderCounts,
+            backgroundColor: '#10b981', // Green
+            borderColor: '#047857', // Dark Green
+            borderWidth: 1,
+            borderRadius: 2,
+            borderSkipped: false,
+            hoverBackgroundColor: '#059669', // Lighter Green
+            hoverBorderColor: '#065f46', // Darker Green
+            hoverBorderWidth: 2
+          }]
         },
-        scales: {
-          x: {
-            ticks: {
-              color: '#64748b',
-              font: {
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 800,
+            easing: 'easeInOutQuart'
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#1f2937',
+              titleColor: '#f9fafb',
+              bodyColor: '#f9fafb',
+              borderColor: '#374151',
+              borderWidth: 1,
+              cornerRadius: 4,
+              displayColors: false,
+              titleFont: {
+                size: 12,
+                weight: '600'
+              },
+              bodyFont: {
                 size: 12,
                 weight: '500'
+              },
+              padding: 8,
+              callbacks: {
+                title: function(context: any) {
+                  return context[0].label;
+                },
+                label: function(context: any) {
+                  return `${context.parsed.y} orders`;
+                }
               }
-            },
-            grid: {
-              color: 'rgba(148, 163, 184, 0.1)'
             }
           },
-          y: {
-            beginAtZero: true,
-            ticks: {
-              color: '#64748b',
-              font: {
-                size: 12,
-                weight: '500'
+          scales: {
+            x: {
+              ticks: {
+                color: '#6b7280',
+                font: {
+                  size: 11,
+                  weight: '500'
+                },
+                padding: 8
+              },
+              grid: {
+                display: false
+              },
+              border: {
+                display: false
               }
             },
-            grid: {
-              color: 'rgba(148, 163, 184, 0.1)'
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#6b7280',
+                font: {
+                  size: 11,
+                  weight: '500'
+                },
+                padding: 8,
+                stepSize: 5
+              },
+              grid: {
+                color: '#e5e7eb',
+                drawBorder: false,
+                lineWidth: 1
+              },
+              border: {
+                display: false
+              }
             }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
           }
         }
-      }
-    });
+      });
 
     // Pie Chart - Service Distribution
     const serviceLabels = ['Wash & Fold', 'Dry Cleaning', 'Ironing', 'Express Service'];
@@ -4770,7 +4870,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     ];
     
     new Chart(this.pieChartRef.nativeElement, {
-      type: 'pie',
+      type: 'doughnut',
       data: {
         labels: serviceLabels,
         datasets: [{
@@ -4783,6 +4883,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       options: { 
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '60%',
         plugins: {
           legend: {
             labels: {
@@ -4885,9 +4986,9 @@ export class LaundryComponent implements OnInit, AfterViewInit {
 
   // Services field methods
   onServiceTypeChange() {
-    // console.log('Selected service type:', this.selectedServiceType);
-    // Trigger change detection to update displayed prices
-    this.filteredServices = [...this.filteredServices];
+    // console.log('Selected service type:', this.cartServiceTypeFilter);
+    // Trigger filtering when service type changes
+    this.debouncedFilterServices();
   }
 
   onServiceForChange() {
@@ -4901,7 +5002,72 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       return;
     }
     
-    this.filteredServices = [...this.services];
+    let filtered = [...this.services];
+    
+    // Apply category filter (cartServiceTypeFilter)
+    if (this.cartServiceTypeFilter && this.cartServiceTypeFilter !== '') {
+      // Check if it's a service type filter (laundry, dry-clean, ironing) or category filter (Men, Women, Kids, Home)
+      if (['laundry', 'dry-clean', 'ironing'].includes(this.cartServiceTypeFilter)) {
+        // This is a service type filter - we don't filter by service type in the services list
+        // Service type affects pricing, not visibility
+      } else {
+        // This is a category filter - map filter values to service categories
+        let categoryFilter = '';
+        switch (this.cartServiceTypeFilter) {
+          case 'Men':
+            categoryFilter = 'Men';
+            break;
+          case 'Women':
+            categoryFilter = 'Women';
+            break;
+          case 'Kids':
+            categoryFilter = 'Children';
+            break;
+          case 'Home':
+            categoryFilter = 'Home';
+            break;
+        }
+        
+        if (categoryFilter) {
+          filtered = filtered.filter(service => service.category === categoryFilter);
+        }
+      }
+    }
+    
+    // Apply target audience filter (selectedServiceFor)
+    if (this.selectedServiceFor && this.selectedServiceFor !== '') {
+      // Map selectedServiceFor to service categories
+      let targetCategory = '';
+      switch (this.selectedServiceFor) {
+        case 'man':
+          targetCategory = 'Men';
+          break;
+        case 'woman':
+          targetCategory = 'Women';
+          break;
+        case 'children':
+          targetCategory = 'Children';
+          break;
+      }
+      
+      if (targetCategory) {
+        filtered = filtered.filter(service => service.category === targetCategory);
+      }
+    }
+    
+    // Apply search term filter
+    if (this.serviceSearchTerm && this.serviceSearchTerm.trim() !== '') {
+      const searchTerm = this.serviceSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter(service => 
+        service.name.toLowerCase().includes(searchTerm) ||
+        this.translateServiceName(service.name).toLowerCase().includes(searchTerm) ||
+        service.description.toLowerCase().includes(searchTerm) ||
+        this.translateServiceDescription(service.description).toLowerCase().includes(searchTerm) ||
+        service.clothType.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    this.filteredServices = filtered;
   }
 
   // Debounced version for search input
@@ -5346,7 +5512,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       
       // Reset search and filter terms for services
       this.serviceSearchTerm = '';
-      this.cartServiceTypeFilter = '';
+      this.cartServiceTypeFilter = 'laundry';
       this.selectedServiceFor = ''; // Reset to show all services
       
       this.showCustomerDetailsModal = true;
@@ -5450,17 +5616,19 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     try {
       const bill = this.bills.find(b => b.id === billId);
       if (bill) {
-        // Use setTimeout to prevent UI blocking
-        setTimeout(() => {
-          this.selectedBillForView = bill;
-          this.showViewBillModal = true;
-        }, 10);
+        console.log('Found bill:', bill);
+        this.selectedBillForView = bill;
+        // Pre-calculate bill items to avoid template method calls
+        this.billItemsForView = this.getBillItemsForView(bill);
+        this.showViewBillModal = true;
+        console.log('Modal should be open now');
       } else {
-        alert('Bill not found!');
+        console.error('Bill not found with ID:', billId);
+        this.toastService.error('Bill not found!');
       }
     } catch (error) {
       console.error('Error viewing bill:', error);
-      alert('Error loading bill details. Please try again.');
+      this.toastService.error('Error loading bill details. Please try again.');
     }
   }
 
@@ -5568,6 +5736,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   closeViewBillModal() {
     this.showViewBillModal = false;
     this.selectedBillForView = null;
+    this.billItemsForView = []; // Clear cached items
     // Clear cache to free memory
     this.billItemsBreakdownCache.clear();
   }
@@ -5575,32 +5744,54 @@ export class LaundryComponent implements OnInit, AfterViewInit {
   getBillItemsForView(bill: any): any[] {
     if (!bill) return [];
     
-    // First, try to use selectedItems if available (most accurate)
-    if (bill.selectedItems && Array.isArray(bill.selectedItems) && bill.selectedItems.length > 0) {
-      return bill.selectedItems.map((item: any) => ({
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        totalPrice: item.totalPrice,
-        serviceType: item.serviceType
-      }));
+    try {
+      console.log('Processing bill for view:', bill);
+      console.log('Bill selectedItems:', bill.selectedItems);
+      console.log('Bill items string:', bill.items);
+      
+      // First, try to use selectedItems if available (most accurate)
+      if (bill.selectedItems && Array.isArray(bill.selectedItems) && bill.selectedItems.length > 0) {
+        console.log('Using selectedItems:', bill.selectedItems);
+        return bill.selectedItems.map((item: any) => {
+          // Handle different item name fields
+          const itemName = item.name || item.serviceName || item.service_name || item.itemName || 'Service Item';
+          const quantity = item.quantity || 1;
+          const unitPrice = item.price || item.unitPrice || item.unit_price || 0;
+          const totalPrice = item.totalPrice || item.total_price || (quantity * unitPrice);
+          const serviceType = item.serviceType || item.service_type || 'laundry';
+          
+          console.log('Mapped item:', { itemName, quantity, unitPrice, totalPrice, serviceType });
+          
+          return {
+            name: itemName,
+            quantity: quantity,
+            unitPrice: unitPrice,
+            totalPrice: totalPrice,
+            serviceType: serviceType
+          };
+        });
+      }
+      
+      // Fallback to getBillItemsBreakdown for parsing string items
+      console.log('Falling back to string parsing');
+      return this.getBillItemsBreakdown(bill);
+    } catch (error) {
+      console.error('Error in getBillItemsForView:', error);
+      return [];
     }
-    
-    // Fallback to getBillItemsBreakdown for parsing string items
-    return this.getBillItemsBreakdown(bill);
   }
 
   getBillItemsBreakdown(bill: any): any[] {
     if (!bill || !bill.items) return [];
     
-    // Check cache first
-    const cacheKey = `${bill.id}_${bill.items}`;
-    if (this.billItemsBreakdownCache.has(cacheKey)) {
-      return this.billItemsBreakdownCache.get(cacheKey)!;
-    }
-    
-    // Try to parse structured items data
     try {
+      // Check cache first
+      const cacheKey = `${bill.id}_${bill.items}`;
+      if (this.billItemsBreakdownCache.has(cacheKey)) {
+        return this.billItemsBreakdownCache.get(cacheKey)!;
+      }
+      
+      // Try to parse structured items data
       if (typeof bill.items === 'string' && bill.items.includes('{')) {
         // If items is a JSON string, parse it
         const itemsData = JSON.parse(bill.items);
@@ -5611,66 +5802,72 @@ export class LaundryComponent implements OnInit, AfterViewInit {
         this.billItemsBreakdownCache.set(cacheKey, bill.items);
         return bill.items;
       }
-    } catch (e) {
-      console.log('Could not parse items as JSON, using fallback');
-    }
-    
-    // If items is empty or null, return empty array
-    if (!bill.items || typeof bill.items !== 'string') {
-      this.billItemsBreakdownCache.set(cacheKey, []);
+      
+      // If items is empty or null, return empty array
+      if (!bill.items || typeof bill.items !== 'string') {
+        this.billItemsBreakdownCache.set(cacheKey, []);
+        return [];
+      }
+      
+      // Fallback: parse the items string to extract item details
+      const itemsString = bill.items || '';
+      const items: any[] = [];
+      
+      // Simple parsing for common patterns like "2x Men Shirt (Laundry), 1x Men Coat (Dry Clean)"
+      const itemMatches = itemsString.match(/(\d+)x\s+([^(]+)\s*\(([^)]+)\)/g);
+      
+      if (itemMatches && itemMatches.length > 0) {
+        itemMatches.forEach((match: string) => {
+          const parts = match.match(/(\d+)x\s+([^(]+)\s*\(([^)]+)\)/);
+          if (parts && parts.length >= 4) {
+            const quantity = parseInt(parts[1]) || 1;
+            const name = parts[2].trim() || 'Unknown Item';
+            const serviceType = parts[3].trim() || 'laundry';
+            
+            // Get price from services array (limit search to prevent performance issues)
+            let service = null;
+            if (this.services && this.services.length > 0) {
+              service = this.services.find(s => 
+                s.name && name && (
+                  s.name.toLowerCase().includes(name.toLowerCase()) || 
+                  name.toLowerCase().includes(s.name.toLowerCase())
+                )
+              );
+            }
+            
+            // Get price based on service type
+            let unitPrice = 25; // Default price
+            if (service) {
+              if (serviceType.toLowerCase().includes('laundry')) {
+                unitPrice = service.laundryPrice || service.price || 25;
+              } else if (serviceType.toLowerCase().includes('dry clean') || serviceType.toLowerCase().includes('dry-clean')) {
+                unitPrice = service.dryCleanPrice || service.price || 25;
+              } else if (serviceType.toLowerCase().includes('ironing') || serviceType.toLowerCase().includes('iron')) {
+                unitPrice = service.ironingPrice || service.price || 25;
+              } else {
+                unitPrice = service.price || 25;
+              }
+            }
+            const totalPrice = quantity * unitPrice;
+            
+            items.push({
+              name,
+              serviceType,
+              quantity,
+              unitPrice,
+              totalPrice
+            });
+          }
+        });
+      }
+      
+      // Cache the result
+      this.billItemsBreakdownCache.set(cacheKey, items);
+      return items;
+    } catch (error) {
+      console.error('Error in getBillItemsBreakdown:', error);
       return [];
     }
-    
-    // Fallback: parse the items string to extract item details
-    const itemsString = bill.items || '';
-    const items: any[] = [];
-    
-    // Simple parsing for common patterns like "2x Men Shirt (Laundry), 1x Men Coat (Dry Clean)"
-    const itemMatches = itemsString.match(/(\d+)x\s+([^(]+)\s*\(([^)]+)\)/g);
-    
-    if (itemMatches) {
-      itemMatches.forEach((match: string) => {
-        const parts = match.match(/(\d+)x\s+([^(]+)\s*\(([^)]+)\)/);
-        if (parts) {
-          const quantity = parseInt(parts[1]);
-          const name = parts[2].trim();
-          const serviceType = parts[3].trim();
-          
-          // Get price from services array
-          const service = this.services.find(s => 
-            s.name.toLowerCase().includes(name.toLowerCase()) || 
-            name.toLowerCase().includes(s.name.toLowerCase())
-          );
-          
-          // Get price based on service type without depending on selectedServiceType
-          let unitPrice = 25; // Default price
-          if (service) {
-            if (serviceType.toLowerCase().includes('laundry')) {
-              unitPrice = service.laundryPrice || service.price;
-            } else if (serviceType.toLowerCase().includes('dry clean') || serviceType.toLowerCase().includes('dry-clean')) {
-              unitPrice = service.dryCleanPrice || service.price;
-            } else if (serviceType.toLowerCase().includes('ironing') || serviceType.toLowerCase().includes('iron')) {
-              unitPrice = service.ironingPrice || service.price;
-            } else {
-              unitPrice = service.price;
-            }
-          }
-          const totalPrice = quantity * unitPrice;
-          
-          items.push({
-            name,
-            serviceType,
-            quantity,
-            unitPrice,
-            totalPrice
-          });
-        }
-      });
-    }
-    
-    // Cache the result
-    this.billItemsBreakdownCache.set(cacheKey, items);
-    return items;
   }
 
   addItemToBill(service: any) {
@@ -6082,23 +6279,50 @@ export class LaundryComponent implements OnInit, AfterViewInit {
       if (response.ok) {
         const bills = await response.json();
         // Transform API data to match frontend format
-        this.bills = bills.map((b: any) => ({
-          id: b.bill_no,
-          databaseId: b.id,
-          customer: b.customer_name,
-          phone: b.customer_phone,
-          amount: b.total_amount,
-          status: b.payment_status === 'paid' ? 'Paid' : 
-                  b.payment_status === 'partial' ? 'Partial' : 'Pending',
-          dueDate: b.due_date || b.bill_date,
-          items: typeof b.items === 'string' ? b.items : JSON.stringify(b.items),
-          serviceType: b.bill_type,
-          notes: b.notes,
-          createdDate: b.bill_date,
-          paidAmount: b.paid_amount,
-          balanceAmount: b.balance_amount,
-          selectedItems: typeof b.items === 'object' ? b.items : []
-        }));
+        this.bills = bills.map((b: any) => {
+          // Parse items properly
+          let selectedItems = [];
+          let itemsString = '';
+          
+          if (b.items) {
+            if (typeof b.items === 'string') {
+              itemsString = b.items;
+              // Try to parse as JSON if it looks like JSON
+              try {
+                if (b.items.includes('{') || b.items.includes('[')) {
+                  selectedItems = JSON.parse(b.items);
+                }
+              } catch (e) {
+                // If parsing fails, treat as string
+                selectedItems = [];
+              }
+            } else if (Array.isArray(b.items)) {
+              selectedItems = b.items;
+              itemsString = JSON.stringify(b.items);
+            } else if (typeof b.items === 'object') {
+              selectedItems = [b.items];
+              itemsString = JSON.stringify(b.items);
+            }
+          }
+          
+          return {
+            id: b.bill_no,
+            databaseId: b.id,
+            customer: b.customer_name,
+            phone: b.customer_phone,
+            amount: b.total_amount,
+            status: b.payment_status === 'paid' ? 'Paid' : 
+                    b.payment_status === 'partial' ? 'Partial' : 'Pending',
+            dueDate: b.due_date || b.bill_date,
+            items: itemsString,
+            serviceType: b.bill_type,
+            notes: b.notes,
+            createdDate: b.bill_date,
+            paidAmount: b.paid_amount,
+            balanceAmount: b.balance_amount,
+            selectedItems: selectedItems
+          };
+        });
         console.log('Loaded bills from API:', this.bills.length);
         if (this.bills.length > 0) {
           console.log('Sample bill:', this.bills[0]);
@@ -6299,7 +6523,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     
     // Reset search and filter terms for services
     this.serviceSearchTerm = '';
-    this.cartServiceTypeFilter = '';
+    this.cartServiceTypeFilter = 'laundry';
     this.selectedServiceFor = ''; // Reset to show all services
     
     this.showCustomerDetailsModal = true;
@@ -6383,7 +6607,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.clearCart();
     // Reset search and filter terms for services
     this.serviceSearchTerm = '';
-    this.cartServiceTypeFilter = '';
+    this.cartServiceTypeFilter = 'laundry';
     this.selectedServiceFor = ''; // Reset to show all services
     this.showCustomerModal = true;
   }
@@ -6395,7 +6619,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.customerForm.reset();
     // Reset search and filter terms
     this.serviceSearchTerm = '';
-    this.cartServiceTypeFilter = '';
+    this.cartServiceTypeFilter = 'laundry';
     this.selectedServiceFor = 'man'; // Reset to default
   }
 
@@ -6525,7 +6749,7 @@ export class LaundryComponent implements OnInit, AfterViewInit {
     this.clearCart();
     // Reset search and filter terms
     this.serviceSearchTerm = '';
-    this.cartServiceTypeFilter = '';
+    this.cartServiceTypeFilter = 'laundry';
     this.selectedServiceFor = 'man'; // Reset to default
   }
 

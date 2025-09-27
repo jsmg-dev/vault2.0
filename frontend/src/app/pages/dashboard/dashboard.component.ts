@@ -37,6 +37,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   async ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';
+    console.log('Dashboard - userRole from sessionStorage:', this.userRole);
+    console.log('Dashboard - userRole type:', typeof this.userRole);
+    console.log('Dashboard - userRole === clothAura:', this.userRole === 'clothAura');
     await this.loadDashboardStats();
   }
 
@@ -162,7 +165,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     ];
     
     new Chart(this.pieChartRef.nativeElement, {
-      type: 'pie',
+      type: 'doughnut',
       data: {
         labels: loanTypeLabels.length > 0 ? loanTypeLabels : ['No Data'],
         datasets: [{
@@ -175,6 +178,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       options: { 
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '60%',
         plugins: {
           legend: {
             labels: {

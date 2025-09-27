@@ -263,12 +263,17 @@ app.post('/login', async (req, res) => {
     const row = result.rows[0];
     if (!row) return res.status(401).send('Invalid username or password');
 
-    const role = (row.role || "").toLowerCase();
+    const role = row.role || "";
+    console.log('Original role from DB:', role);
+    console.log('Role type:', typeof role);
+    
     req.session.userId = row.id;
     req.session.userRole = role;
     req.session.username = row.username;
+    
+    console.log('Session role:', req.session.userRole);
     const user = { ...row, role: req.session.userRole }
-    console.log(user);
+    console.log('Final user object:', user);
 
     return res.json({ success: true, user: { ...row, role: req.session.userRole } });
   } catch (err) {

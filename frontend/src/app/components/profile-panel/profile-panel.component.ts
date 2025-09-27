@@ -64,7 +64,9 @@ export class ProfilePanelComponent implements OnInit {
       }
 
       const userData = await userResponse.json();
+      console.log('User data from API:', userData);
       const currentUser = userData.find((user: any) => user.id == userId);
+      console.log('Current user found:', currentUser);
       
       if (currentUser) {
         this.userProfile = {
@@ -81,8 +83,10 @@ export class ProfilePanelComponent implements OnInit {
         };
         
         // Set profile pic preview
+        console.log('Profile pic from user data:', this.userProfile.profile_pic);
         if (this.userProfile.profile_pic) {
           this.profilePicPreview = `${environment.apiUrl}/uploads/profile/${this.userProfile.profile_pic}`;
+          console.log('Profile pic preview URL:', this.profilePicPreview);
         }
         
       }
@@ -140,7 +144,8 @@ export class ProfilePanelComponent implements OnInit {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload profile picture');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to upload profile picture');
       }
 
       const data = await response.json();
@@ -154,7 +159,8 @@ export class ProfilePanelComponent implements OnInit {
       this.toastService.show('Profile picture updated successfully', 'success');
     } catch (error) {
       console.error('Error uploading profile picture:', error);
-      this.toastService.show('Error uploading profile picture', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Error uploading profile picture';
+      this.toastService.show(errorMessage, 'error');
     } finally {
       this.isUploading = false;
     }

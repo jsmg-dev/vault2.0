@@ -129,7 +129,7 @@ router.put('/update/:id', async (req, res) => {
 router.get('/list', async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, name, username, role, status FROM users`
+      `SELECT id, name, username, role, status, email, phone, address, profile_pic, created_at, last_login FROM users`
     );
     res.json(result.rows);
   } catch (err) {
@@ -232,10 +232,15 @@ router.put('/profile/:id', async (req, res) => {
 router.post('/upload-profile-pic/:id', upload.single('profile_pic'), async (req, res) => {
   try {
     const userId = req.params.id;
+    console.log('Upload request for user ID:', userId);
+    console.log('Request file:', req.file);
     
     if (!req.file) {
+      console.log('No file uploaded');
       return res.status(400).json({ error: 'No file uploaded' });
     }
+
+    console.log('File uploaded successfully:', req.file.filename);
 
     // Update user record with profile picture filename
     const updateQuery = `
@@ -245,14 +250,18 @@ router.post('/upload-profile-pic/:id', upload.single('profile_pic'), async (req,
       RETURNING profile_pic
     `;
     
+    console.log('Updating user record with filename:', req.file.filename);
     const result = await db.query(updateQuery, [req.file.filename, userId]);
+    console.log('Database update result:', result.rows);
     
     if (result.rows.length === 0) {
+      console.log('User not found, deleting uploaded file');
       // Delete uploaded file if user not found
       fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'User not found' });
     }
 
+    console.log('Profile picture uploaded successfully');
     res.json({
       message: 'Profile picture uploaded successfully',
       filename: result.rows[0].profile_pic
@@ -262,10 +271,14 @@ router.post('/upload-profile-pic/:id', upload.single('profile_pic'), async (req,
     
     // Delete uploaded file on error
     if (req.file) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error deleting uploaded file:', unlinkError);
+      }
     }
     
-    res.status(500).json({ error: 'Failed to upload profile picture' });
+    res.status(500).json({ error: 'Failed to upload profile picture: ' + error.message });
   }
 });
 

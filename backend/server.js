@@ -274,7 +274,7 @@ app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     const result = await db.query(
-      `SELECT id, name, username, role FROM users WHERE username = $1 AND password = $2 LIMIT 1;`,
+      `SELECT id, name, username, role, profile_pic FROM users WHERE username = $1 AND password = $2 LIMIT 1;`,
       [username, password]
     );
     console.log(result);

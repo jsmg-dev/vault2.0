@@ -34,7 +34,7 @@ export class PoliciesComponent implements OnInit {
   userRole: string = '';
   sidenavCollapsed = false;
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'LIC Policy Management', route: '/policies' }
+    { label: 'Policy Management', route: '/policies' }
   ];
 
   policyForm = {

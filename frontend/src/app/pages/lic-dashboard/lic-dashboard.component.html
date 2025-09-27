@@ -6,12 +6,6 @@
   (fullscreenToggle)="toggleFullscreen()"
   (logoutEvent)="logout()"
 >
-  <div slot="actions" class="header-actions">
-    <button class="btn btn-primary" (click)="sendAllDueNotifications()" 
-            [disabled]="dashboardData.policiesDueToday === 0">
-      <i class="fab fa-whatsapp"></i> {{ languageService.translate('lic.send_due_notifications') }}
-    </button>
-  </div>
 
   <div class="lic-dashboard-container">
 

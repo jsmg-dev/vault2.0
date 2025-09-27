@@ -56,7 +56,7 @@ export interface BreadcrumbItem {
 
     .breadcrumb-current {
       font-size: 30px;
-      color: #ffffff;
+      color: #000000;
       font-weight: 600;
     }
   `]

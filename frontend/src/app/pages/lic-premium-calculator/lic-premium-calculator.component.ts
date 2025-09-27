@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-lic-premium-calculator',
@@ -16,8 +17,10 @@ export class LicPremiumCalculatorComponent implements OnInit {
   sidenavCollapsed = false;
   
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'LIC Premium Calculator', active: true }
+    { label: 'Premium Calculator', active: true }
   ];
+
+  constructor(public languageService: LanguageService) {}
 
   // Form Data
   calculatorForm = {
@@ -114,8 +117,6 @@ export class LicPremiumCalculatorComponent implements OnInit {
     term: 0.5,
     premiumWaiver: 1.2
   };
-
-  constructor() {}
 
   ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';

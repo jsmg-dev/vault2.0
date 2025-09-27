@@ -61,7 +61,7 @@
 /* Metrics Grid */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 30px;
   overflow-x: auto;
@@ -501,15 +501,19 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
-  .dashboard-row {
-    grid-template-columns: 1fr;
+@media (max-width: 1400px) {
+  .metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 1200px) {
+  .dashboard-row {
+    grid-template-columns: 1fr;
+  }
+  
   .metrics-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -551,6 +555,33 @@
   .header-actions .btn {
     padding: 8px 16px;
     font-size: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .metric-card {
+    padding: 20px;
+    min-width: auto;
+  }
+  
+  .metric-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    margin-right: 16px;
+  }
+  
+  .metric-content h3 {
+    font-size: 28px;
+  }
+  
+  .metric-content p {
+    font-size: 13px;
   }
 }
 

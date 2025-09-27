@@ -1,11 +1,11 @@
 .policies-container {
-  padding: 20px;
+  padding: 0px 15px 5px 15px;
 }
 
 /* Global Search Section */
 .global-search-section {
-  margin-bottom: 20px;
-  padding: 20px;
+  margin-bottom: 5px;
+  padding: 8px;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   border-radius: 12px;
   border: 1px solid #e2e8f0;
@@ -120,7 +120,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 2px;
   padding: 0;
 }
 
@@ -296,13 +296,13 @@
 }
 
 .policies-table th {
-  padding: 12px 20px;
+  padding: 8px 15px;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .policies-table td {
-  padding: 16px;
+  padding: 10px 15px;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -432,37 +432,43 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 30px;
+  padding: 15px 20px;
 }
 
 .form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
   border-bottom: 2px solid #e5e7eb;
 }
 
 .form-header h2 {
   margin: 0;
   color: #374151;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
 }
 
+.form-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .form-section {
-  margin-bottom: 30px;
-  padding: 20px;
+  margin-bottom: 15px;
+  padding: 15px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #f9fafb;
 }
 
 .form-section h3 {
-  margin: 0 0 20px 0;
+  margin: 0 0 15px 0;
   color: #3b82f6;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   display: flex;
   align-items: center;

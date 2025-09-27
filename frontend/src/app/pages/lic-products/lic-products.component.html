@@ -16,7 +16,7 @@
           <i class="fas fa-search"></i>
           <input 
             type="text" 
-            placeholder="Search insurance plans..." 
+            placeholder="{{ languageService.translate('lic.search_insurance_plans') }}" 
             [(ngModel)]="searchTerm"
             class="search-input"
           >
@@ -59,14 +59,14 @@
           <p class="product-description">{{ product.description }}</p>
           
           <div class="product-features">
-            <h4>Key Features:</h4>
+            <h4>{{ languageService.translate('lic.key_features') }}</h4>
             <ul>
               <li *ngFor="let feature of product.features.slice(0, 4)">
                 <i class="fas fa-check-circle"></i>
                 {{ feature }}
               </li>
               <li *ngIf="product.features.length > 4" class="more-features">
-                +{{ product.features.length - 4 }} more features
+                +{{ product.features.length - 4 }} {{ languageService.translate('lic.more_features') }}
               </li>
             </ul>
           </div>
@@ -80,14 +80,14 @@
               (click)="openBuyOnline(product)"
             >
               <i class="fas fa-shopping-cart"></i>
-              Buy Online
+              {{ languageService.translate('lic.buy_online') }}
             </button>
             <button 
               class="btn btn-secondary details-btn"
               (click)="viewProductDetails(product)"
             >
               <i class="fas fa-info-circle"></i>
-              View Details
+              {{ languageService.translate('lic.view_details') }}
             </button>
           </div>
         </div>
@@ -98,10 +98,10 @@
     <div *ngIf="filteredProducts.length === 0" class="no-results">
       <div class="no-results-content">
         <i class="fas fa-search"></i>
-        <h3>No products found</h3>
-        <p>Try adjusting your search terms or category filter</p>
+        <h3>{{ languageService.translate('lic.no_products_found') }}</h3>
+        <p>{{ languageService.translate('lic.try_adjusting_search') }}</p>
         <button class="btn btn-primary" (click)="selectedCategory = 'all'; searchTerm = ''">
-          Clear Filters
+          {{ languageService.translate('lic.clear_filters') }}
         </button>
       </div>
     </div>
@@ -109,30 +109,30 @@
 
     <!-- Government Schemes -->
     <div class="govt-schemes-section">
-      <h2 class="section-title">Government Schemes</h2>
+      <h2 class="section-title">{{ languageService.translate('lic.government_schemes') }}</h2>
       <div class="schemes-grid">
         <div class="scheme-card">
-          <h3>Pradhan Mantri Jeevan Jyoti Bima Yojana</h3>
+          <h3>{{ languageService.translate('lic.pmjby') }}</h3>
           <div class="scheme-details">
             <div class="detail-item">
-              <strong>Age Group:</strong> 18-50 years
+              <strong>{{ languageService.translate('lic.age_group') }}:</strong> 18-50 years
             </div>
             <div class="detail-item">
-              <strong>Cover:</strong> ₹2 Lakhs
+              <strong>{{ languageService.translate('lic.cover') }}:</strong> ₹2 Lakhs
             </div>
             <div class="detail-item">
-              <strong>Premium:</strong> ₹436/annum
+              <strong>{{ languageService.translate('lic.premium_annum') }}:</strong> ₹436/annum
             </div>
           </div>
         </div>
         <div class="scheme-card">
-          <h3>Pradhan Mantri MaanDhan Yojana</h3>
+          <h3>{{ languageService.translate('lic.pmmvy') }}</h3>
           <div class="scheme-details">
             <div class="detail-item">
-              <strong>Type:</strong> Pension Scheme
+              <strong>{{ languageService.translate('lic.pension_scheme') }}:</strong> Pension Scheme
             </div>
             <div class="detail-item">
-              <strong>Website:</strong> www.maandhan.in
+              <strong>{{ languageService.translate('lic.website') }}:</strong> www.maandhan.in
             </div>
           </div>
         </div>
@@ -142,3 +142,4 @@
 
   </div>
 </app-main-layout>
+

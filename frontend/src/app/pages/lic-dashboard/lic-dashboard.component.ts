@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { RouterModule } from '@angular/router';
 import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-lic-dashboard',
@@ -19,7 +20,7 @@ export class LicDashboardComponent implements OnInit {
   isLoading = true;
   
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'LIC Dashboard', active: true }
+    { label: 'Dashboard', active: true }
   ];
 
   // Dashboard Data
@@ -44,7 +45,7 @@ export class LicDashboardComponent implements OnInit {
     policyTypes: [] as any[]
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, public languageService: LanguageService) {}
 
   ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';

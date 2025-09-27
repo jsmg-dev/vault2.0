@@ -8,7 +8,7 @@
 >
   <div class="policies-container">
     <!-- Page Actions -->
-    <div class="page-actions">
+    <div class="page-actions" *ngIf="!showForm">
       <button class="btn-primary" (click)="openForm()">
         <i class="fas fa-plus"></i> Add New Policy
       </button>
@@ -168,12 +168,15 @@
   <div class="policy-form" *ngIf="showForm">
     <div class="form-header">
       <h2>{{ editingPolicy ? 'Edit Policy' : 'Add New Policy' }}</h2>
-      <button class="btn btn-secondary" (click)="closeForm()">
-        <i class="fa fa-times"></i> Close
-      </button>
+      <div class="form-header-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting" form="policyForm">
+          <i class="fa fa-save"></i> {{ editingPolicy ? (saveMode === 'add' ? 'Save as New' : 'Update') : 'Save' }}
+        </button>
+      </div>
     </div>
 
-    <form (submit)="onSubmit($event)">
+    <form id="policyForm" (submit)="onSubmit($event)">
       <!-- Policy Information -->
       <div class="form-section">
         <h3><i class="fa fa-hashtag"></i> Policy Information</h3>
@@ -373,13 +376,6 @@
         </div>
       </div>
 
-      <!-- Form Actions -->
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
-          <i class="fa fa-save"></i> {{ editingPolicy ? (saveMode === 'add' ? 'Save as New' : 'Update') : 'Save' }} Policy
-        </button>
-      </div>
     </form>
 
     <!-- Decision Modal -->

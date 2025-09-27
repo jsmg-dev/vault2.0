@@ -9,7 +9,7 @@
   <div slot="actions" class="header-actions">
     <button class="btn btn-primary" (click)="sendAllDueNotifications()" 
             [disabled]="dashboardData.policiesDueToday === 0">
-      <i class="fab fa-whatsapp"></i> Send Due Notifications
+      <i class="fab fa-whatsapp"></i> {{ languageService.translate('lic.send_due_notifications') }}
     </button>
   </div>
 
@@ -18,7 +18,7 @@
     <!-- Loading State -->
     <div class="loading-container" *ngIf="isLoading">
       <div class="loading-spinner"></div>
-      <p>Loading dashboard data...</p>
+      <p>{{ languageService.translate('lic.loading_dashboard') }}</p>
     </div>
 
     <!-- Dashboard Content -->
@@ -28,52 +28,41 @@
       <div class="metrics-grid">
         <div class="metric-card total-policies">
           <div class="metric-icon">
-            <i class="fas fa-file-contract"></i>
+            <i class="fas fa-shield-alt"></i>
           </div>
           <div class="metric-content">
             <h3>{{ dashboardData.totalPolicies }}</h3>
-            <p>Total Policies</p>
+            <p>{{ languageService.translate('lic.total_policies') }}</p>
           </div>
         </div>
 
         <div class="metric-card active-policies">
           <div class="metric-icon">
-            <i class="fas fa-check-circle"></i>
+            <i class="fas fa-heartbeat"></i>
           </div>
           <div class="metric-content">
             <h3>{{ dashboardData.activePolicies }}</h3>
-            <p>Active Policies</p>
+            <p>{{ languageService.translate('lic.active_policies') }}</p>
           </div>
         </div>
 
         <div class="metric-card due-today">
           <div class="metric-icon">
-            <i class="fas fa-exclamation-triangle"></i>
+            <i class="fas fa-clock"></i>
           </div>
           <div class="metric-content">
             <h3>{{ dashboardData.policiesDueToday }}</h3>
-            <p>Due Today</p>
+            <p>{{ languageService.translate('lic.due_today') }}</p>
           </div>
         </div>
-
-        <div class="metric-card total-premium">
-          <div class="metric-icon">
-            <i class="fas fa-rupee-sign"></i>
-          </div>
-          <div class="metric-content">
-            <h3>{{ formatCurrency(dashboardData.totalPremiumCollected) }}</h3>
-            <p>Premium Collected</p>
-          </div>
-        </div>
-
 
         <div class="metric-card due-month">
           <div class="metric-icon">
-            <i class="fas fa-calendar-alt"></i>
+            <i class="fas fa-calendar-check"></i>
           </div>
           <div class="metric-content">
             <h3>{{ dashboardData.policiesDueThisMonth }}</h3>
-            <p>Due This Month</p>
+            <p>{{ languageService.translate('lic.due_this_month') }}</p>
           </div>
         </div>
       </div>
@@ -84,7 +73,7 @@
         <!-- Policy Status Chart -->
         <div class="chart-container">
           <div class="chart-header">
-            <h3><i class="fas fa-chart-pie"></i> Policy Status Distribution</h3>
+            <h3><i class="fas fa-chart-pie"></i> {{ languageService.translate('lic.policy_status_distribution') }}</h3>
           </div>
           <div class="chart-content">
             <div class="status-chart">
@@ -102,7 +91,7 @@
         <!-- Policy Types Chart -->
         <div class="chart-container">
           <div class="chart-header">
-            <h3><i class="fas fa-chart-bar"></i> Policy Types</h3>
+            <h3><i class="fas fa-chart-bar"></i> {{ languageService.translate('lic.policy_types') }}</h3>
           </div>
           <div class="chart-content">
             <div class="types-chart">
@@ -127,7 +116,7 @@
         <!-- Premium Due Today -->
         <div class="table-container">
           <div class="table-header">
-            <h3><i class="fas fa-clock"></i> Premium Due Today</h3>
+            <h3><i class="fas fa-clock"></i> {{ languageService.translate('lic.premium_due_today') }}</h3>
             <span class="badge due-badge">{{ dashboardData.policiesDueToday }}</span>
           </div>
           <div class="table-content">
@@ -135,11 +124,11 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Policy No</th>
-                    <th>Customer</th>
-                    <th>Premium</th>
-                    <th>Mobile</th>
-                    <th>Actions</th>
+                    <th>{{ languageService.translate('lic.policy_no') }}</th>
+                    <th>{{ languageService.translate('lic.customer') }}</th>
+                    <th>{{ languageService.translate('lic.premium') }}</th>
+                    <th>{{ languageService.translate('lic.mobile') }}</th>
+                    <th>{{ languageService.translate('lic.actions') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -151,13 +140,13 @@
                     <td class="actions">
                       <button class="btn-icon btn-whatsapp" 
                               (click)="sendWhatsAppNotification(policy.id)"
-                              title="Send WhatsApp">
+                              [title]="languageService.translate('lic.send_whatsapp')">
                         <i class="fab fa-whatsapp"></i>
                       </button>
                     </td>
                   </tr>
                   <tr *ngIf="dashboardData.premiumDueToday.length === 0">
-                    <td colspan="5" class="no-data">No policies due today</td>
+                    <td colspan="5" class="no-data">{{ languageService.translate('lic.no_policies_due_today') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -168,18 +157,18 @@
         <!-- Recent Policies -->
         <div class="table-container">
           <div class="table-header">
-            <h3><i class="fas fa-plus-circle"></i> Recent Policies</h3>
+            <h3><i class="fas fa-plus-circle"></i> {{ languageService.translate('lic.recent_policies') }}</h3>
           </div>
           <div class="table-content">
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Policy No</th>
-                    <th>Customer</th>
-                    <th>Plan</th>
-                    <th>Status</th>
-                    <th>Created</th>
+                    <th>{{ languageService.translate('lic.policy_no') }}</th>
+                    <th>{{ languageService.translate('lic.customer') }}</th>
+                    <th>{{ languageService.translate('lic.plan') }}</th>
+                    <th>{{ languageService.translate('lic.status') }}</th>
+                    <th>{{ languageService.translate('lic.created') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -196,7 +185,7 @@
                     <td>{{ formatDate(policy.created_at) }}</td>
                   </tr>
                   <tr *ngIf="dashboardData.recentPolicies.length === 0">
-                    <td colspan="5" class="no-data">No recent policies</td>
+                    <td colspan="5" class="no-data">{{ languageService.translate('lic.no_recent_policies') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -208,7 +197,7 @@
       <!-- Monthly Premium Chart -->
       <div class="chart-container full-width">
         <div class="chart-header">
-          <h3><i class="fas fa-chart-line"></i> Monthly Premium Collection (Last 6 Months)</h3>
+          <h3><i class="fas fa-chart-line"></i> {{ languageService.translate('lic.monthly_premium_collection') }}</h3>
         </div>
         <div class="chart-content">
           <div class="monthly-chart">

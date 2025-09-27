@@ -82,6 +82,7 @@ export interface NavItem {
       padding: 10px;
     }
 
+
     .logo {
       width: calc(100% - 4px);
       height: calc(100% - 4px);
@@ -90,7 +91,7 @@ export interface NavItem {
       transition: all 0.3s ease;
       max-width: 100%;
       max-height: 100%;
-      margin-bottom: 8px;
+      margin-bottom: 0;
     }
 
     .logo.logo-small {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 import { BreadcrumbItem } from '../../components/breadcrumb/breadcrumb.component';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-lic-products',
@@ -16,8 +17,10 @@ export class LicProductsComponent implements OnInit {
   sidenavCollapsed = false;
   
   breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'LIC Products', active: true }
+    { label: 'Product Details', active: true }
   ];
+
+  constructor(public languageService: LanguageService) {}
 
   selectedCategory = 'all';
   searchTerm = '';
@@ -419,8 +422,6 @@ export class LicProductsComponent implements OnInit {
       isNew: false
     }
   ];
-
-  constructor() {}
 
   ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';

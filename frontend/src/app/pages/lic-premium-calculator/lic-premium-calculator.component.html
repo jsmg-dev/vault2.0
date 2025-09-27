@@ -16,8 +16,7 @@
       <div class="form-section">
         <div class="form-card">
           <div class="form-header">
-            <h2><i class="fas fa-edit"></i> Policy Details</h2>
-            <p>Enter your policy details to calculate premium</p>
+            <h2><i class="fas fa-calculator"></i> {{ languageService.translate('lic.calculator') }}</h2>
           </div>
 
           <form class="calculator-form" (ngSubmit)="calculatePremium()">
@@ -26,7 +25,7 @@
             <div class="form-group">
               <label for="selectedPlan">
                 <i class="fas fa-list"></i>
-                Select LIC Plan
+                {{ languageService.translate('lic.select_lic_plan') }}
               </label>
               <select 
                 id="selectedPlan" 
@@ -35,33 +34,33 @@
                 class="form-control"
                 required
               >
-                <option value="">Choose a LIC Plan</option>
-                <optgroup label="Endowment Plans">
+                <option value="">{{ languageService.translate('lic.choose_lic_plan') }}</option>
+                <optgroup label="{{ languageService.translate('lic.endowment_plans') }}">
                   <option *ngFor="let plan of getEndowmentPlans()" [value]="plan.id">
                     {{ plan.name }}
                   </option>
                 </optgroup>
-                <optgroup label="Limited Premium Plans">
+                <optgroup label="{{ languageService.translate('lic.limited_premium_plans') }}">
                   <option *ngFor="let plan of getLimitedPremiumPlans()" [value]="plan.id">
                     {{ plan.name }}
                   </option>
                 </optgroup>
-                <optgroup label="Money Back Plans">
+                <optgroup label="{{ languageService.translate('lic.money_back_plans') }}">
                   <option *ngFor="let plan of getMoneyBackPlans()" [value]="plan.id">
                     {{ plan.name }}
                   </option>
                 </optgroup>
-                <optgroup label="Term Plans">
+                <optgroup label="{{ languageService.translate('lic.term_plans') }}">
                   <option *ngFor="let plan of getTermPlans()" [value]="plan.id">
                     {{ plan.name }}
                   </option>
                 </optgroup>
-                <optgroup label="Pension Plans">
+                <optgroup label="{{ languageService.translate('lic.pension_plans') }}">
                   <option *ngFor="let plan of getPensionPlans()" [value]="plan.id">
                     {{ plan.name }}
                   </option>
                 </optgroup>
-                <optgroup label="Single Premium Plans">
+                <optgroup label="{{ languageService.translate('lic.single_premium_plans') }}">
                   <option *ngFor="let plan of getSinglePremiumPlans()" [value]="plan.id">
                     {{ plan.name }}
                   </option>
@@ -74,7 +73,7 @@
               <div class="form-group">
                 <label for="age">
                   <i class="fas fa-user"></i>
-                  Age (in Years)
+                  {{ languageService.translate('lic.age_years') }}
                 </label>
                 <select 
                   id="age" 
@@ -90,7 +89,7 @@
               <div class="form-group">
                 <label for="policyTerm">
                   <i class="fas fa-calendar-alt"></i>
-                  Policy Term (in Years)
+                  {{ languageService.translate('lic.policy_term_years') }}
                 </label>
                 <select 
                   id="policyTerm" 
@@ -108,7 +107,7 @@
             <div class="form-group">
               <label for="basicSumAssured">
                 <i class="fas fa-rupee-sign"></i>
-                Basic Sum Assured (BSA)
+                {{ languageService.translate('lic.basic_sum_assured') }}
               </label>
               <input 
                 type="number" 
@@ -116,19 +115,19 @@
                 [(ngModel)]="calculatorForm.basicSumAssured" 
                 name="basicSumAssured"
                 class="form-control"
-                placeholder="Enter Sum Assured"
+                placeholder="{{ languageService.translate('lic.enter_sum_assured') }}"
                 min="100000"
                 step="10000"
                 required
               >
-              <small class="form-help">Minimum ₹1,00,000</small>
+              <small class="form-help">{{ languageService.translate('lic.minimum_amount') }}</small>
             </div>
 
             <!-- Premium Payment Mode -->
             <div class="form-group">
               <label for="paymentMode">
                 <i class="fas fa-credit-card"></i>
-                Premium Payment Mode
+                {{ languageService.translate('lic.premium_payment_mode') }}
               </label>
               <select 
                 id="paymentMode" 
@@ -144,7 +143,7 @@
 
             <!-- Riders Section -->
             <div class="riders-section">
-              <h3><i class="fas fa-plus-circle"></i> Optional Riders</h3>
+              <h3><i class="fas fa-plus-circle"></i> {{ languageService.translate('lic.optional_riders') }}</h3>
               
               <div class="rider-group">
                 <div class="rider-item">
@@ -156,8 +155,8 @@
                     class="rider-checkbox"
                   >
                   <label for="accidentalDisabilityRider" class="rider-label">
-                    <span class="rider-name">Accidental Death & Disability Benefit (AD & DB) Rider</span>
-                    <span class="rider-rate">₹2.5 per ₹1000 SA</span>
+                    <span class="rider-name">{{ languageService.translate('lic.accidental_disability_rider') }}</span>
+                    <span class="rider-rate">₹2.5 {{ languageService.translate('lic.per_thousand_sa') }}</span>
                   </label>
                 </div>
 
@@ -170,8 +169,8 @@
                     class="rider-checkbox"
                   >
                   <label for="accidentalRider" class="rider-label">
-                    <span class="rider-name">Accidental Death Benefit (ADB) Rider</span>
-                    <span class="rider-rate">₹1.8 per ₹1000 SA</span>
+                    <span class="rider-name">{{ languageService.translate('lic.accidental_death_rider') }}</span>
+                    <span class="rider-rate">₹1.8 {{ languageService.translate('lic.per_thousand_sa') }}</span>
                   </label>
                 </div>
 
@@ -184,15 +183,15 @@
                     class="rider-checkbox"
                   >
                   <label for="termRider" class="rider-label">
-                    <span class="rider-name">Term Assurance Rider</span>
-                    <span class="rider-rate">₹0.5 per ₹1000 SA</span>
+                    <span class="rider-name">{{ languageService.translate('lic.term_assurance_rider') }}</span>
+                    <span class="rider-rate">₹0.5 {{ languageService.translate('lic.per_thousand_sa') }}</span>
                   </label>
                 </div>
 
                 <div class="form-group" *ngIf="calculatorForm.termRider">
                   <label for="termRiderSumAssured">
                     <i class="fas fa-shield-alt"></i>
-                    Term Rider Sum Assured
+                    {{ languageService.translate('lic.term_rider_sum_assured') }}
                   </label>
                   <input 
                     type="number" 
@@ -200,7 +199,7 @@
                     [(ngModel)]="calculatorForm.termRiderSumAssured" 
                     name="termRiderSumAssured"
                     class="form-control"
-                    placeholder="Enter Term Rider Sum Assured"
+                    placeholder="{{ languageService.translate('lic.enter_term_rider_sa') }}"
                     min="0"
                     step="10000"
                   >
@@ -215,8 +214,8 @@
                     class="rider-checkbox"
                   >
                   <label for="premiumWaiverRider" class="rider-label">
-                    <span class="rider-name">Premium Waiver Benefit (PWB) Rider</span>
-                    <span class="rider-rate">₹1.2 per ₹1000 SA</span>
+                    <span class="rider-name">{{ languageService.translate('lic.premium_waiver_rider') }}</span>
+                    <span class="rider-rate">₹1.2 {{ languageService.translate('lic.per_thousand_sa') }}</span>
                   </label>
                 </div>
               </div>
@@ -226,7 +225,7 @@
             <div class="form-group">
               <label for="proposerAge">
                 <i class="fas fa-user-friends"></i>
-                Proposer (Father) Age
+                {{ languageService.translate('lic.proposer_age') }}
               </label>
               <select 
                 id="proposerAge" 
@@ -248,14 +247,14 @@
                 class="form-checkbox"
               >
               <label for="maturitySettlement" class="checkbox-label">
-                <span class="checkbox-text">Maturity Settlement</span>
+                <span class="checkbox-text">{{ languageService.translate('lic.maturity_settlement') }}</span>
               </label>
             </div>
 
             <div class="form-group" *ngIf="calculatorForm.maturitySettlement">
               <label for="settlementYears">
                 <i class="fas fa-clock"></i>
-                Settlement Years
+                {{ languageService.translate('lic.settlement_years') }}
               </label>
               <select 
                 id="settlementYears" 
@@ -263,7 +262,7 @@
                 name="settlementYears"
                 class="form-control"
               >
-                <option *ngFor="let year of getSettlementOptions()" [value]="year">{{ year }} Years</option>
+                <option *ngFor="let year of getSettlementOptions()" [value]="year">{{ year }} {{ languageService.translate('lic.years') }}</option>
               </select>
             </div>
 
@@ -271,11 +270,11 @@
             <div class="form-actions">
               <button type="submit" class="btn btn-calculate">
                 <i class="fas fa-calculator"></i>
-                Calculate Premium
+                {{ languageService.translate('lic.calculate_premium') }}
               </button>
               <button type="button" class="btn btn-reset" (click)="resetCalculator()">
                 <i class="fas fa-undo"></i>
-                Reset
+                {{ languageService.translate('lic.reset') }}
               </button>
             </div>
 
@@ -287,7 +286,7 @@
       <div class="results-section" *ngIf="calculationResults.finalPremium > 0">
         <div class="results-card">
           <div class="results-header">
-            <h2><i class="fas fa-chart-bar"></i> Premium Calculation Results</h2>
+            <h2><i class="fas fa-chart-bar"></i> {{ languageService.translate('lic.premium_calculation_results') }}</h2>
             <div class="plan-info" *ngIf="getSelectedPlanDetails()">
               <span class="plan-name">{{ getSelectedPlanDetails()?.name }}</span>
               <span class="plan-category">{{ getSelectedPlanDetails()?.category }}</span>
@@ -303,27 +302,27 @@
                   <i class="fas fa-rupee-sign"></i>
                 </div>
                 <div class="premium-content">
-                  <h3>Final Premium</h3>
+                  <h3>{{ languageService.translate('lic.final_premium') }}</h3>
                   <div class="premium-amount">{{ formatCurrency(calculationResults.finalPremium) }}</div>
-                  <small>Including 18% GST</small>
+                  <small>{{ languageService.translate('lic.including_gst') }}</small>
                 </div>
               </div>
 
               <div class="premium-breakdown">
                 <div class="breakdown-item">
-                  <span class="label">Basic Premium:</span>
+                  <span class="label">{{ languageService.translate('lic.basic_premium') }}:</span>
                   <span class="value">{{ formatCurrency(calculationResults.basicPremium) }}</span>
                 </div>
                 <div class="breakdown-item">
-                  <span class="label">Rider Premium:</span>
+                  <span class="label">{{ languageService.translate('lic.rider_premium') }}:</span>
                   <span class="value">{{ formatCurrency(calculationResults.riderPremium) }}</span>
                 </div>
                 <div class="breakdown-item">
-                  <span class="label">Sub Total:</span>
+                  <span class="label">{{ languageService.translate('lic.sub_total') }}:</span>
                   <span class="value">{{ formatCurrency(calculationResults.totalPremium) }}</span>
                 </div>
                 <div class="breakdown-item gst">
-                  <span class="label">GST (18%):</span>
+                  <span class="label">{{ languageService.translate('lic.gst_18') }}:</span>
                   <span class="value">{{ formatCurrency(calculationResults.gst) }}</span>
                 </div>
               </div>
@@ -331,44 +330,44 @@
 
             <!-- Detailed Breakdown -->
             <div class="detailed-breakdown">
-              <h4><i class="fas fa-list-alt"></i> Detailed Breakdown</h4>
+              <h4><i class="fas fa-list-alt"></i> {{ languageService.translate('lic.detailed_breakdown') }}</h4>
               
               <div class="breakdown-grid">
                 <div class="breakdown-card">
-                  <h5>Basic Premium Calculation</h5>
+                  <h5>{{ languageService.translate('lic.basic_premium_calculation') }}</h5>
                   <div class="breakdown-list">
                     <div class="breakdown-row">
-                      <span>Tabular Premium:</span>
+                      <span>{{ languageService.translate('lic.tabular_premium') }}:</span>
                       <span>{{ formatCurrency(calculationResults.breakdown.tabularPremium) }}</span>
                     </div>
                     <div class="breakdown-row rebate">
-                      <span>Payment Mode Rebate:</span>
+                      <span>{{ languageService.translate('lic.payment_mode_rebate') }}:</span>
                       <span>-{{ formatCurrency(calculationResults.breakdown.paymentModeRebate) }}</span>
                     </div>
                     <div class="breakdown-row rebate">
-                      <span>Sum Assured Rebate:</span>
+                      <span>{{ languageService.translate('lic.sum_assured_rebate') }}:</span>
                       <span>-{{ formatCurrency(calculationResults.breakdown.sumAssuredRebate) }}</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="breakdown-card" *ngIf="calculationResults.riderPremium > 0">
-                  <h5>Rider Premiums</h5>
+                  <h5>{{ languageService.translate('lic.rider_premiums') }}</h5>
                   <div class="breakdown-list">
                     <div class="breakdown-row" *ngIf="calculationResults.breakdown.accidentalDisabilityRider > 0">
-                      <span>AD & DB Rider:</span>
+                      <span>{{ languageService.translate('lic.ad_db_rider') }}:</span>
                       <span>{{ formatCurrency(calculationResults.breakdown.accidentalDisabilityRider) }}</span>
                     </div>
                     <div class="breakdown-row" *ngIf="calculationResults.breakdown.accidentalRider > 0">
-                      <span>ADB Rider:</span>
+                      <span>{{ languageService.translate('lic.adb_rider') }}:</span>
                       <span>{{ formatCurrency(calculationResults.breakdown.accidentalRider) }}</span>
                     </div>
                     <div class="breakdown-row" *ngIf="calculationResults.breakdown.termRider > 0">
-                      <span>Term Rider:</span>
+                      <span>{{ languageService.translate('lic.term_rider') }}:</span>
                       <span>{{ formatCurrency(calculationResults.breakdown.termRider) }}</span>
                     </div>
                     <div class="breakdown-row" *ngIf="calculationResults.breakdown.premiumWaiverRider > 0">
-                      <span>PWB Rider:</span>
+                      <span>{{ languageService.translate('lic.pwb_rider') }}:</span>
                       <span>{{ formatCurrency(calculationResults.breakdown.premiumWaiverRider) }}</span>
                     </div>
                   </div>

@@ -82,17 +82,17 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   // Centralized navigation items
   navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'fas fa-tachometer-alt', route: '/dashboard', roles: ['admin', 'user'] },
-    { label: 'LIC Dashboard', icon: 'fas fa-chart-line', route: '/lic-dashboard', roles: ['admin', 'lic'] },
-    { label: 'LIC Products', icon: 'fas fa-shield-alt', route: '/lic-products', roles: ['admin', 'lic'] },
-    { label: 'LIC Premium Calculator', icon: 'fas fa-calculator', route: '/lic-premium-calculator', roles: ['admin', 'lic'] },
-    { label: 'Customers', icon: 'fas fa-users', route: '/customers', roles: ['admin', 'user'] },
-    { label: 'Deposits', icon: 'fas fa-piggy-bank', route: '/deposits', roles: ['admin', 'user'] },
-    { label: 'LIC Policies', icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'lic'] },
-    { label: 'EMI Calculator', icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
-    { label: 'ClothAura', icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
-    { label: 'Reports', icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
-    { label: 'User Management', icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] }
+    { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-tachometer-alt', route: '/dashboard', roles: ['admin', 'user'] },
+    { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-chart-line', route: '/lic-dashboard', roles: ['admin', 'lic'] },
+    { label: this.languageService.translate('nav.product_details'), icon: 'fas fa-shield-alt', route: '/lic-products', roles: ['admin', 'lic'] },
+    { label: this.languageService.translate('nav.premium_calculator'), icon: 'fas fa-calculator', route: '/lic-premium-calculator', roles: ['admin', 'lic'] },
+    { label: this.languageService.translate('nav.customers'), icon: 'fas fa-users', route: '/customers', roles: ['admin', 'user'] },
+    { label: this.languageService.translate('nav.deposits'), icon: 'fas fa-piggy-bank', route: '/deposits', roles: ['admin', 'user'] },
+    { label: this.languageService.translate('nav.policies'), icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'lic'] },
+    { label: this.languageService.translate('nav.emi_calculator'), icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
+    { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
+    { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
+    { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] }
   ];
 
   constructor(private languageService: LanguageService) {}
@@ -111,16 +111,16 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   private updateNavigationLabels() {
     this.navItems = [
       { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-tachometer-alt', route: '/dashboard', roles: ['admin', 'user'] },
-      { label: 'LIC Dashboard', icon: 'fas fa-chart-line', route: '/lic-dashboard', roles: ['admin', 'lic'] },
-      { label: 'LIC Products', icon: 'fas fa-shield-alt', route: '/lic-products', roles: ['admin', 'lic'] },
-      { label: 'LIC Premium Calculator', icon: 'fas fa-calculator', route: '/lic-premium-calculator', roles: ['admin', 'lic'] },
+      { label: this.languageService.translate('nav.dashboard'), icon: 'fas fa-chart-line', route: '/lic-dashboard', roles: ['admin', 'lic'] },
+      { label: this.languageService.translate('nav.product_details'), icon: 'fas fa-shield-alt', route: '/lic-products', roles: ['admin', 'lic'] },
+      { label: this.languageService.translate('nav.premium_calculator'), icon: 'fas fa-calculator', route: '/lic-premium-calculator', roles: ['admin', 'lic'] },
       { label: this.languageService.translate('nav.customers'), icon: 'fas fa-users', route: '/customers', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.deposits'), icon: 'fas fa-piggy-bank', route: '/deposits', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.policies'), icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'lic'] },
-      { label: 'EMI Calculator', icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
+      { label: this.languageService.translate('nav.emi_calculator'), icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
-      { label: 'User Management', icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] }
+      { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] }
     ];
   }
 

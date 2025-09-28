@@ -1,32 +1,62 @@
-const db = require('./db');
+const { Pool } = require('pg');
+require('dotenv').config();
 
-async function testLogin() {
+const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'vault_db',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'password',
+});
+
+async function testLogin(username, password) {
   try {
-    console.log('Testing clothAura user login...');
+    console.log(`🔍 Testing login for username: ${username}`);
     
-    // Test the exact query from the login endpoint
-    const result = await db.query(
-      `SELECT id, name, username, role FROM users WHERE username = $1 AND password = $2 LIMIT 1;`,
-      ['clothaura', '123']
+    const result = await pool.query(
+      'SELECT id, name, username, role, password FROM users WHERE username = $1 AND password = $2 LIMIT 1',
+      [username, password]
     );
     
-    console.log('Query result:', result.rows);
-    
-    if (result.rows.length > 0) {
-      const row = result.rows[0];
-      console.log('User found:', row);
-      console.log('Role:', row.role);
-      console.log('Role type:', typeof row.role);
-      console.log('Role === clothAura:', row.role === 'clothAura');
+    if (result.rows.length === 0) {
+      console.log('❌ Login failed - Invalid credentials');
+      
+      // Check if user exists but password is wrong
+      const userCheck = await pool.query('SELECT username, password FROM users WHERE username = $1', [username]);
+      if (userCheck.rows.length > 0) {
+        console.log(`⚠️  User exists but password doesn't match`);
+        console.log(`   Stored password: ${userCheck.rows[0].password}`);
+        console.log(`   Provided password: ${password}`);
+      } else {
+        console.log('❌ User does not exist');
+      }
     } else {
-      console.log('No user found with these credentials');
+      console.log('✅ Login successful!');
+      console.log('   User:', result.rows[0]);
     }
     
-    process.exit(0);
-  } catch (err) {
-    console.error('Error:', err);
-    process.exit(1);
+  } catch (error) {
+    console.error('❌ Error testing login:', error.message);
+  } finally {
+    await pool.end();
   }
 }
 
-testLogin();
+// Test with common credentials
+const testCredentials = [
+  { username: 'admin', password: 'admin123' },
+  { username: 'admin', password: 'admin' },
+  { username: 'aks', password: 'aks' },
+  { username: 'nuser', password: 'nuser' },
+  { username: 'clothaura', password: 'clothaura' },
+  { username: 'user1', password: 'user1' }
+];
+
+async function runTests() {
+  for (const cred of testCredentials) {
+    await testLogin(cred.username, cred.password);
+    console.log('---');
+  }
+}
+
+runTests();

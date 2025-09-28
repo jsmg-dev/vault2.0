@@ -1,9 +1,7 @@
 [build]
   publish = "frontend/dist/frontend/browser"
   command = "cd frontend && npm install && ng build frontend --configuration production"
-  command = "cd frontend && npm install && npm run build"
-  publish = "frontend/dist/frontend/browser"
-
+ 
 [build.environment]
   NODE_VERSION = "18"
 

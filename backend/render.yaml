@@ -1,0 +1,19 @@
+# Render Configuration
+# This file helps Render understand how to deploy your backend
+
+# Render will automatically detect this is a Node.js project
+# and use the start script from package.json
+
+# Environment variables needed:
+# NODE_ENV=production
+# DB_HOST=your-postgres-host
+# DB_PORT=5432
+# DB_NAME=your-database-name
+# DB_USER=your-database-user
+# DB_PASSWORD=your-database-password
+# SESSION_SECRET=your-session-secret-key
+
+# Make sure to set these in Render dashboard:
+# - Root Directory: backend
+# - Build Command: npm install
+# - Start Command: npm start

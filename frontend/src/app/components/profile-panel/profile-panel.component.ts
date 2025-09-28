@@ -27,6 +27,7 @@ interface UserProfile {
 export class ProfilePanelComponent implements OnInit {
   @Input() isOpen: boolean = false;
   @Output() close = new EventEmitter<void>();
+  @Output() profileUpdated = new EventEmitter<void>();
   @ViewChild('profilePicInput') profilePicInput!: ElementRef<HTMLInputElement>;
   
   userProfile: UserProfile | null = null;
@@ -53,8 +54,8 @@ export class ProfilePanelComponent implements OnInit {
     if (!userId) return;
 
     try {
-      // Get user data from user management
-      const userResponse = await fetch(`${environment.apiUrl}/users/list`, {
+      // Get specific user data by ID
+      const userResponse = await fetch(`${environment.apiUrl}/users/profile/${userId}`, {
         method: 'GET',
         credentials: 'include'
       });
@@ -65,7 +66,7 @@ export class ProfilePanelComponent implements OnInit {
 
       const userData = await userResponse.json();
       console.log('User data from API:', userData);
-      const currentUser = userData.find((user: any) => user.id == userId);
+      const currentUser = userData.user || userData; // Handle both wrapped and direct responses
       console.log('Current user found:', currentUser);
       
       if (currentUser) {
@@ -157,6 +158,9 @@ export class ProfilePanelComponent implements OnInit {
       
       this.selectedFile = null;
       this.toastService.show('Profile picture updated successfully', 'success');
+      
+      // Emit event to notify parent component
+      this.profileUpdated.emit();
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error uploading profile picture';

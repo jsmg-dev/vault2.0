@@ -28,7 +28,7 @@ export const routes: Routes = [
   { path: 'policies', component: PoliciesComponent, canActivate: [authGuard], data: { roles: ['admin', 'lic'] } },
   { path: 'calculator', component: EmiCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
   { path: 'laundry', component: LaundryComponent, canActivate: [authGuard], data: { roles: ['admin', 'clothAura'] } },
-  { path: 'billing-config', component: BillingConfigComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
+  { path: 'billing-config', component: BillingConfigComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'clothAura'] } },
 
   { path: '**', redirectTo: 'login' }
 ];

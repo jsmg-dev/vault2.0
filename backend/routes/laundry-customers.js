@@ -7,10 +7,20 @@ const db = require('../db');
 // Get all laundry customers
 router.get('/', async (req, res) => {
   try {
-    const customers = await many(`
-      SELECT * FROM laundry_customers 
-      ORDER BY created_at DESC
-    `);
+    const userId = req.session.userId;
+    const userRole = req.session.userRole;
+    
+    let query, params;
+    
+    if (userRole === 'admin') {
+      query = `SELECT * FROM laundry_customers ORDER BY created_at DESC`;
+      params = [];
+    } else {
+      query = `SELECT * FROM laundry_customers WHERE created_by = $1 ORDER BY created_at DESC`;
+      params = [userId];
+    }
+    
+    const customers = await many(query, params);
     res.json(customers);
   } catch (error) {
     console.error('Error fetching laundry customers:', error);
@@ -85,17 +95,19 @@ router.post('/', async (req, res) => {
       }
     }
 
+    const userId = req.session.userId;
+
     const result = await query(`
       INSERT INTO laundry_customers (
         name, phone, alt_phone, address, email, status, 
         expected_delivery_date, items, items_json, service_type, 
-        total_amount, paid_amount, balance_amount, special_instructions
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        total_amount, paid_amount, balance_amount, special_instructions, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `, [
       name, phone, alt_phone, address, email, status,
       expected_delivery_date, items, validItemsJson, service_type,
-      total_amount, req.body.paid_amount || 0, balance_amount, special_instructions
+      total_amount, req.body.paid_amount || 0, balance_amount, special_instructions, userId
     ]);
 
     res.status(201).json(result.rows[0]);
@@ -340,12 +352,20 @@ router.delete('/:id', async (req, res) => {
 router.get('/status/:status', async (req, res) => {
   try {
     const { status } = req.params;
-    const customers = await many(`
-      SELECT * FROM laundry_customers 
-      WHERE status = $1 
-      ORDER BY created_at DESC
-    `, [status]);
+    const userId = req.session.userId;
+    const userRole = req.session.userRole;
     
+    let query, params;
+    
+    if (userRole === 'admin') {
+      query = `SELECT * FROM laundry_customers WHERE status = $1 ORDER BY created_at DESC`;
+      params = [status];
+    } else {
+      query = `SELECT * FROM laundry_customers WHERE status = $1 AND created_by = $2 ORDER BY created_at DESC`;
+      params = [status, userId];
+    }
+    
+    const customers = await many(query, params);
     res.json(customers);
   } catch (error) {
     console.error('Error fetching laundry customers by status:', error);

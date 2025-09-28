@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidenavComponent, NavItem } from '../sidenav/sidenav.component';
@@ -24,6 +24,7 @@ import { Subscription } from 'rxjs';
 
       <div class="content-area" [class.sidenav-collapsed]="sidenavCollapsed">
         <app-header 
+          #headerComponent
           [breadcrumbItems]="breadcrumbItems"
           (fullscreenToggle)="onFullscreenToggle()"
           (logoutEvent)="onLogout()"
@@ -81,6 +82,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   @Input() userRole: string = '';
   @Input() sidenavCollapsed: boolean = false;
   @Input() breadcrumbItems: BreadcrumbItem[] = [];
+  @ViewChild('headerComponent') headerComponent!: HeaderComponent;
   
   @Output() sidenavToggle = new EventEmitter<boolean>();
   @Output() fullscreenToggle = new EventEmitter<void>();
@@ -159,5 +161,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   onProfileClose() {
     this.isProfileOpen = false;
+    // Refresh the profile picture in header after profile panel is closed
+    if (this.headerComponent) {
+      this.headerComponent.refreshProfilePic();
+    }
   }
 }

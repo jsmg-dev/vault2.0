@@ -93,6 +93,28 @@ app.use('/billing-config', billingConfigRoutes);
       ADD COLUMN IF NOT EXISTS last_login TIMESTAMP;
     `);
 
+    // Add created_by columns to customers and deposits tables
+    await db.query(`
+      ALTER TABLE customers 
+      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
+    `);
+    
+    await db.query(`
+      ALTER TABLE deposits 
+      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
+    `);
+
+    // Add created_by columns to LIC policies and laundry tables
+    await db.query(`
+      ALTER TABLE lic_policy_details 
+      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
+    `);
+    
+    await db.query(`
+      ALTER TABLE laundry_customers 
+      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
+    `);
+
     const countRes = await db.query(`SELECT COUNT(*)::int AS cnt FROM users;`);
     if ((countRes.rows[0]?.cnt ?? 0) === 0) {
       await db.query(

@@ -79,17 +79,19 @@ router.post('/add', async (req, res) => {
     payment_status: toNull(payment_status) || 'due'
   };
 
+  const userId = req.session.userId;
+
   const sql = `
     INSERT INTO lic_policy_details (
       policy_no, fullname, dob, gender, marital_status, aadhaar_pan, email, mobile, address,
       plan_name, start_date, end_date, mode_of_payment, deposit_date, next_premium_date, sum_assured,
       policy_term, premium_term, premium, maturity_value, nominee_name, nominee_relation,
       height_cm, weight_kg, health_lifestyle, bank_account, ifsc_code, bank_name,
-      agent_code, branch_code, status, payment_status, created_at
+      agent_code, branch_code, status, payment_status, created_by, created_at
     ) VALUES (
       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
       $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-      $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,NOW()
+      $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,NOW()
     )
     RETURNING id;
   `;
@@ -100,7 +102,7 @@ router.post('/add', async (req, res) => {
       payload.plan_name, payload.start_date, payload.end_date, payload.mode_of_payment, payload.deposit_date, payload.next_premium_date, payload.sum_assured,
       payload.policy_term, payload.premium_term, payload.premium, payload.maturity_value, payload.nominee_name, payload.nominee_relation,
       payload.height_cm, payload.weight_kg, payload.health_lifestyle, payload.bank_account, payload.ifsc_code, payload.bank_name,
-      payload.agent_code, payload.branch_code, payload.status, payload.payment_status
+      payload.agent_code, payload.branch_code, payload.status, payload.payment_status, userId
     ]);
     res.json({ success: true, policy_id: result.rows[0].id });
   } catch (err) {
@@ -112,9 +114,20 @@ router.post('/add', async (req, res) => {
 // === Get All Policies ===
 router.get('/list', async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT * FROM lic_policy_details ORDER BY created_at DESC`
-    );
+    const userId = req.session.userId;
+    const userRole = req.session.userRole;
+    
+    let query, params;
+    
+    if (userRole === 'admin') {
+      query = `SELECT * FROM lic_policy_details ORDER BY created_at DESC`;
+      params = [];
+    } else {
+      query = `SELECT * FROM lic_policy_details WHERE created_by = $1 ORDER BY created_at DESC`;
+      params = [userId];
+    }
+    
+    const result = await db.query(query, params);
     console.log('LIST Policies - Sample policy deposit_date:', result.rows[0]?.deposit_date);
     res.json(result.rows);
   } catch (err) {

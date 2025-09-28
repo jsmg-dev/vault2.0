@@ -159,13 +159,13 @@ router.delete('/delete/:id', async (req, res) => {
   }
 });
 
-// ✅ Get user profile
+// ✅ Get user profile (with profile_pic)
 router.get('/profile/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
     const query = `
-      SELECT id, name, username, role, email, phone, address, created_at, last_login
+      SELECT id, name, username, role, email, phone, address, profile_pic, created_at, last_login
       FROM users 
       WHERE id = $1
     `;
@@ -176,9 +176,7 @@ router.get('/profile/:id', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({
-      user: result.rows[0]
-    });
+    res.json(result.rows[0]);
   } catch (err) {
     console.error('Error fetching user profile:', err.message);
     res.status(500).json({ error: 'Database error: ' + err.message });

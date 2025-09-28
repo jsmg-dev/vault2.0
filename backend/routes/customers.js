@@ -37,11 +37,26 @@ const upload = multer({
 });
 
 // =============================
-// Get all customers
+// Get all customers (filtered by user)
 // =============================
 router.get("/list", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM customers ORDER BY created_at DESC");
+    const userId = req.session.userId;
+    const userRole = req.session.userRole;
+    
+    let query, params;
+    
+    if (userRole === 'admin') {
+      // Admin can see all customers
+      query = "SELECT * FROM customers ORDER BY created_at DESC";
+      params = [];
+    } else {
+      // Regular users can only see their own customers
+      query = "SELECT * FROM customers WHERE created_by = $1 ORDER BY created_at DESC";
+      params = [userId];
+    }
+    
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching customers:", err);
@@ -120,14 +135,16 @@ router.post('/create', upload.fields([
       }
     }
 
+    const userId = req.session.userId;
+    
     const query = `
       INSERT INTO customers (
         customer_code, name, contact_no, alt_contact_no, start_date, end_date, loan_duration,
         loan_amount, file_charge, agent_fee, emi, advance_days, amount_after_deduction,
-        agent_commission, status, loan_type, remark, photo_path, document_path
+        agent_commission, status, loan_type, remark, photo_path, document_path, created_by
       )
       VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
       )
       RETURNING *;
     `;
@@ -151,7 +168,8 @@ router.post('/create', upload.fields([
       loan_type || 'Personal Loan',
       remark,
       photoPaths,
-      documentPaths
+      documentPaths,
+      userId
     ];
 
     const result = await pool.query(query, values);
@@ -394,6 +412,103 @@ router.delete("/delete/:id", async (req, res) => {
   } catch (err) {
     console.error("Error deleting customer:", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// =============================
+// LAUNDRY CUSTOMERS ROUTES
+// =============================
+// These are separate from loan customers and use a different table
+
+// Get all laundry customers
+router.get('/laundry/list', async (req, res) => {
+  try {
+    console.log('GET /customers/laundry/list called');
+    const result = await pool.query(
+      `SELECT * FROM laundry_customers ORDER BY created_at DESC`
+    );
+    console.log('Query result:', result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching laundry customers:', err.message);
+    res.status(500).json({ error: 'Failed to fetch laundry customers' });
+  }
+});
+
+// Delete laundry customer
+router.delete('/laundry/delete/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('DELETE /customers/laundry/delete/' + id + ' called');
+
+    const result = await pool.query(
+      'DELETE FROM laundry_customers WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    console.log('Delete result:', result.rows);
+
+    if (result.rows.length === 0) {
+      console.log('Customer not found with id:', id);
+      return res.status(404).json({ error: 'Laundry customer not found' });
+    }
+
+    console.log('Customer deleted successfully:', result.rows[0]);
+    res.json({ message: 'Laundry customer deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting laundry customer:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create new laundry customer
+router.post('/laundry/create', async (req, res) => {
+  try {
+    const { name, phone, email, address, notes, status } = req.body;
+
+    if (!name || !phone) {
+      return res.status(400).json({ error: 'Name and phone are required' });
+    }
+
+    // Generate a simple customer_code (e.g., LC001)
+    const countResult = await pool.query(`SELECT COUNT(*) FROM laundry_customers`);
+    const count = parseInt(countResult.rows[0].count);
+    const customer_code = `LC${String(count + 1).padStart(3, '0')}`;
+
+    const result = await pool.query(
+      `INSERT INTO laundry_customers (customer_code, name, phone, email, address, notes, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [customer_code, name, phone, email, address, notes, status || 'active']
+    );
+
+    res.status(201).json({ message: 'Laundry customer created successfully', customer: result.rows[0] });
+  } catch (err) {
+    console.error('Error creating laundry customer:', err.message);
+    res.status(500).json({ error: 'Failed to create laundry customer' });
+  }
+});
+
+// Update laundry customer
+router.put('/laundry/update/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, email, address, notes, status } = req.body;
+
+    const result = await pool.query(
+      `UPDATE laundry_customers
+       SET name = $1, phone = $2, email = $3, address = $4, notes = $5, status = $6, updated_at = NOW()
+       WHERE id = $7 RETURNING *`,
+      [name, phone, email, address, notes, status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Laundry customer not found' });
+    }
+
+    res.json({ message: 'Laundry customer updated successfully', customer: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating laundry customer:', err.message);
+    res.status(500).json({ error: 'Failed to update laundry customer' });
   }
 });
 

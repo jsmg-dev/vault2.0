@@ -1,7 +1,10 @@
 <app-main-layout 
   [userRole]="userRole" 
   [sidenavCollapsed]="sidenavCollapsed"
-  [breadcrumbItems]="breadcrumbItems">
+  [breadcrumbItems]="breadcrumbItems"
+  (sidenavToggle)="onSidenavToggle($event)"
+  (fullscreenToggle)="toggleFullscreen()"
+  (logoutEvent)="logout()">
   
   <div class="billing-config-container">
     <div class="config-layout">

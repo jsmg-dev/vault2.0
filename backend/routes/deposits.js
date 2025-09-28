@@ -61,11 +61,13 @@ router.post('/create', async (req, res) => {
     const formattedDate = formatToYYYYMMDD(date);
     if (!formattedDate) return res.status(400).json({ error: 'Invalid date format' });
 
+    const userId = req.session.userId;
+    
     const insertQuery = `
-      INSERT INTO deposits (customer_code, customer_name, amount, penalty, date, remark)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+      INSERT INTO deposits (customer_code, customer_name, amount, penalty, date, remark, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
     `;
-    const result = await db.query(insertQuery, [customer_code, customer_name, amount, penalty, formattedDate, remark]);
+    const result = await db.query(insertQuery, [customer_code, customer_name, amount, penalty, formattedDate, remark, userId]);
 
     res.status(201).json({ message: 'Deposit recorded', depositId: result.rows[0].id });
   } catch (err) {
@@ -77,7 +79,22 @@ router.post('/create', async (req, res) => {
 // GET: List all deposits
 router.get('/list', async (req, res) => {
   try {
-    const result = await db.query(`SELECT * FROM deposits ORDER BY date DESC`);
+    const userId = req.session.userId;
+    const userRole = req.session.userRole;
+    
+    let query, params;
+    
+    if (userRole === 'admin') {
+      // Admin can see all deposits
+      query = `SELECT * FROM deposits ORDER BY date DESC`;
+      params = [];
+    } else {
+      // Regular users can only see their own deposits
+      query = `SELECT * FROM deposits WHERE created_by = $1 ORDER BY date DESC`;
+      params = [userId];
+    }
+    
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching deposits:', err.message);

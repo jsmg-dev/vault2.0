@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BreadcrumbComponent, BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
 import { LanguageService, Language } from '../../services/language.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-header',
@@ -14,15 +15,6 @@ import { LanguageService, Language } from '../../services/language.service';
       
       <div class="header-actions">
         <ng-content select="[slot=actions]"></ng-content>
-        
-        <!-- Profile Icon -->
-        <button 
-          class="profile-button" 
-          (click)="toggleProfile()" 
-          title="Profile"
-        >
-          <i class="fas fa-user"></i>
-        </button>
         
         <!-- Language Toggle -->
         <div class="language-toggle">
@@ -49,6 +41,23 @@ import { LanguageService, Language } from '../../services/language.service';
           (click)="logout()"
         >
           {{ translate('common.logout') }}
+        </button>
+        
+        <!-- Profile Icon -->
+        <button 
+          class="profile-button" 
+          (click)="toggleProfile()" 
+          title="Profile"
+        >
+          <div class="profile-avatar">
+            <img 
+              *ngIf="userProfilePic" 
+              [src]="userProfilePic" 
+              [alt]="'Profile Picture'"
+              class="profile-image"
+            >
+            <i *ngIf="!userProfilePic" class="fas fa-user"></i>
+          </div>
         </button>
       </div>
     </div>
@@ -157,15 +166,83 @@ import { LanguageService, Language } from '../../services/language.service';
     .profile-button i {
       font-size: 16px;
     }
+
+    .profile-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .profile-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
   `]
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   @Input() breadcrumbItems: BreadcrumbItem[] = [];
   @Output() fullscreenToggle = new EventEmitter<void>();
   @Output() logoutEvent = new EventEmitter<void>();
   @Output() profileToggle = new EventEmitter<void>();
 
+  userProfilePic: string | null = null;
+
   constructor(private languageService: LanguageService) {}
+
+  ngOnInit() {
+    this.loadUserProfilePic();
+  }
+
+  // Method to refresh profile picture (can be called from parent component)
+  refreshProfilePic() {
+    this.loadUserProfilePic();
+  }
+
+  async loadUserProfilePic() {
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) {
+      console.log('Header: No userId found in sessionStorage');
+      return;
+    }
+
+    console.log('Header: Loading profile picture for user ID:', userId);
+
+    try {
+      const response = await fetch(`${environment.apiUrl}/users/profile/${userId}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      console.log('Header: Profile API response status:', response.status);
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Header: Profile API response data:', responseData);
+        
+        const userData = responseData.user || responseData; // Handle both wrapped and direct responses
+        console.log('Header: User data:', userData);
+        
+        if (userData.profile_pic) {
+          // Add timestamp to prevent caching issues
+          this.userProfilePic = `${environment.apiUrl}/uploads/profile/${userData.profile_pic}?t=${Date.now()}`;
+          console.log('Header: Profile picture URL set:', this.userProfilePic);
+        } else {
+          console.log('Header: No profile picture found for user');
+        }
+      } else {
+        console.error('Header: Profile API error:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Header: Error loading user profile picture:', error);
+    }
+  }
 
   toggleFullscreen() {
     this.fullscreenToggle.emit();

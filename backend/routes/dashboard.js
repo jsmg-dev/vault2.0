@@ -7,29 +7,43 @@ const pool = require("../db");
 // =============================
 router.get("/stats", async (req, res) => {
   try {
+    const userId = req.session.userId;
+    const userRole = req.session.userRole;
+    
+    // Build user filter for queries
+    let userFilter = "";
+    let queryParams = [];
+    
+    if (userRole !== 'admin') {
+      userFilter = " WHERE created_by = $1";
+      queryParams = [userId];
+    }
+    
     // Get total customers
-    const customersResult = await pool.query("SELECT COUNT(*) as total FROM customers");
+    const customersResult = await pool.query(`SELECT COUNT(*) as total FROM customers${userFilter}`, queryParams);
     const totalCustomers = customersResult.rows[0].total;
 
     // Get total deposits amount
-    const depositsResult = await pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM deposits");
+    const depositsResult = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM deposits${userFilter}`, queryParams);
     const totalDeposits = depositsResult.rows[0].total;
 
     // Get active loans (customers with status = 'active')
-    const activeLoansResult = await pool.query("SELECT COUNT(*) as total FROM customers WHERE status = 'active'");
+    const activeLoansResult = await pool.query(`SELECT COUNT(*) as total FROM customers WHERE status = 'active'${userFilter.replace('WHERE', 'AND')}`, queryParams);
     const activeLoans = activeLoansResult.rows[0].total;
 
     // Get monthly earnings (current month)
-    const monthlyEarningsResult = await pool.query(`
+    const monthlyEarningsQuery = `
       SELECT COALESCE(SUM(amount), 0) as total 
       FROM deposits 
       WHERE EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE) 
       AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
-    `);
+      ${userFilter.replace('WHERE', 'AND')}
+    `;
+    const monthlyEarningsResult = await pool.query(monthlyEarningsQuery, queryParams);
     const monthlyEarnings = monthlyEarningsResult.rows[0].total;
 
     // Get customers per month (last 6 months) - use created_at if start_date is null
-    const customersPerMonthResult = await pool.query(`
+    const customersPerMonthQuery = `
       WITH month_series AS (
         SELECT generate_series(
           date_trunc('month', CURRENT_DATE - INTERVAL '5 months'),
@@ -44,6 +58,7 @@ router.get("/stats", async (req, res) => {
           COUNT(*) as count
         FROM customers 
         WHERE COALESCE(start_date, created_at::date) >= CURRENT_DATE - INTERVAL '6 months'
+        ${userFilter.replace('WHERE', 'AND')}
         GROUP BY TO_CHAR(COALESCE(start_date, created_at::date), 'Mon'), EXTRACT(MONTH FROM COALESCE(start_date, created_at::date))
       )
       SELECT 
@@ -52,7 +67,8 @@ router.get("/stats", async (req, res) => {
       FROM month_series ms
       LEFT JOIN customer_counts cc ON TO_CHAR(ms.month, 'Mon') = cc.month_name
       ORDER BY ms.month
-    `);
+    `;
+    const customersPerMonthResult = await pool.query(customersPerMonthQuery, queryParams);
     
     const customersPerMonth = {};
     customersPerMonthResult.rows.forEach(row => {
@@ -60,14 +76,16 @@ router.get("/stats", async (req, res) => {
     });
 
     // Get loan type distribution
-    const loanTypeDistributionResult = await pool.query(`
+    const loanTypeDistributionQuery = `
       SELECT 
         COALESCE(loan_type, 'Personal Loan') as loan_type,
         COUNT(*) as count
       FROM customers 
+      ${userFilter}
       GROUP BY loan_type
       ORDER BY count DESC
-    `);
+    `;
+    const loanTypeDistributionResult = await pool.query(loanTypeDistributionQuery, queryParams);
     
     const loanTypeDistribution = {};
     loanTypeDistributionResult.rows.forEach(row => {

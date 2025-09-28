@@ -52,6 +52,10 @@ export class BillingConfigComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    // Initialize user role from session storage
+    this.userRole = sessionStorage.getItem('role') || '';
+    console.log('BillingConfig - userRole from sessionStorage:', this.userRole);
+    
     // Subscribe to language changes
     this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
       this.updateBreadcrumbItems();
@@ -214,5 +218,25 @@ export class BillingConfigComponent implements OnInit, OnDestroy {
   closeConfiguration() {
     // Navigate back to ClothAura settings
     this.router.navigate(['/laundry'], { queryParams: { tab: 'whatsapp' } });
+  }
+
+  // Required methods for main layout component
+  onSidenavToggle(collapsed: boolean) {
+    this.sidenavCollapsed = collapsed;
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+
+  logout() {
+    sessionStorage.clear();
+    this.router.navigate(['/login']);
   }
 }

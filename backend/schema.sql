@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS customers (
     remark TEXT,
     photo_path TEXT,
     document_path TEXT,
+    created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS deposits (
     penalty DECIMAL(10,2) DEFAULT 0,
     date DATE,
     remark TEXT,
+    created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -91,6 +93,7 @@ CREATE TABLE IF NOT EXISTS lic_policy_details (
     agent_code TEXT,
     branch_code TEXT,
     status TEXT DEFAULT 'Active',
+    created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -112,6 +115,7 @@ CREATE TABLE IF NOT EXISTS laundry_customers (
     paid_amount DECIMAL(10,2) DEFAULT 0,
     balance_amount DECIMAL(10,2),
     special_instructions TEXT,
+    created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

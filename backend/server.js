@@ -63,57 +63,26 @@ app.use('/whatsapp-notifications', whatsappNotificationRoutes);
 app.use('/billing', billingRoutes);
 app.use('/billing-config', billingConfigRoutes);
 
-// Bootstrap users table + seed admin (Postgres)
+// Bootstrap database tables (Postgres)
 (async () => {
   try {
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name TEXT,
-        username TEXT UNIQUE,
-        password TEXT,
-        role TEXT,
-        email TEXT,
-        phone TEXT,
-        address TEXT,
-        profile_pic TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        last_login TIMESTAMP
-      );
-    `);
-
-    // Add new columns if they don't exist (for existing databases)
-    await db.query(`
-      ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS email TEXT,
-      ADD COLUMN IF NOT EXISTS phone TEXT,
-      ADD COLUMN IF NOT EXISTS address TEXT,
-      ADD COLUMN IF NOT EXISTS profile_pic TEXT,
-      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
-      ADD COLUMN IF NOT EXISTS last_login TIMESTAMP;
-    `);
-
-    // Add created_by columns to customers and deposits tables
-    await db.query(`
-      ALTER TABLE customers 
-      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
-    `);
+    console.log('🔧 Creating database tables...');
     
-    await db.query(`
-      ALTER TABLE deposits 
-      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
-    `);
-
-    // Add created_by columns to LIC policies and laundry tables
-    await db.query(`
-      ALTER TABLE lic_policy_details 
-      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
-    `);
+    // Create all tables from schema.sql
+    const fs = require('fs');
+    const path = require('path');
+    const schemaPath = path.join(__dirname, 'schema.sql');
+    const schemaSQL = fs.readFileSync(schemaPath, 'utf8');
     
-    await db.query(`
-      ALTER TABLE laundry_customers 
-      ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
-    `);
+    // Split by semicolon and execute each statement
+    const statements = schemaSQL.split(';').filter(stmt => stmt.trim());
+    for (const statement of statements) {
+      if (statement.trim()) {
+        await db.query(statement);
+      }
+    }
+    
+    console.log('✅ Database tables created successfully');
 
     const countRes = await db.query(`SELECT COUNT(*)::int AS cnt FROM users;`);
     if ((countRes.rows[0]?.cnt ?? 0) === 0) {

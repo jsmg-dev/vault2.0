@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl: 'https://vault2-0.onrender.com'  // backend URL on Netlify / Render
+    apiUrl: 'https://vault2-0.onrender.com'  // Update this to your actual backend URL
   };

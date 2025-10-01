@@ -116,8 +116,23 @@ export class CustomersComponent implements OnInit, OnDestroy {
   openCreateCustomerModal() {
     this.showCreateModal = true;
     this.customerForm = {
+      customer_code: '',
+      name: '',
+      contact_no: '',
+      alt_contact_no: '',
+      start_date: '',
+      end_date: '',
+      loan_duration: '',
+      loan_amount: '',
+      file_charge: '',
+      agent_fee: '',
+      emi: '',
+      advance_days: '',
+      amount_after_deduction: '',
+      agent_commission: '',
       status: 'active',
-      loan_type: 'Personal Loan'
+      loan_type: 'Personal Loan',
+      remark: ''
     };
   }
 
@@ -127,12 +142,39 @@ export class CustomersComponent implements OnInit, OnDestroy {
   }
 
   openEditCustomerModal(id: number) {
-    this.editForm = this.customers.find(c => c.id === id) || {};
+    const customer = this.customers.find(c => c.id === id) || {};
+    
+    // Convert dates to YYYY-MM-DD format for HTML date inputs
+    this.editForm = {
+      ...customer,
+      start_date: customer.start_date ? this.formatDateForInput(customer.start_date) : '',
+      end_date: customer.end_date ? this.formatDateForInput(customer.end_date) : ''
+    };
     
     // Load existing files for preview
     this.loadExistingFiles(this.editForm);
     
     this.showEditModal = true;
+  }
+
+  // Helper method to format date for HTML date input
+  formatDateForInput(dateString: string): string {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      // Format as YYYY-MM-DD
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
   }
 
   loadExistingFiles(customer: any) {

@@ -150,7 +150,7 @@ import { environment } from '../../../environments/environment';
       background: #3b82f6;
       color: white;
       border: none;
-      padding: 10px 12px;
+      padding: 4px;
       border-radius: 8px;
       cursor: pointer;
       transition: background 0.2s;

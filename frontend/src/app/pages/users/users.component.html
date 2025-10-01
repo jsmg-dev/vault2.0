@@ -7,30 +7,28 @@
   (logoutEvent)="logout()"
 >
   <div class="users-container">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-actions">
-        <button class="btn-primary" (click)="openCreateModal()">
-          <i class="fas fa-plus"></i> Create New User
-        </button>
+    <!-- Users Table -->
+    <div class="table-container">
+      <div class="table-header">
+        <div class="table-actions">
+          <div class="left-actions">
+            <input 
+              type="text" 
+              placeholder="Search users..." 
+              class="search-input"
+              (input)="filterUsers($event)"
+            />
+            <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedUsers.length === 0">
+              <i class="fas fa-trash"></i> Delete Selected
+            </button>
+          </div>
+          <div class="right-actions">
+            <button class="btn-primary" (click)="openCreateModal()">
+              <i class="fas fa-plus"></i> Create New User
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-
-  <!-- Users Table -->
-  <div class="table-container">
-    <div class="table-header">
-      <div class="table-actions">
-        <input 
-          type="text" 
-          placeholder="Search users..." 
-          class="search-input"
-          (input)="filterUsers($event)"
-        />
-        <button class="btn-danger" (click)="deleteSelected()" [disabled]="selectedUsers.length === 0">
-          <i class="fas fa-trash"></i> Delete Selected
-        </button>
-      </div>
-    </div>
 
     <div class="table-wrapper">
       <table class="users-table">

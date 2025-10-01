@@ -50,6 +50,9 @@ export interface NavItem {
           [title]="collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
         >
           <i [class]="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+          <span *ngIf="!collapsed" class="toggle-text">
+            {{ collapsed ? 'Expand' : 'Collapse' }}
+          </span>
         </button>
       </div>
     </div>
@@ -129,6 +132,27 @@ export interface NavItem {
     .nav-items {
       flex: 1;
       padding: 20px 0;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+
+    /* Custom scrollbar for nav-items */
+    .nav-items::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .nav-items::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .nav-items::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+
+    .nav-items::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
     }
 
     .nav-item {
@@ -171,28 +195,46 @@ export interface NavItem {
     .sidenav-footer {
       padding: 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      bottom: 0;
+      background: #374151;
+      z-index: 10;
     }
 
     .toggle-btn {
       width: 100%;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: white;
-      padding: 12px;
-      border-radius: 8px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+      padding: 8px 12px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
     }
 
     .toggle-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .toggle-btn:active {
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .toggle-btn i {
-      font-size: 16px;
+      font-size: 12px;
+      margin-right: 8px;
+    }
+
+    .toggle-text {
+      font-size: 13px;
+      font-weight: 500;
     }
 
     /* Responsive */

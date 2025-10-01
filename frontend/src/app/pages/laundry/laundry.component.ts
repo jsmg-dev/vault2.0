@@ -549,6 +549,42 @@ declare var Chart: any;
             <div class="services-section">
               <h4><i class="fas fa-list"></i> Available Services</h4>
               
+              <!-- Services Category Section -->
+              <div class="services-category-section">
+                <div class="form-group">
+                  <label for="servicesDropdown">Services</label>
+                  <div class="dropdown-container">
+                    <select 
+                      id="servicesDropdown"
+                      [(ngModel)]="cartServiceTypeFilter" 
+                      class="services-dropdown"
+                      (change)="onServiceTypeChange()"
+                    >
+                      <option value="laundry">Laundry</option>
+                      <option value="dry-clean">Dry Clean</option>
+                      <option value="ironing">Ironing</option>
+                    </select>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="serviceForDropdown">Service For</label>
+                  <div class="dropdown-container">
+                    <select 
+                      id="serviceForDropdown"
+                      [(ngModel)]="selectedServiceFor" 
+                      class="services-dropdown"
+                      (change)="onServiceForChange()"
+                    >
+                      <option value="man">Man</option>
+                      <option value="woman">Woman</option>
+                      <option value="children">Children's</option>
+                    </select>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                  </div>
+                </div>
+              </div>
+              
               <!-- Service Search and Filter -->
               <div class="service-controls">
                 <div class="search-box">
@@ -560,14 +596,7 @@ declare var Chart: any;
                     placeholder="Search services..."
                   >
                 </div>
-                <select [(ngModel)]="cartServiceTypeFilter" (change)="debouncedFilterServices()" class="filter-select">
-                  <option value="">All Categories</option>
-                  <option value="Men">Men</option>
-                  <option value="Women">Women</option>
-                  <option value="Kids">Kids</option>
-                  <option value="Home">Home</option>
-                    </select>
-                </div>
+              </div>
                 
               <!-- Services Grid -->
                 <div class="services-grid">
@@ -734,6 +763,42 @@ declare var Chart: any;
             <div class="services-section">
               <h4><i class="fas fa-list"></i> Available Services</h4>
               
+              <!-- Services Category Section -->
+              <div class="services-category-section">
+                <div class="form-group">
+                  <label for="servicesDropdown">Services</label>
+                  <div class="dropdown-container">
+                    <select 
+                      id="servicesDropdown"
+                      [(ngModel)]="cartServiceTypeFilter" 
+                      class="services-dropdown"
+                      (change)="onServiceTypeChange()"
+                    >
+                      <option value="laundry">Laundry</option>
+                      <option value="dry-clean">Dry Clean</option>
+                      <option value="ironing">Ironing</option>
+                    </select>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="serviceForDropdown">Service For</label>
+                  <div class="dropdown-container">
+                    <select 
+                      id="serviceForDropdown"
+                      [(ngModel)]="selectedServiceFor" 
+                      class="services-dropdown"
+                      (change)="onServiceForChange()"
+                    >
+                      <option value="man">Man</option>
+                      <option value="woman">Woman</option>
+                      <option value="children">Children's</option>
+                    </select>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                  </div>
+                </div>
+              </div>
+              
               <!-- Service Search and Filter -->
               <div class="service-controls">
                 <div class="search-box">
@@ -745,13 +810,6 @@ declare var Chart: any;
                     placeholder="Search services..."
                   >
                 </div>
-                <select [(ngModel)]="cartServiceTypeFilter" (change)="debouncedFilterServices()" class="filter-select">
-                  <option value="">All Categories</option>
-                  <option value="Men">Men</option>
-                  <option value="Women">Women</option>
-                  <option value="Kids">Kids</option>
-                  <option value="Home">Home</option>
-                </select>
               </div>
 
               <!-- Services Grid -->
@@ -3428,6 +3486,30 @@ declare var Chart: any;
       color: #007bff;
     }
 
+    .services-category-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+      display: flex;
+      gap: 20px;
+      align-items: flex-end;
+    }
+
+    .services-category-section .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .services-category-section .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #374151;
+      font-size: 1rem;
+    }
+
     .service-controls {
       display: flex;
       gap: 12px;
@@ -5513,7 +5595,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       // Reset search and filter terms for services
       this.serviceSearchTerm = '';
       this.cartServiceTypeFilter = 'laundry';
-      this.selectedServiceFor = ''; // Reset to show all services
+      this.selectedServiceFor = 'man'; // Keep default as man
       
       this.showCustomerDetailsModal = true;
     } else {
@@ -6524,7 +6606,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     // Reset search and filter terms for services
     this.serviceSearchTerm = '';
     this.cartServiceTypeFilter = 'laundry';
-    this.selectedServiceFor = ''; // Reset to show all services
+    this.selectedServiceFor = 'man'; // Keep default as man
     
     this.showCustomerDetailsModal = true;
   }
@@ -6608,7 +6690,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     // Reset search and filter terms for services
     this.serviceSearchTerm = '';
     this.cartServiceTypeFilter = 'laundry';
-    this.selectedServiceFor = ''; // Reset to show all services
+    this.selectedServiceFor = 'man'; // Keep default as man
     this.showCustomerModal = true;
   }
 

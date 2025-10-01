@@ -383,11 +383,11 @@
 }
 
 .policies-table th {
-  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  background: #6b7280;
   font-weight: 600;
-  color: #0f172a;
+  color: #ffffff;
   font-size: 14px;
-  border: 1px solid #94a3b8;
+  border: 1px solid #6b7280;
 }
 
 .policies-table td {

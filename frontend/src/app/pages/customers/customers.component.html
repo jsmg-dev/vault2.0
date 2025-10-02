@@ -110,121 +110,179 @@
 
 <!-- Create Customer Modal -->
 <div class="modal" [class.show]="showCreateModal">
-  <div class="modal-content">
+  <div class="modal-content customer-modal-large">
     <div class="modal-header">
-      <h3>Create New Customer</h3>
-      <button class="modal-close" (click)="closeCreateCustomerModal()">×</button>
-    </div>
-    <form (submit)="createCustomer($event)" class="customer-form">
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Customer Code *</label>
-          <input type="text" name="customer_code" [(ngModel)]="customerForm.customer_code" required />
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-user-plus"></i>
         </div>
-        <div class="form-group">
-          <label>Name *</label>
-          <input type="text" name="name" [(ngModel)]="customerForm.name" required />
-        </div>
-        <div class="form-group">
-          <label>Contact No *</label>
-          <input type="text" name="contact_no" [(ngModel)]="customerForm.contact_no" required />
-        </div>
-        <div class="form-group">
-          <label>Alt Contact</label>
-          <input type="text" name="alt_contact_no" [(ngModel)]="customerForm.alt_contact_no" />
-        </div>
-        <div class="form-group">
-          <label>Start Date *</label>
-          <input type="date" name="start_date" [(ngModel)]="customerForm.start_date" required />
-        </div>
-        <div class="form-group">
-          <label>End Date</label>
-          <input type="date" name="end_date" [(ngModel)]="customerForm.end_date" readonly />
-        </div>
-        <div class="form-group">
-          <label>Loan Duration (months) *</label>
-          <input type="number" name="loan_duration" [(ngModel)]="customerForm.loan_duration" required />
-        </div>
-        <div class="form-group">
-          <label>Loan Amount *</label>
-          <input type="number" name="loan_amount" step="0.01" [(ngModel)]="customerForm.loan_amount" required />
-        </div>
-        <div class="form-group">
-          <label>File Charge</label>
-          <input type="number" name="file_charge" step="0.01" [(ngModel)]="customerForm.file_charge" />
-        </div>
-        <div class="form-group">
-          <label>Agent Fee</label>
-          <input type="number" name="agent_fee" step="0.01" [(ngModel)]="customerForm.agent_fee" />
-        </div>
-        <div class="form-group">
-          <label>EMI</label>
-          <input type="number" name="emi" step="0.01" [(ngModel)]="customerForm.emi" />
-        </div>
-        <div class="form-group">
-          <label>Advance Days</label>
-          <input type="number" name="advance_days" [(ngModel)]="customerForm.advance_days" />
-        </div>
-        <div class="form-group">
-          <label>Amount After Deduction</label>
-          <input type="number" name="amount_after_deduction" step="0.01" [(ngModel)]="customerForm.amount_after_deduction" />
-        </div>
-        <div class="form-group">
-          <label>Agent Commission</label>
-          <input type="number" name="agent_commission" step="0.01" [(ngModel)]="customerForm.agent_commission" />
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select name="status" [(ngModel)]="customerForm.status">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Loan Type</label>
-          <select name="loan_type" [(ngModel)]="customerForm.loan_type">
-            <option value="Personal Loan">Personal Loan</option>
-            <option value="Gold Loan">Gold Loan</option>
-            <option value="Business Loan">Business Loan</option>
-            <option value="Home Loan">Home Loan</option>
-            <option value="Education Loan">Education Loan</option>
-          </select>
-        </div>
-        <div class="form-group full-width">
-          <label>Remark</label>
-          <textarea name="remark" rows="3" [(ngModel)]="customerForm.remark"></textarea>
-        </div>
-        
-        <!-- File Upload Section -->
-        <div class="form-group full-width">
-          <label>Customer Photos</label>
-          <input type="file" name="customerphoto" accept="image/*" multiple (change)="onPhotoUpload($event)" />
-          <div class="document-preview" *ngIf="photoPreviews && photoPreviews.length > 0">
-            <div class="document-grid">
-              <div class="document-item" *ngFor="let photo of photoPreviews; let i = index">
-                <img [src]="photo" alt="Photo Preview" />
-                <button type="button" class="remove-btn" (click)="removePhoto(i)">×</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="form-group full-width">
-          <label>Customer Documents</label>
-          <input type="file" name="customerdocument" accept="image/*" multiple (change)="onDocumentUpload($event)" />
-          <div class="document-preview" *ngIf="documentPreviews && documentPreviews.length > 0">
-            <div class="document-grid">
-              <div class="document-item" *ngFor="let doc of documentPreviews; let i = index">
-                <img [src]="doc" alt="Document Preview" />
-                <button type="button" class="remove-btn" (click)="removeDocument(i)">×</button>
-              </div>
-            </div>
-          </div>
+        <div class="header-text">
+          <h3>Create New Customer</h3>
+          <p>Add a new customer to the system</p>
         </div>
       </div>
-      <div class="form-actions">
-        <button type="button" class="btn-secondary" (click)="closeCreateCustomerModal()">Cancel</button>
-        <button type="submit" class="btn-primary">Create Customer</button>
+      <button class="modal-close" (click)="closeCreateCustomerModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <form (submit)="createCustomer($event)" class="customer-form">
+      <div class="form-content">
+        <!-- Left Section - Photo Area -->
+        <div class="photo-section">
+          <div class="photo-container">
+            <div class="photo-preview" *ngIf="photoPreviews && photoPreviews.length > 0; else noPhotoTemplate">
+              <img [src]="photoPreviews[0]" alt="Customer Photo" class="main-photo" />
+              <button type="button" class="remove-photo-btn" (click)="removePhoto(0)">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <ng-template #noPhotoTemplate>
+              <div class="no-photo-placeholder">
+                <i class="fas fa-camera"></i>
+                <span>Customer Photo</span>
+              </div>
+            </ng-template>
+          </div>
+          
+          <label class="photo-upload-btn" for="photoUpload">
+            <i class="fas fa-upload"></i>
+            <span>Upload Photo</span>
+            <input type="file" id="photoUpload" name="customerphoto" accept="image/*" (change)="onPhotoUpload($event)" />
+          </label>
+          
+          <p class="photo-help-text">Upload a clear photo of the customer</p>
+        </div>
+
+        <!-- Right Section - Form Fields -->
+        <div class="form-section">
+          <!-- Customer Information -->
+          <div class="form-group-section">
+            <h4 class="section-title">
+              <i class="fas fa-user"></i> Customer Information
+            </h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Customer Code *</label>
+                <input type="text" name="customer_code" [(ngModel)]="customerForm.customer_code" required />
+              </div>
+              <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" name="name" [(ngModel)]="customerForm.name" required />
+              </div>
+              <div class="form-group">
+                <label>Contact Number *</label>
+                <input type="text" name="contact_no" [(ngModel)]="customerForm.contact_no" required />
+              </div>
+              <div class="form-group">
+                <label>Alternative Contact</label>
+                <input type="text" name="alt_contact_no" [(ngModel)]="customerForm.alt_contact_no" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Loan Information -->
+          <div class="form-group-section">
+            <h4 class="section-title">
+              <i class="fas fa-money-bill-wave"></i> Loan Information
+            </h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Start Date *</label>
+                <input type="date" name="start_date" [(ngModel)]="customerForm.start_date" required />
+              </div>
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="date" name="end_date" [(ngModel)]="customerForm.end_date" readonly />
+              </div>
+              <div class="form-group">
+                <label>Loan Duration (months) *</label>
+                <input type="number" name="loan_duration" [(ngModel)]="customerForm.loan_duration" required />
+              </div>
+              <div class="form-group">
+                <label>Loan Amount *</label>
+                <input type="number" name="loan_amount" step="0.01" [(ngModel)]="customerForm.loan_amount" required />
+              </div>
+              <div class="form-group">
+                <label>File Charge</label>
+                <input type="number" name="file_charge" step="0.01" [(ngModel)]="customerForm.file_charge" />
+              </div>
+              <div class="form-group">
+                <label>Agent Fee</label>
+                <input type="number" name="agent_fee" step="0.01" [(ngModel)]="customerForm.agent_fee" />
+              </div>
+              <div class="form-group">
+                <label>EMI</label>
+                <input type="number" name="emi" step="0.01" [(ngModel)]="customerForm.emi" />
+              </div>
+              <div class="form-group">
+                <label>Advance Days</label>
+                <input type="number" name="advance_days" [(ngModel)]="customerForm.advance_days" />
+              </div>
+              <div class="form-group">
+                <label>Amount After Deduction</label>
+                <input type="number" name="amount_after_deduction" step="0.01" [(ngModel)]="customerForm.amount_after_deduction" />
+              </div>
+              <div class="form-group">
+                <label>Agent Commission</label>
+                <input type="number" name="agent_commission" step="0.01" [(ngModel)]="customerForm.agent_commission" />
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select name="status" [(ngModel)]="customerForm.status">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Loan Type</label>
+                <select name="loan_type" [(ngModel)]="customerForm.loan_type">
+                  <option value="Personal Loan">Personal Loan</option>
+                  <option value="Gold Loan">Gold Loan</option>
+                  <option value="Business Loan">Business Loan</option>
+                  <option value="Home Loan">Home Loan</option>
+                  <option value="Education Loan">Education Loan</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Information -->
+          <div class="form-group-section">
+            <h4 class="section-title">
+              <i class="fas fa-file-alt"></i> Additional Information
+            </h4>
+            <div class="form-group full-width">
+              <label>Remark</label>
+              <textarea name="remark" rows="3" [(ngModel)]="customerForm.remark" placeholder="Enter any additional notes or remarks..."></textarea>
+            </div>
+            
+            <!-- Customer Documents Section -->
+            <div class="form-group full-width">
+              <label>Customer Documents</label>
+              <div class="document-upload-area">
+                <input type="file" name="customerdocument" accept="image/*" multiple (change)="onDocumentUpload($event)" />
+                <div class="document-preview" *ngIf="documentPreviews && documentPreviews.length > 0">
+                  <div class="document-grid">
+                    <div class="document-item" *ngFor="let doc of documentPreviews; let i = index">
+                      <img [src]="doc" alt="Document Preview" class="document-photo" />
+                      <button type="button" class="remove-btn" (click)="removeDocument(i)">×</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="closeCreateCustomerModal()">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-save"></i> Create Customer
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   </div>
@@ -232,123 +290,180 @@
 
 <!-- Edit Customer Modal -->
 <div class="modal" [class.show]="showEditModal">
-  <div class="modal-content">
+  <div class="modal-content customer-modal-large">
     <div class="modal-header">
-      <h3>Edit Customer</h3>
-      <button class="modal-close" (click)="closeEditCustomerModal()">×</button>
-    </div>
-    <form (submit)="updateCustomer($event)" class="customer-form">
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Customer Code *</label>
-          <input type="text" name="customer_code" [(ngModel)]="editForm.customer_code" required />
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-user-edit"></i>
         </div>
-        <div class="form-group">
-          <label>Name *</label>
-          <input type="text" name="name" [(ngModel)]="editForm.name" required />
-        </div>
-        <div class="form-group">
-          <label>Contact No *</label>
-          <input type="text" name="contact_no" [(ngModel)]="editForm.contact_no" required />
-        </div>
-        <div class="form-group">
-          <label>Alt Contact</label>
-          <input type="text" name="alt_contact_no" [(ngModel)]="editForm.alt_contact_no" />
-        </div>
-        <div class="form-group">
-          <label>Start Date *</label>
-          <input type="date" name="start_date" [(ngModel)]="editForm.start_date" required />
-        </div>
-        <div class="form-group">
-          <label>End Date</label>
-          <input type="date" name="end_date" [(ngModel)]="editForm.end_date" />
-        </div>
-        <div class="form-group">
-          <label>Loan Duration</label>
-          <input type="number" name="loan_duration" [(ngModel)]="editForm.loan_duration" />
-        </div>
-        <div class="form-group">
-          <label>Loan Amount *</label>
-          <input type="number" name="loan_amount" step="0.01" [(ngModel)]="editForm.loan_amount" required />
-        </div>
-        <div class="form-group">
-          <label>File Charge</label>
-          <input type="number" name="file_charge" step="0.01" [(ngModel)]="editForm.file_charge" />
-        </div>
-        <div class="form-group">
-          <label>Agent Fee</label>
-          <input type="number" name="agent_fee" step="0.01" [(ngModel)]="editForm.agent_fee" />
-        </div>
-        <div class="form-group">
-          <label>EMI</label>
-          <input type="number" name="emi" step="0.01" [(ngModel)]="editForm.emi" />
-        </div>
-        <div class="form-group">
-          <label>Advance Days</label>
-          <input type="number" name="advance_days" [(ngModel)]="editForm.advance_days" />
-        </div>
-        <div class="form-group">
-          <label>Amount After Deduction</label>
-          <input type="number" name="amount_after_deduction" step="0.01" [(ngModel)]="editForm.amount_after_deduction" />
-        </div>
-        <div class="form-group">
-          <label>Agent Commission</label>
-          <input type="number" name="agent_commission" step="0.01" [(ngModel)]="editForm.agent_commission" />
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select name="status" [(ngModel)]="editForm.status">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Loan Type</label>
-          <select name="loan_type" [(ngModel)]="editForm.loan_type">
-            <option value="Personal Loan">Personal Loan</option>
-            <option value="Gold Loan">Gold Loan</option>
-            <option value="Business Loan">Business Loan</option>
-            <option value="Home Loan">Home Loan</option>
-            <option value="Education Loan">Education Loan</option>
-          </select>
-        </div>
-        <div class="form-group full-width">
-          <label>Remark</label>
-          <textarea name="remark" rows="3" [(ngModel)]="editForm.remark"></textarea>
-        </div>
-        
-        <!-- File Upload Section -->
-        <div class="form-group full-width">
-          <label>Customer Photos</label>
-          <input type="file" name="customerphoto" accept="image/*" multiple (change)="onPhotoUpload($event)" />
-          <div class="document-preview" *ngIf="photoPreviews && photoPreviews.length > 0">
-            <div class="document-grid">
-              <div class="document-item" *ngFor="let photo of photoPreviews; let i = index">
-                <img [src]="photo" alt="Photo Preview" />
-                <button type="button" class="remove-btn" (click)="removePhoto(i)">×</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="form-group full-width">
-          <label>Customer Documents</label>
-          <input type="file" name="customerdocument" accept="image/*" multiple (change)="onDocumentUpload($event)" />
-          <div class="document-preview" *ngIf="documentPreviews && documentPreviews.length > 0">
-            <div class="document-grid">
-              <div class="document-item" *ngFor="let doc of documentPreviews; let i = index">
-                <img [src]="doc" alt="Document Preview" />
-                <button type="button" class="remove-btn" (click)="removeDocument(i)">×</button>
-              </div>
-            </div>
-          </div>
+        <div class="header-text">
+          <h3>Edit Customer</h3>
+          <p>Update customer information and details</p>
         </div>
       </div>
-      <div class="form-actions">
-        <button type="button" class="btn-secondary" (click)="closeEditCustomerModal()">Cancel</button>
-        <button type="submit" class="btn-primary">Update Customer</button>
+      <button class="modal-close" (click)="closeEditCustomerModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <form (submit)="updateCustomer($event)" class="customer-form">
+      <div class="form-content">
+        <!-- Left Section - Photo Area -->
+        <div class="photo-section">
+          <div class="photo-container">
+            <div class="photo-preview" *ngIf="photoPreviews && photoPreviews.length > 0; else noPhotoTemplate">
+              <img [src]="photoPreviews[0]" alt="Customer Photo" class="main-photo" />
+              <button type="button" class="remove-photo-btn" (click)="removePhoto(0)">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <ng-template #noPhotoTemplate>
+              <div class="no-photo-placeholder">
+                <i class="fas fa-camera"></i>
+                <span>Customer Photo</span>
+              </div>
+            </ng-template>
+          </div>
+          
+          <label class="photo-upload-btn" for="photoUploadEdit">
+            <i class="fas fa-upload"></i>
+            <span>Upload Photo</span>
+            <input type="file" id="photoUploadEdit" name="customerphoto" accept="image/*" (change)="onPhotoUpload($event)" />
+          </label>
+          
+          <p class="photo-help-text">Upload a clear photo of the customer</p>
+        </div>
+
+        <!-- Right Section - Form Fields -->
+        <div class="form-section">
+          <!-- Customer Information -->
+          <div class="form-group-section">
+            <h4 class="section-title">
+              <i class="fas fa-user"></i> Customer Information
+            </h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Customer Code *</label>
+                <input type="text" name="customer_code" [(ngModel)]="editForm.customer_code" required />
+              </div>
+              <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" name="name" [(ngModel)]="editForm.name" required />
+              </div>
+              <div class="form-group">
+                <label>Contact Number *</label>
+                <input type="text" name="contact_no" [(ngModel)]="editForm.contact_no" required />
+              </div>
+              <div class="form-group">
+                <label>Alternative Contact</label>
+                <input type="text" name="alt_contact_no" [(ngModel)]="editForm.alt_contact_no" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Loan Information -->
+          <div class="form-group-section">
+            <h4 class="section-title">
+              <i class="fas fa-money-bill-wave"></i> Loan Information
+            </h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Start Date *</label>
+                <input type="date" name="start_date" [(ngModel)]="editForm.start_date" required />
+              </div>
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="date" name="end_date" [(ngModel)]="editForm.end_date" readonly />
+              </div>
+              <div class="form-group">
+                <label>Loan Duration (months) *</label>
+                <input type="number" name="loan_duration" [(ngModel)]="editForm.loan_duration" required />
+              </div>
+              <div class="form-group">
+                <label>Loan Amount *</label>
+                <input type="number" name="loan_amount" step="0.01" [(ngModel)]="editForm.loan_amount" required />
+              </div>
+              <div class="form-group">
+                <label>File Charge</label>
+                <input type="number" name="file_charge" step="0.01" [(ngModel)]="editForm.file_charge" />
+              </div>
+              <div class="form-group">
+                <label>Agent Fee</label>
+                <input type="number" name="agent_fee" step="0.01" [(ngModel)]="editForm.agent_fee" />
+              </div>
+              <div class="form-group">
+                <label>EMI</label>
+                <input type="number" name="emi" step="0.01" [(ngModel)]="editForm.emi" />
+              </div>
+              <div class="form-group">
+                <label>Advance Days</label>
+                <input type="number" name="advance_days" [(ngModel)]="editForm.advance_days" />
+              </div>
+              <div class="form-group">
+                <label>Amount After Deduction</label>
+                <input type="number" name="amount_after_deduction" step="0.01" [(ngModel)]="editForm.amount_after_deduction" />
+              </div>
+              <div class="form-group">
+                <label>Agent Commission</label>
+                <input type="number" name="agent_commission" step="0.01" [(ngModel)]="editForm.agent_commission" />
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select name="status" [(ngModel)]="editForm.status">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Loan Type</label>
+                <select name="loan_type" [(ngModel)]="editForm.loan_type">
+                  <option value="Personal Loan">Personal Loan</option>
+                  <option value="Gold Loan">Gold Loan</option>
+                  <option value="Business Loan">Business Loan</option>
+                  <option value="Home Loan">Home Loan</option>
+                  <option value="Education Loan">Education Loan</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Information -->
+          <div class="form-group-section">
+            <h4 class="section-title">
+              <i class="fas fa-file-alt"></i> Additional Information
+            </h4>
+            <div class="form-group full-width">
+              <label>Remark</label>
+              <textarea name="remark" rows="3" [(ngModel)]="editForm.remark" placeholder="Enter any additional notes or remarks..."></textarea>
+            </div>
+            
+            <!-- Customer Documents Section -->
+            <div class="form-group full-width">
+              <label>Customer Documents</label>
+              <div class="document-upload-area">
+                <input type="file" name="customerdocument" accept="image/*" multiple (change)="onDocumentUpload($event)" />
+                <div class="document-preview" *ngIf="documentPreviews && documentPreviews.length > 0">
+                  <div class="document-grid">
+                    <div class="document-item" *ngFor="let doc of documentPreviews; let i = index">
+                      <img [src]="doc" alt="Document Preview" class="document-photo" />
+                      <button type="button" class="remove-btn" (click)="removeDocument(i)">×</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="closeEditCustomerModal()">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-save"></i> Update Customer
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   </div>
-  </div>
-</app-main-layout>
+</div>

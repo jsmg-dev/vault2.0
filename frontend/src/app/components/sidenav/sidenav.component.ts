@@ -275,6 +275,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
 
   get filteredNavItems(): NavItem[] {
     console.log('Sidenav - userRole:', this.userRole);
+    console.log('Sidenav - userRole type:', typeof this.userRole);
     console.log('Sidenav - navItems:', this.navItems);
     
     if (!this.userRole) {
@@ -284,7 +285,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
     
     const filtered = this.navItems.filter(item => {
       const hasAccess = !item.roles || item.roles.includes(this.userRole);
-      console.log(`Sidenav - Item "${item.label}": roles=${item.roles}, hasAccess=${hasAccess}`);
+      console.log(`Sidenav - Item "${item.label}": roles=${JSON.stringify(item.roles)}, userRole="${this.userRole}", hasAccess=${hasAccess}`);
       return hasAccess;
     });
     

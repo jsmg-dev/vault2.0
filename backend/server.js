@@ -23,6 +23,7 @@ const whatsappConfigRoutes = require('./routes/whatsapp-config'); // new laundry
 const whatsappNotificationRoutes = require('./routes/whatsapp-notifications'); // new WhatsApp notification routes
 const billingRoutes = require('./routes/billing'); // new billing routes
 const billingConfigRoutes = require('./routes/billing-config'); // new billing configuration routes
+const systemCommandRoutes = require('./routes/system-commands'); // new system command routes
 
 const app = express();
 const port = config.server.port;
@@ -62,6 +63,7 @@ app.use('/whatsapp', whatsappConfigRoutes);
 app.use('/whatsapp-notifications', whatsappNotificationRoutes);
 app.use('/billing', billingRoutes);
 app.use('/billing-config', billingConfigRoutes);
+app.use('/system-commands', systemCommandRoutes);
 
 // Bootstrap database tables (Postgres)
 (async () => {

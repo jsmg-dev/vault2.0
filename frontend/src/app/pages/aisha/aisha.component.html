@@ -1,0 +1,148 @@
+<!-- AISHA Standalone Page -->
+<div class="aisha-container">
+  <!-- Left Side - AISHA Avatar -->
+  <div class="avatar-section">
+    <div class="avatar-container" [class.glowing]="isGlowing" [class.blinking]="isBlinking">
+      <!-- Avatar Face -->
+      <div class="avatar-face" [class]="'emotion-' + currentEmotion.type">
+        <!-- Real girl avatar image -->
+        <div class="avatar-image">
+          <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=face&auto=format&q=80" 
+               alt="AISHA Avatar" 
+               class="avatar-photo">
+        </div>
+        
+        <!-- Status Indicators -->
+        <div class="status-indicators">
+          <div class="status-dot listening" [class.active]="isListening"></div>
+          <div class="status-dot speaking" [class.active]="isSpeaking"></div>
+          <div class="status-dot thinking" [class.active]="isTyping"></div>
+        </div>
+      </div>
+      
+      <!-- AISHA Name -->
+      <div class="avatar-name">
+        <h2>AISHA</h2>
+        <p class="avatar-subtitle">AI Assistant</p>
+      </div>
+    </div>
+    
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <button class="control-btn" 
+              [class.active]="isListening" 
+              (click)="toggleVoiceInput()"
+              title="Toggle Voice Input">
+        <i class="fas fa-microphone"></i>
+        <span class="status-text" *ngIf="isListening">Listening</span>
+      </button>
+      
+      <button class="control-btn" 
+              [class.active]="ttsEnabled" 
+              (click)="toggleTTS()"
+              title="Toggle Text-to-Speech">
+        <i class="fas fa-volume-up"></i>
+      </button>
+      
+      <button class="control-btn" 
+              (click)="openSettings()"
+              title="Settings">
+        <i class="fas fa-cog"></i>
+      </button>
+      
+      <button class="control-btn danger" 
+              (click)="clearChat()"
+              title="Clear Chat">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Right Side - Chat Interface -->
+  <div class="chat-section">
+    <!-- Chat Header -->
+    <div class="chat-header">
+      <div class="chat-title">
+        <h3>Chat with AISHA</h3>
+        <div class="connection-status">
+          <div class="status-indicator online"></div>
+          <span>Online</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messages-container" #chatContainer>
+      <div class="message" 
+           *ngFor="let message of messages" 
+           [class.user-message]="message.isUser"
+           [class.ai-message]="!message.isUser">
+        
+        <!-- AI Avatar in Messages -->
+        <div class="message-avatar" *ngIf="!message.isUser">
+          <div class="mini-avatar"></div>
+        </div>
+        
+        <!-- Message Content -->
+        <div class="message-content">
+          <div class="message-bubble">
+            <p>{{ message.text }}</p>
+            <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+          </div>
+        </div>
+        
+        <!-- User Avatar -->
+        <div class="message-avatar user" *ngIf="message.isUser">
+          <div class="mini-avatar user"></div>
+        </div>
+      </div>
+      
+      <!-- Typing Indicator -->
+      <div class="typing-indicator" *ngIf="isTyping">
+        <div class="message-avatar">
+          <div class="mini-avatar"></div>
+        </div>
+        <div class="message-content">
+          <div class="message-bubble typing">
+            <div class="typing-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-container">
+        <textarea 
+          #messageInput
+          [(ngModel)]="currentMessage"
+          (keypress)="onKeyPress($event)"
+          placeholder="Type your message to AISHA..."
+          class="message-input"
+          rows="1">
+        </textarea>
+        
+        <div class="input-controls">
+          <button class="voice-btn" 
+                  [class.listening]="isListening"
+                  (click)="toggleVoiceInput()"
+                  title="Voice Input">
+            <i class="fas fa-microphone" *ngIf="!isListening"></i>
+            <i class="fas fa-stop" *ngIf="isListening"></i>
+          </button>
+          
+          <button class="send-btn" 
+                  (click)="sendMessage()"
+                  [disabled]="!currentMessage.trim()"
+                  title="Send Message">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

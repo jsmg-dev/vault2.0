@@ -157,24 +157,57 @@ export class CustomersComponent implements OnInit, OnDestroy {
     this.showEditModal = true;
   }
 
-  // Helper method to format date for HTML date input
-  formatDateForInput(dateString: string): string {
-    if (!dateString) return '';
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '';
-      
-      // Format as YYYY-MM-DD
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return '';
-    }
+  // Helper method to resize images to passport size
+  private resizeImage(file: File, maxWidth: number, maxHeight: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and resize image
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(resizedDataUrl);
+        } else {
+          reject(new Error('Could not get canvas context'));
+        }
+      };
+
+      img.onerror = () => {
+        reject(new Error('Could not load image'));
+      };
+
+      // Load image from file
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        reject(new Error('Could not read file'));
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   loadExistingFiles(customer: any) {
@@ -438,13 +471,19 @@ export class CustomersComponent implements OnInit, OnDestroy {
         // Store the actual file
         this.photoFiles.push(file);
         
-        // Create preview
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.photoPreviews.push(e.target.result);
+        // Resize and create preview
+        this.resizeImage(file, 80, 100).then((resizedDataUrl) => {
+          this.photoPreviews.push(resizedDataUrl);
           console.log('Photos array length:', this.photoPreviews.length);
-        };
-        reader.readAsDataURL(file);
+        }).catch((error) => {
+          console.error('Error resizing image:', error);
+          // Fallback to original image
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.photoPreviews.push(e.target.result);
+          };
+          reader.readAsDataURL(file);
+        });
       }
     }
   }
@@ -470,12 +509,18 @@ export class CustomersComponent implements OnInit, OnDestroy {
         // Store the actual file
         this.documentFiles.push(file);
         
-        // Create preview
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.documentPreviews.push(e.target.result);
-        };
-        reader.readAsDataURL(file);
+        // Resize and create preview
+        this.resizeImage(file, 80, 100).then((resizedDataUrl) => {
+          this.documentPreviews.push(resizedDataUrl);
+        }).catch((error) => {
+          console.error('Error resizing image:', error);
+          // Fallback to original image
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.documentPreviews.push(e.target.result);
+          };
+          reader.readAsDataURL(file);
+        });
       }
     }
   }
@@ -523,5 +568,11 @@ export class CustomersComponent implements OnInit, OnDestroy {
 
   onSidenavToggle(collapsed: boolean) {
     this.sidenavCollapsed = collapsed;
+  }
+
+  formatDateForInput(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
   }
 }

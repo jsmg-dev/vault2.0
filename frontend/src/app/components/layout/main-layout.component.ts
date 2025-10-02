@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { SidenavComponent, NavItem } from '../sidenav/sidenav.component';
 import { HeaderComponent } from '../header/header.component';
 import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
-import { AiChatbotComponent } from '../../pages/ai-chatbot/ai-chatbot.component';
+// Removed AISHAComponent import - now only in sidebar
 import { ProfilePanelComponent } from '../profile-panel/profile-panel.component';
 import { LanguageService } from '../../services/language.service';
 import { Subscription } from 'rxjs';
@@ -12,7 +12,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SidenavComponent, HeaderComponent, AiChatbotComponent, ProfilePanelComponent],
+  imports: [CommonModule, RouterModule, SidenavComponent, HeaderComponent, ProfilePanelComponent],
   template: `
     <div class="main-layout">
       <app-sidenav 
@@ -36,8 +36,8 @@ import { Subscription } from 'rxjs';
         </div>
       </div>
       
-      <!-- Global AI Chatbot Widget -->
-      <app-ai-chatbot></app-ai-chatbot>
+      <!-- Global AISHA Widget -->
+      <!-- AISHA removed from global layout - now only in sidebar -->
       
       <!-- Profile Panel -->
       <app-profile-panel 
@@ -119,7 +119,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
+      { label: 'AISHA', icon: 'fas fa-robot', route: '/aisha', roles: ['admin', 'lic'] },
     ];
+    console.log('MainLayout - Initialized navItems:', this.navItems);
   }
 
   ngOnDestroy() {
@@ -139,7 +141,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
+      { label: 'AISHA', icon: 'fas fa-robot', route: '/aisha', roles: ['admin', 'lic'] },
     ];
+    console.log('MainLayout - Updated navItems:', this.navItems);
   }
 
   onSidenavToggle(collapsed: boolean) {

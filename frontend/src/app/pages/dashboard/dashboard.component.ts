@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
@@ -15,7 +15,7 @@ declare var Chart: any;
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('barChart') barChartRef!: ElementRef;
   @ViewChild('pieChart') pieChartRef!: ElementRef;
   @ViewChild('lineChart') lineChartRef!: ElementRef;
@@ -33,9 +33,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     { label: 'Dashboard', active: true }
   ];
   
+  // Chart instances for proper cleanup
+  private barChart: any = null;
+  private pieChart: any = null;
+  private lineChart: any = null;
+  private chartsInitialized = false;
 
-
-  async ngOnInit() {
+async ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';
     console.log('Dashboard - userRole from sessionStorage:', this.userRole);
     console.log('Dashboard - userRole type:', typeof this.userRole);
@@ -59,6 +63,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         
         // Refresh charts with new data
         setTimeout(() => {
+          this.destroyCharts();
           this.initCharts();
         }, 50);
       } else {
@@ -72,17 +77,38 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     // Wait for data to load before initializing charts
     setTimeout(() => {
-      this.initCharts();
+      if (!this.chartsInitialized) {
+        this.initCharts();
+      }
     }, 100);
   }
 
+  destroyCharts() {
+    if (this.barChart) {
+      this.barChart.destroy();
+      this.barChart = null;
+    }
+    if (this.pieChart) {
+      this.pieChart.destroy();
+      this.pieChart = null;
+    }
+    if (this.lineChart) {
+      this.lineChart.destroy();
+      this.lineChart = null;
+    }
+    this.chartsInitialized = false;
+  }
+
   initCharts() {
+    // Destroy existing charts first
+    this.destroyCharts();
+    
     // Prepare data for charts
     const monthLabels = this.customersPerMonth.map(item => item.month);
     const monthCounts = this.customersPerMonth.map(item => item.count);
     
     // Bar Chart - Customers Per Month
-    new Chart(this.barChartRef.nativeElement, {
+    this.barChart = new Chart(this.barChartRef.nativeElement, {
       type: 'bar',
       data: {
         labels: monthLabels.length > 0 ? monthLabels : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -164,7 +190,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       'rgba(59, 130, 246, 0.6)'
     ];
     
-    new Chart(this.pieChartRef.nativeElement, {
+    this.pieChart = new Chart(this.pieChartRef.nativeElement, {
       type: 'doughnut',
       data: {
         labels: loanTypeLabels.length > 0 ? loanTypeLabels : ['No Data'],
@@ -194,7 +220,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
 
     // Line Chart
-    new Chart(this.lineChartRef.nativeElement, {
+    this.lineChart = new Chart(this.lineChartRef.nativeElement, {
       type: 'line',
       data: {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -255,6 +281,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         }
       }
     });
+    
+    this.chartsInitialized = true;
   }
 
   toggleFullscreen() {
@@ -274,6 +302,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   onSidenavToggle(collapsed: boolean) {
     this.sidenavCollapsed = collapsed;
+  }
+
+  ngOnDestroy() {
+    this.destroyCharts();
   }
 
 }

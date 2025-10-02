@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -23,7 +23,7 @@ interface AISHAEmotion {
   templateUrl: './aisha.component.html',
   styleUrl: './aisha.component.css'
 })
-export class AISHAComponent implements OnInit, AfterViewInit {
+export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chatContainer') chatContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
 
@@ -52,6 +52,8 @@ export class AISHAComponent implements OnInit, AfterViewInit {
   private responseCooldown: number = 10000; // 10 seconds cooldown between responses
   private isWaitingForUser: boolean = false;
   private lastUserMessage: string = '';
+  private shouldListenContinuously: boolean = true;
+  private isStarting: boolean = false;
 
   ngOnInit() {
     this.userRole = sessionStorage.getItem('role') || '';
@@ -160,13 +162,15 @@ export class AISHAComponent implements OnInit, AfterViewInit {
     };
 
     this.recognition.onend = () => {
-      console.log('Speech recognition ended - restarting continuous listening');
-      // Restart continuous listening automatically
-      setTimeout(() => {
-        if (!this.isListening) {
+      console.log('🎤 Speech recognition ended');
+      this.isListening = false;
+      // Only restart if we're supposed to be listening continuously
+      if (this.shouldListenContinuously) {
+        console.log('🎤 Restarting continuous listening...');
+        setTimeout(() => {
           this.startContinuousListening();
-        }
-      }, 1000);
+        }, 500);
+      }
     };
   }
 
@@ -374,6 +378,15 @@ export class AISHAComponent implements OnInit, AfterViewInit {
   }
 
   startContinuousListening() {
+    // Prevent multiple simultaneous start attempts
+    if (this.isStarting || this.isListening) {
+      console.log('🎤 Already starting or listening, skipping...');
+      return;
+    }
+
+    this.isStarting = true;
+    this.shouldListenContinuously = true;
+
     if (!this.recognition) {
       console.log('🎤 Recognition not available, recreating...');
       this.setupSpeechRecognition();
@@ -382,10 +395,12 @@ export class AISHAComponent implements OnInit, AfterViewInit {
     try {
       this.recognition.start();
       this.isListening = true;
+      this.isStarting = false;
       console.log('🎤 Started CONTINUOUS listening with cooldown protection!');
     } catch (error) {
       console.error('Error starting continuous speech recognition:', error);
       this.isListening = false;
+      this.isStarting = false;
       // Try to recreate recognition instance
       setTimeout(() => {
         this.setupSpeechRecognition();
@@ -395,6 +410,9 @@ export class AISHAComponent implements OnInit, AfterViewInit {
   }
 
   stopContinuousListening() {
+    this.shouldListenContinuously = false;
+    this.isStarting = false;
+    
     if (this.recognition && this.isListening) {
       this.recognition.stop();
       this.isListening = false;
@@ -951,5 +969,18 @@ export class AISHAComponent implements OnInit, AfterViewInit {
     }
 
     return alternatives[0]; // Return the first alternative if no correction found
+  }
+
+  ngOnDestroy() {
+    this.shouldListenContinuously = false;
+    this.isStarting = false;
+    
+    if (this.recognition) {
+      this.recognition.stop();
+      this.recognition = null;
+    }
+    if (this.synthesis) {
+      this.synthesis.cancel();
+    }
   }
 }

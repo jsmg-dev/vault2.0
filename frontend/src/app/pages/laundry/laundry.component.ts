@@ -4484,6 +4484,12 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   billingConfig: any = {}; // Billing configuration for company details
   billItemsForView: any[] = []; // Cached bill items for view modal
   editingCustomer: any = null;
+  
+  // Chart instances for proper cleanup
+  private barChart: any = null;
+  private pieChart: any = null;
+  private lineChart: any = null;
+  private chartsInitialized = false;
   editingService: any = null;
   
   // Layout properties
@@ -4790,12 +4796,15 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     // Wait for data to load before initializing charts
     setTimeout(() => {
-      this.initCharts();
+      if (!this.chartsInitialized) {
+        this.initCharts();
+      }
     }, 100);
   }
 
   ngOnDestroy() {
     this.languageSubscription.unsubscribe();
+    this.destroyCharts();
   }
 
   private updateBreadcrumbItems() {
@@ -4816,9 +4825,28 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.languageService.translateServiceDescription(description);
   }
 
+  destroyCharts() {
+    if (this.barChart) {
+      this.barChart.destroy();
+      this.barChart = null;
+    }
+    if (this.pieChart) {
+      this.pieChart.destroy();
+      this.pieChart = null;
+    }
+    if (this.lineChart) {
+      this.lineChart.destroy();
+      this.lineChart = null;
+    }
+    this.chartsInitialized = false;
+  }
+
   initCharts() {
     try {
       console.log('Initializing ClothAura Dashboard charts...');
+      
+      // Destroy existing charts first
+      this.destroyCharts();
       
       // Check if Chart is available
       if (typeof Chart === 'undefined') {
@@ -4839,7 +4867,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       // Bar Chart - Orders Per Month (Corporate Style)
       console.log('Creating corporate style bar chart...');
       
-      new Chart(this.barChartRef.nativeElement, {
+      this.barChart = new Chart(this.barChartRef.nativeElement, {
         type: 'bar',
         data: {
           labels: monthLabels,
@@ -4951,7 +4979,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       'rgba(236, 72, 153, 0.7)'
     ];
     
-    new Chart(this.pieChartRef.nativeElement, {
+    this.pieChart = new Chart(this.pieChartRef.nativeElement, {
       type: 'doughnut',
       data: {
         labels: serviceLabels,
@@ -4981,7 +5009,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     // Line Chart - Laundry Revenue
-    new Chart(this.lineChartRef.nativeElement, {
+    this.lineChart = new Chart(this.lineChartRef.nativeElement, {
       type: 'line',
       data: {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -5044,6 +5072,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     
     console.log('ClothAura Dashboard charts initialized successfully!');
+    this.chartsInitialized = true;
     } catch (error) {
       console.error('Error initializing ClothAura Dashboard charts:', error);
     }
@@ -5057,6 +5086,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     if (tab === 'dashboard') {
       console.log('Loading ClothAura Dashboard...');
       setTimeout(() => {
+        this.destroyCharts();
         this.initCharts();
       }, 300);
     }

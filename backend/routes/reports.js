@@ -6,7 +6,7 @@ const { Parser } = require("json2csv");
 
 // 📌 Fetch reports (Customer / Deposit / EMI)
 router.get("/generate", async (req, res) => {
-  const { type, start, end } = req.query;
+  const { type, start, end, customer_id } = req.query;
 
   if (!type || !start || !end) {
     return res.status(400).json({ error: "Missing required query parameters" });
@@ -24,19 +24,37 @@ router.get("/generate", async (req, res) => {
       `;
       result = await db.query(query, [start, end]);
     } else if (type === "deposit") {
-      const query = `
+      let query = `
         SELECT 
           c.customer_code, 
           c.name AS customer_name, 
           COALESCE(SUM(d.amount), 0) AS total_deposit,
-          MAX(d.date) AS last_deposit_date
+          MAX(d.date) AS last_deposit_date,
+          COUNT(d.id) AS deposit_count
         FROM customers c
-        LEFT JOIN deposits d ON c.customer_code = d.customer_code
-        WHERE d.date::date <= $1
+        LEFT JOIN deposits d ON c.customer_code = d.customer_code AND d.date::date BETWEEN $1 AND $2
+      `;
+      
+      let params = [start, end];
+      
+      // Add customer filter if customer_id is provided
+      if (customer_id) {
+        query += ` WHERE c.id = $3`;
+        params.push(parseInt(customer_id));
+        console.log('Deposit report - Customer ID:', customer_id);
+        console.log('Deposit report - Start Date:', start);
+        console.log('Deposit report - End Date:', end);
+        console.log('Deposit report - Final Query:', query);
+        console.log('Deposit report - Params:', params);
+      }
+      
+      query += `
         GROUP BY c.customer_code, c.name
         ORDER BY c.customer_code
       `;
-      result = await db.query(query, [end]);
+      
+      result = await db.query(query, params);
+      console.log('Deposit report - Result rows:', result.rows.length);
     } else if (type === "emi") {
       const query = `
         SELECT 

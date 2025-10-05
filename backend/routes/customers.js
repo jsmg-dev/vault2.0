@@ -6,6 +6,58 @@ const path = require('path');
 const fs = require('fs');
 
 // =============================
+// Code Generation Functions
+// =============================
+
+// Generate 6-digit alphanumeric customer code
+function generateCustomerCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Generate 12-digit alphanumeric ID
+function generateCustomerId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 12; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Check if customer code already exists
+async function isCustomerCodeUnique(code) {
+  try {
+    const result = await pool.query('SELECT id FROM customers WHERE customer_code = $1', [code]);
+    return result.rows.length === 0;
+  } catch (err) {
+    console.error('Error checking customer code uniqueness:', err.message);
+    return false;
+  }
+}
+
+// Generate unique customer code
+async function generateUniqueCustomerCode() {
+  let code;
+  let attempts = 0;
+  const maxAttempts = 100;
+  
+  do {
+    code = generateCustomerCode();
+    attempts++;
+    if (attempts > maxAttempts) {
+      throw new Error('Unable to generate unique customer code after maximum attempts');
+    }
+  } while (!(await isCustomerCodeUnique(code)));
+  
+  return code;
+}
+
+// =============================
 // Configure multer for file uploads
 // =============================
 const storage = multer.diskStorage({
@@ -88,7 +140,6 @@ router.post('/create', upload.fields([
 ]), async (req, res) => {
   try {
     let {
-      customer_code,
       name,
       contact_no,
       alt_contact_no,
@@ -106,6 +157,9 @@ router.post('/create', upload.fields([
       loan_type,
       remark
     } = req.body;
+
+    // Auto-generate unique customer code
+    const customer_code = await generateUniqueCustomerCode();
 
     // Convert empty strings to null for numeric and date fields
     start_date = start_date || null;
@@ -137,19 +191,23 @@ router.post('/create', upload.fields([
 
     const userId = req.session.userId;
     
+    // Generate unique customer ID
+    const customer_id = generateCustomerId();
+
     const query = `
       INSERT INTO customers (
-        customer_code, name, contact_no, alt_contact_no, start_date, end_date, loan_duration,
+        customer_id, customer_code, name, contact_no, alt_contact_no, start_date, end_date, loan_duration,
         loan_amount, file_charge, agent_fee, emi, advance_days, amount_after_deduction,
         agent_commission, status, loan_type, remark, photo_path, document_path, created_by
       )
       VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21
       )
       RETURNING *;
     `;
 
     const values = [
+      customer_id,
       customer_code,
       name,
       contact_no,
@@ -211,9 +269,8 @@ router.put("/update/:id", upload.fields([
   try {
     const { id } = req.params;
 
-    // Extract all supported fields
+    // Extract all supported fields (customer_code cannot be changed)
     let {
-      customer_code,
       name,
       contact_no,
       alt_contact_no,
@@ -284,34 +341,32 @@ router.put("/update/:id", upload.fields([
     let query, values;
     
     if (photoPaths || documentPaths) {
-      // Update with files
+      // Update with files (customer_code cannot be changed)
       query = `
         UPDATE customers SET
-          customer_code = $1,
-          name = $2,
-          contact_no = $3,
-          alt_contact_no = $4,
-          start_date = $5,
-          end_date = $6,
-          loan_duration = $7,
-          loan_amount = $8,
-          file_charge = $9,
-          agent_fee = $10,
-          emi = $11,
-          advance_days = $12,
-          amount_after_deduction = $13,
-          agent_commission = $14,
-          status = $15,
-          loan_type = $16,
-          remark = $17,
-          photo_path = COALESCE($18, photo_path),
-          document_path = COALESCE($19, document_path)
-        WHERE id = $20
+          name = $1,
+          contact_no = $2,
+          alt_contact_no = $3,
+          start_date = $4,
+          end_date = $5,
+          loan_duration = $6,
+          loan_amount = $7,
+          file_charge = $8,
+          agent_fee = $9,
+          emi = $10,
+          advance_days = $11,
+          amount_after_deduction = $12,
+          agent_commission = $13,
+          status = $14,
+          loan_type = $15,
+          remark = $16,
+          photo_path = COALESCE($17, photo_path),
+          document_path = COALESCE($18, document_path)
+        WHERE id = $19
         RETURNING *;
       `;
       
       values = [
-        toNull(customer_code),
         toNull(name),
         toNull(contact_no),
         toNull(alt_contact_no),
@@ -333,32 +388,30 @@ router.put("/update/:id", upload.fields([
         id
       ];
     } else {
-      // Update without files
+      // Update without files (customer_code cannot be changed)
       query = `
         UPDATE customers SET
-          customer_code = $1,
-          name = $2,
-          contact_no = $3,
-          alt_contact_no = $4,
-          start_date = $5,
-          end_date = $6,
-          loan_duration = $7,
-          loan_amount = $8,
-          file_charge = $9,
-          agent_fee = $10,
-          emi = $11,
-          advance_days = $12,
-          amount_after_deduction = $13,
-          agent_commission = $14,
-          status = $15,
-          loan_type = $16,
-          remark = $17
-        WHERE id = $18
+          name = $1,
+          contact_no = $2,
+          alt_contact_no = $3,
+          start_date = $4,
+          end_date = $5,
+          loan_duration = $6,
+          loan_amount = $7,
+          file_charge = $8,
+          agent_fee = $9,
+          emi = $10,
+          advance_days = $11,
+          amount_after_deduction = $12,
+          agent_commission = $13,
+          status = $14,
+          loan_type = $15,
+          remark = $16
+        WHERE id = $17
         RETURNING *;
       `;
       
       values = [
-        toNull(customer_code),
         toNull(name),
         toNull(contact_no),
         toNull(alt_contact_no),

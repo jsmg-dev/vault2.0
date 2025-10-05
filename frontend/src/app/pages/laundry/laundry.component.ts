@@ -143,28 +143,28 @@ declare var Chart: any;
       <!-- Customers Tab -->
       <div class="tab-content" *ngIf="activeTab === 'customers'">
         <div class="section-header">
-          <button class="btn primary" (click)="openCustomerModal()">
-            <i class="fas fa-plus"></i>
-            Add New Customer
-          </button>
-        </div>
-
-        <!-- Search and Filter -->
-        <div class="search-section">
-          <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input 
-              type="text" 
-              placeholder="Search customers by name, phone, or email..."
-              [(ngModel)]="customerSearchTerm"
-              (input)="filterCustomers()"
-            >
+          <div class="header-left">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input 
+                type="text" 
+                placeholder="Search customers by name, phone, or email..."
+                [(ngModel)]="customerSearchTerm"
+                (input)="filterCustomers()"
+              >
+            </div>
+            <div class="filter-options">
+              <select [(ngModel)]="customerFilter" (change)="filterCustomers()">
+                <option value="">All Customers</option>
+                <option *ngFor="let status of statuses" [value]="status.id">{{ status.name }}</option>
+              </select>
+            </div>
           </div>
-          <div class="filter-options">
-            <select [(ngModel)]="customerFilter" (change)="filterCustomers()">
-              <option value="">All Customers</option>
-              <option *ngFor="let status of statuses" [value]="status.id">{{ status.name }}</option>
-            </select>
+          <div class="header-right">
+            <button class="btn primary" (click)="openCustomerModal()">
+              <i class="fas fa-plus"></i>
+              Add New Customer
+            </button>
           </div>
         </div>
 
@@ -173,36 +173,44 @@ declare var Chart: any;
           <table class="data-table">
             <thead>
               <tr>
+                <th>{{ translate('common.actions') }}</th>
                 <th>ID</th>
                 <th>Name</th>
                 <th>Phone</th>
                 <th>Email</th>
                 <th>Address</th>
+                <th>Order Date</th>
                 <th>Status</th>
                 <th>Total Orders</th>
-                <th>{{ translate('common.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let customer of filteredCustomers">
+                <td style="text-align: left;">
+                  <div class="action-buttons" style="display: flex; justify-content: flex-start; gap: 5px;">
+                    <button class="btn-small primary" (click)="viewCustomer(customer.id)" title="{{ translate('common.view') }}">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-small secondary" (click)="editCustomer(customer.id)" title="{{ translate('common.edit') }}">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-small danger" (click)="deleteCustomer(customer.id)" title="{{ translate('common.delete') }}">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
                 <td>{{ customer.id }}</td>
                 <td>{{ customer.name }}</td>
                 <td>{{ customer.phone }}</td>
                 <td>{{ customer.email }}</td>
                 <td>{{ customer.address }}</td>
+                <td>{{ customer.orderDate || customer.createdDate | date:'shortDate' }}</td>
                 <td>
-                  <span class="status-badge" [class]="'status-' + customer.status.toLowerCase()">
+                  <span class="status-badge" [class]="'status-' + customer.status.toLowerCase()" style="color: #666 !important;">
                     {{ getStatusDisplayName(customer.status) }}
                   </span>
                 </td>
                 <td>{{ customer.totalOrders }}</td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn-small primary" (click)="viewCustomer(customer.id)">{{ translate('common.view') }}</button>
-                    <button class="btn-small secondary" (click)="editCustomer(customer.id)">{{ translate('common.edit') }}</button>
-                    <button class="btn-small danger" (click)="deleteCustomer(customer.id)">{{ translate('common.delete') }}</button>
-                  </div>
-                </td>
               </tr>
             </tbody>
           </table>
@@ -382,7 +390,7 @@ declare var Chart: any;
                  (dragenter)="onDragEnter($event, statusCol.id)"
                  (dragleave)="onDragLeave($event)"
                  (drop)="onDrop($event, statusCol.id)">
-              <div class="column-header" [style.background-color]="statusCol.color">
+              <div class="column-header" [style.background-color]="statusCol.color" (click)="filterByStatus(statusCol.id)" style="cursor: pointer;">
                 <h3>{{ statusCol.name }} ({{ getOrdersByStatus(statusCol.id).length || 0 }})</h3>
               </div>
               <div class="column-content">
@@ -403,7 +411,7 @@ declare var Chart: any;
                 </div>
                   <p><strong>Phone:</strong> {{ order.phone }}</p>
                   <p><strong>Items:</strong> {{ order.items || 'N/A' }}</p>
-                  <p><strong>Order Date:</strong> {{ order.createdDate | date:'shortDate' }}</p>
+                  <p><strong>Order Date:</strong> {{ order.orderDate || order.createdDate | date:'shortDate' }}</p>
                   <p><strong>Amount:</strong> ₹{{ order.totalAmount || 0 }}</p>
                   <div class="drag-indicator">
                     <i class="fas fa-grip-vertical"></i>
@@ -539,10 +547,18 @@ declare var Chart: any;
       <div class="modal" [class.active]="showCustomerModal" (click)="closeModal($event)">
         <div class="modal-content customer-modal-large" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>{{ editingCustomer ? 'Edit Customer' : 'Add New Customer' }}</h3>
-            <button class="close-btn" (click)="closeCustomerModal()">
-              <i class="fas fa-times"></i>
-            </button>
+            <div class="header-content">
+              <h3>{{ editingCustomer ? 'Edit Customer' : 'Add New Customer' }}</h3>
+            </div>
+            <div class="header-actions">
+              <button type="button" class="btn-cancel-themed" (click)="closeCustomerModal()">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+              <button type="button" class="btn-save-themed" (click)="handleCustomerAction()">
+                <i class="fas fa-save"></i>
+                {{ editingCustomer ? 'Update Customer' : 'Create Customer' }}
+              </button>
+            </div>
           </div>
           <div class="modal-body two-part-layout">
             <!-- Left Part: Services -->
@@ -627,7 +643,7 @@ declare var Chart: any;
             <div class="customer-section">
               <div class="customer-details">
                     <h4><i class="fas fa-user"></i> Customer Details</h4>
-                <form [formGroup]="customerForm" (ngSubmit)="submitCustomer()">
+                <form [formGroup]="customerForm">
               <div class="form-group">
                       <label for="customerName">Full Name *</label>
                 <input 
@@ -667,6 +683,15 @@ declare var Chart: any;
                 ></textarea>
               </div>
               <div class="form-group">
+                <label for="orderDate">Order Date *</label>
+                <input 
+                  type="date" 
+                  id="orderDate" 
+                  formControlName="orderDate"
+                  required
+                >
+              </div>
+              <div class="form-group">
                     <label for="customerStatus">Status</label>
                     <select id="customerStatus" formControlName="status">
                       <option value="received">Received</option>
@@ -675,7 +700,7 @@ declare var Chart: any;
                       <option value="delivered">Delivered</option>
                       <option value="billed">Billed</option>
                     </select>
-                </div>
+              </div>
                 </form>
               </div>
                     
@@ -735,15 +760,6 @@ declare var Chart: any;
                 </div>
               </div>
 
-              <div class="form-actions">
-                <button type="button" class="btn secondary" (click)="closeCustomerModal()">
-                  {{ translate('clothaura.cancel') }}
-                </button>
-                <button type="button" class="btn primary" (click)="submitCustomer()" [disabled]="selectedItems.length === 0">
-                  <i class="fas fa-plus"></i>
-                  {{ editingCustomer ? translate('clothaura.edit_customer') : translate('clothaura.add_customer') }}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -753,10 +769,18 @@ declare var Chart: any;
       <div class="modal" [class.active]="showCustomerDetailsModal" (click)="closeModal($event)">
         <div class="modal-content customer-modal-large" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3><i class="fas fa-user"></i> Customer Details</h3>
-            <button class="close-btn" (click)="closeCustomerDetailsModal()">
-              <i class="fas fa-times"></i>
-            </button>
+            <div class="header-content">
+              <h3><i class="fas fa-user"></i> Customer Details</h3>
+            </div>
+            <div class="header-actions">
+              <button type="button" class="btn-cancel-themed" (click)="closeCustomerDetailsModal()">
+                <i class="fas fa-times"></i> {{ isViewMode ? 'Close' : 'Cancel' }}
+              </button>
+              <button type="button" class="btn-save-themed" (click)="handleCustomerAction()" [disabled]="!isViewMode && !editingCustomer && (selectedItems.length === 0 || !customerForm.valid)">
+                <i class="fas" [class.fa-edit]="isViewMode" [class.fa-save]="!isViewMode"></i>
+                {{ isViewMode ? 'Edit Customer' : (editingCustomer ? 'Update Customer' : 'Create Customer') }}
+              </button>
+            </div>
           </div>
           <div class="modal-body two-part-layout" *ngIf="selectedCustomerForDetails">
             <!-- Left Part: Services -->
@@ -841,7 +865,7 @@ declare var Chart: any;
             <div class="customer-section">
               <div class="customer-details">
                 <h4><i class="fas fa-user"></i> Customer Details</h4>
-                <form [formGroup]="customerForm" (ngSubmit)="submitCustomer()">
+                <form [formGroup]="customerForm">
                   <div class="form-group">
                     <label for="customerName">Full Name *</label>
                     <input 
@@ -883,6 +907,16 @@ declare var Chart: any;
                       rows="3"
                       [disabled]="isViewMode"
                     ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="orderDate">Order Date *</label>
+                    <input 
+                      type="date" 
+                      id="orderDate" 
+                      formControlName="orderDate"
+                      required
+                      [disabled]="isViewMode"
+                    >
                   </div>
               <div class="form-group">
                 <label for="customerStatus">Status</label>
@@ -990,15 +1024,6 @@ declare var Chart: any;
                     </div>
                   </div>
 
-              <div class="form-actions">
-                <button type="button" class="btn secondary" (click)="closeCustomerDetailsModal()">
-                  {{ isViewMode ? 'Close' : 'Cancel' }}
-                </button>
-                <button type="button" class="btn primary" (click)="handleCustomerAction()" [disabled]="!isViewMode && selectedItems.length === 0">
-                  <i class="fas" [class.fa-edit]="isViewMode" [class.fa-save]="!isViewMode"></i>
-                  {{ isViewMode ? 'Edit Customer' : (editingCustomer ? 'Update Customer' : 'Create Customer') }}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -1921,6 +1946,17 @@ declare var Chart: any;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
     .section-header h2 {
       margin: 0;
       color: #374151;
@@ -2769,11 +2805,203 @@ declare var Chart: any;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 16px 16px 0 0;
     }
 
     .modal-header h3 {
       margin: 0;
-      color: #374151;
+      color: white;
+    }
+
+    /* Customer Modal Header Layout */
+    .modal-header .header-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .modal-header .header-content h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .modal-header .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .modal-header .header-actions .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-header .header-actions .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header .header-actions .btn-primary {
+      background: rgba(255, 255, 255, 0.9);
+      color: #3b82f6;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header .header-actions .btn-primary:hover {
+      background: white;
+      color: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header .header-actions .btn-primary:disabled {
+      background: #9ca3af;
+      border-color: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* New Button Implementation */
+    .modal-header .header-actions .btn-cancel-new {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 10px 18px;
+      font-size: 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header .header-actions .btn-cancel-new:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header .header-actions .btn-save-new {
+      background: rgba(255, 255, 255, 0.9);
+      color: #667eea;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      padding: 10px 18px;
+      font-size: 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header .header-actions .btn-save-new:hover {
+      background: white;
+      color: #764ba2;
+      border-color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header .header-actions .btn-save-new:disabled {
+      background: rgba(255, 255, 255, 0.5);
+      color: rgba(102, 126, 234, 0.5);
+      border-color: rgba(255, 255, 255, 0.5);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Themed Save Button - Matching Loan Customer Style */
+    .modal-header .header-actions .btn-save-themed {
+      background: rgba(255, 255, 255, 0.9);
+      color: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-header .header-actions .btn-save-themed:hover {
+      background: white;
+      color: #000000;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header .header-actions .btn-save-themed:disabled {
+      background: rgba(255, 255, 255, 0.5);
+      color: rgba(0, 0, 0, 0.5);
+      border-color: rgba(255, 255, 255, 0.5);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Cancel Button - Matching Loan Customer Style */
+    .modal-header .header-actions .btn-cancel-themed {
+      background: rgba(255, 255, 255, 0.2);
+      color: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-header .header-actions .btn-cancel-themed:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+      color: #000000;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     .close-btn {
@@ -4718,7 +4946,8 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       phone: ['', Validators.required],
       email: [''],
       address: [''],
-      status: ['received']
+      status: ['received'],
+      orderDate: [new Date().toISOString().split('T')[0], Validators.required]
     });
 
     this.serviceForm = this.fb.group({
@@ -5437,7 +5666,8 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
         phone: customer.phone,
         email: customer.email,
         address: customer.address,
-        status: customer.status || 'received'
+        status: customer.status || 'received',
+        orderDate: customer.orderDate || customer.createdDate
       });
       this.showCustomerModal = true;
     }
@@ -5460,13 +5690,18 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('After validation - Form valid:', this.customerForm.valid);
     console.log('After validation - Form errors:', this.customerForm.errors);
     
-    // Allow updates even if form validation fails, as long as we have the required data
+    // Check required fields
     const customerData = this.customerForm.value;
     const hasRequiredData = customerData.name && customerData.phone;
     
     console.log('Customer data:', customerData);
     console.log('Has required data:', hasRequiredData);
-    console.log('Will proceed with update:', this.customerForm.valid || (this.editingCustomer && hasRequiredData));
+    
+    // Validate required fields
+    if (!customerData.name || !customerData.phone) {
+      this.toastService.error('Please fill in all required fields (Name and Phone)');
+      return;
+    }
     
     if (this.customerForm.valid || (this.editingCustomer && hasRequiredData)) {
       try {
@@ -5514,6 +5749,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
               email: customerData.email,
               address: customerData.address,
               status: customerData.status || 'received',
+              order_date: customerData.orderDate,
               items: itemsDescription,
               items_json: itemsJson,
               service_type: this.selectedItems.map(item => item.serviceType).join(', '),
@@ -5566,6 +5802,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
               email: customerData.email,
               address: customerData.address,
               status: customerData.status || 'received',
+              order_date: customerData.orderDate,
               items: itemsDescription,
               items_json: itemsJson,
               service_type: this.selectedItems.map(item => item.serviceType).join(', '),
@@ -5612,7 +5849,8 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
         phone: customer.phone,
         email: customer.email || '',
         address: customer.address || '',
-        status: customer.status || 'received'
+        status: customer.status || 'received',
+        orderDate: customer.orderDate || customer.createdDate
       });
       
       // Mark form as valid since we're populating with existing data
@@ -6349,7 +6587,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
           email: c.email || '',
           address: c.address || '',
           status: c.status || 'received',
-          orderDate: c.order_date,
+          orderDate: c.order_date ? new Date(c.order_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           expectedDeliveryDate: c.expected_delivery_date,
           deliveryDate: c.delivery_date,
           items: c.items || '',
@@ -6600,8 +6838,8 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isDelayed(order: any): boolean {
-    if (order.status === 'inProcess' && order.createdDate) {
-      const orderDateTime = new Date(order.createdDate).getTime();
+    if (order.status === 'inProcess' && (order.orderDate || order.createdDate)) {
+      const orderDateTime = new Date(order.orderDate || order.createdDate).getTime();
       const now = new Date().getTime();
       const twentyFourHours = 24 * 60 * 60 * 1000;
       return (now - orderDateTime) > twentyFourHours;
@@ -6623,7 +6861,8 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       phone: order.phone,
       email: order.email || '',
       address: order.address || '',
-      status: order.status || 'received'
+      status: order.status || 'received',
+      orderDate: order.orderDate || order.createdDate
     });
     
     // Mark form as valid since we're populating with existing data
@@ -6715,7 +6954,10 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   openCustomerModal() {
     this.editingCustomer = null;
     this.customerForm.reset();
-    this.customerForm.patchValue({ status: 'received' });
+    this.customerForm.patchValue({ 
+      status: 'received',
+      orderDate: new Date().toISOString().split('T')[0]
+    });
     this.clearCart();
     // Reset search and filter terms for services
     this.serviceSearchTerm = '';
@@ -6842,6 +7084,24 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isDragging = false;
   }
 
+  // Filter customers by status and switch to customers tab
+  filterByStatus(statusId: string) {
+    console.log('Filtering by status:', statusId);
+    
+    // Switch to customers tab
+    this.activeTab = 'customers';
+    
+    // Set the filter
+    this.customerFilter = statusId;
+    
+    // Apply the filter
+    this.filterCustomers();
+    
+    // Show success message
+    const statusName = this.getStatusDisplayName(statusId);
+    this.toastService.success(`Filtered customers by status: ${statusName}`);
+  }
+
   getStatusDisplayName(statusId: string): string {
     const status = this.statuses.find(s => s.id === statusId);
     return status ? status.name : statusId;
@@ -6874,7 +7134,8 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       phone: this.selectedCustomerForDetails.phone,
       email: this.selectedCustomerForDetails.email,
       address: this.selectedCustomerForDetails.address,
-      status: this.selectedCustomerForDetails.status || 'received'
+      status: this.selectedCustomerForDetails.status || 'received',
+      orderDate: this.selectedCustomerForDetails.orderDate || this.selectedCustomerForDetails.createdDate
     });
     
     // Mark form as valid since we're populating with existing data
@@ -6890,8 +7151,27 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       // Switch to edit mode
       this.editCustomerFromDetails();
     } else if (this.editingCustomer) {
-      // Update existing customer using simplified method (same as Laundry board)
-      this.updateCustomerDetails();
+      // Show confirmation for update
+      const confirmed = confirm('Do you want to create new record or update existing record?\n\nClick OK to UPDATE existing record\nClick Cancel to CREATE new record');
+      if (confirmed) {
+        // Update existing customer using simplified method (same as Laundry board)
+        console.log('User confirmed UPDATE - editingCustomer:', this.editingCustomer);
+        if (!this.editingCustomer || !this.editingCustomer.id) {
+          this.toastService.error('No customer selected for update');
+          return;
+        }
+        this.updateCustomerDetails();
+      } else {
+        // Create new customer instead - close current modal and create new customer
+        this.closeCustomerDetailsModal();
+        this.editingCustomer = null; // Clear editing customer to create new
+        
+        // Set status to "received" for new customer
+        this.customerForm.patchValue({ status: 'received' });
+        
+        // Create new customer with current form data
+        this.createCustomerDetails();
+      }
     } else {
       // Create new customer using simplified method (same as Laundry board)
       this.createCustomerDetails();
@@ -6901,9 +7181,10 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   // New simplified update method using the same API as Laundry board
   async updateCustomerDetails() {
     console.log('=== UPDATE CUSTOMER DETAILS (Simplified) ===');
-    console.log('Customer ID:', this.editingCustomer.id);
+    console.log('Customer ID:', this.editingCustomer?.id);
     console.log('Form data:', this.customerForm.value);
     console.log('Selected items:', this.selectedItems);
+    console.log('Editing customer object:', this.editingCustomer);
 
     if (!this.editingCustomer || !this.editingCustomer.id) {
       this.toastService.error('No customer selected for update');
@@ -6913,22 +7194,69 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       const customerData = this.customerForm.value;
       
-      // Prepare items data
-      const itemsDescription = this.selectedItems.map(item => 
-        `${item.quantity}x ${item.service.name} (${item.serviceType})`
-      ).join(', ');
+      console.log('=== FORM DATA DEBUG ===');
+      console.log('Full form data:', customerData);
+      console.log('Order date specifically:', customerData.orderDate);
+      console.log('Order date type:', typeof customerData.orderDate);
+      console.log('Order date is null/undefined:', customerData.orderDate === null || customerData.orderDate === undefined);
       
-      const itemsJson = this.selectedItems.map(item => ({
-        serviceId: item.service.id,
-        serviceName: item.service.name,
-        quantity: item.quantity,
-        serviceType: item.serviceType,
-        price: item.price,
-        totalPrice: item.quantity * item.price
-      }));
+      // Ensure orderDate is properly formatted
+      let formattedOrderDate = customerData.orderDate;
+      if (formattedOrderDate) {
+        // If it's a Date object, convert to string
+        if (formattedOrderDate instanceof Date) {
+          formattedOrderDate = formattedOrderDate.toISOString().split('T')[0];
+        }
+        // If it's already a string, ensure it's in YYYY-MM-DD format
+        else if (typeof formattedOrderDate === 'string') {
+          // Check if it's already in the correct format
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedOrderDate)) {
+            // Try to parse and reformat
+            const date = new Date(formattedOrderDate);
+            if (!isNaN(date.getTime())) {
+              formattedOrderDate = date.toISOString().split('T')[0];
+            }
+          }
+        }
+      } else {
+        // If no orderDate provided, use current date
+        formattedOrderDate = new Date().toISOString().split('T')[0];
+      }
+      
+      console.log('Formatted order date:', formattedOrderDate);
+      
+      // Prepare items data - preserve existing items if no new items are selected
+      let itemsDescription, itemsJson, serviceType, totalAmount;
+      
+      if (this.selectedItems.length > 0) {
+        // Use new items from cart
+        itemsDescription = this.selectedItems.map(item => 
+          `${item.quantity}x ${item.service.name} (${item.serviceType})`
+        ).join(', ');
+        
+        itemsJson = this.selectedItems.map(item => ({
+          serviceId: item.service.id,
+          serviceName: item.service.name,
+          quantity: item.quantity,
+          serviceType: item.serviceType,
+          price: item.price,
+          totalPrice: item.quantity * item.price
+        }));
+        
+        serviceType = this.selectedItems.map(item => item.serviceType).join(', ');
+        totalAmount = this.totalAmount * 1.05;
+      } else {
+        // Preserve existing items if no new items are selected
+        itemsDescription = this.editingCustomer.items || '';
+        itemsJson = this.editingCustomer.items_json || null;
+        serviceType = this.editingCustomer.service_type || '';
+        totalAmount = this.editingCustomer.total_amount || 0;
+      }
 
       console.log('=== SIMPLIFIED UPDATE API CALL ===');
       console.log('API URL:', `${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`);
+      console.log('Order Date from form:', customerData.orderDate);
+      console.log('Formatted order date:', formattedOrderDate);
       console.log('Request body:', {
         name: customerData.name,
         phone: customerData.phone,
@@ -6936,10 +7264,11 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
         email: customerData.email || '',
         address: customerData.address || '',
         status: customerData.status || 'received',
+        order_date: formattedOrderDate,
         items: itemsDescription,
         items_json: itemsJson,
-        service_type: this.selectedItems.map(item => item.serviceType).join(', '),
-        total_amount: this.totalAmount * 1.05
+        service_type: serviceType,
+        total_amount: totalAmount
       });
 
       const response = await fetch(`${environment.apiUrl}/laundry-customers/${this.editingCustomer.id}`, {
@@ -6954,10 +7283,11 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
           email: customerData.email || '',
           address: customerData.address || '',
           status: customerData.status || 'received',
+          order_date: formattedOrderDate,
           items: itemsDescription,
           items_json: itemsJson,
-          service_type: this.selectedItems.map(item => item.serviceType).join(', '),
-          total_amount: this.totalAmount * 1.05
+          service_type: serviceType,
+          total_amount: totalAmount
         }),
         credentials: 'include'
       });
@@ -6999,6 +7329,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('=== CREATE CUSTOMER DETAILS (Simplified) ===');
     console.log('Form data:', this.customerForm.value);
     console.log('Selected items:', this.selectedItems);
+    console.log('Status from form:', this.customerForm.value.status);
 
     try {
       const customerData = this.customerForm.value;
@@ -7019,6 +7350,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
 
       console.log('=== SIMPLIFIED CREATE API CALL ===');
       console.log('API URL:', `${environment.apiUrl}/laundry-customers`);
+      console.log('Status being sent:', customerData.status || 'received');
       console.log('Request body:', {
         name: customerData.name,
         phone: customerData.phone,

@@ -194,26 +194,35 @@ router.post('/upload-excel', upload.single('excel'), async (req, res) => {
     try {
       await client.query('BEGIN');
 
+      const userId = req.session.userId;
+      let successCount = 0;
+      let skipCount = 0;
+
       for (const row of data) {
         const cc = String(row.customer_code || '').trim();
         const cn = String(row.customer_name || '').trim();
         const amount = parseFloat(row.amount);
         const penalty = parseFloat(row.penalty) || 0;
         const formattedDate = formatToYYYYMMDD(row.date);
+        const remark = String(row.remark || '').trim();
 
         if (!cc || !cn || isNaN(amount) || !formattedDate) {
           console.warn('Skipped row due to invalid data:', row);
+          skipCount++;
           continue;
         }
 
         await client.query(
-          `INSERT INTO deposits (customer_code, customer_name, amount, penalty, date) VALUES ($1, $2, $3, $4, $5)`,
-          [cc, cn, amount, penalty, formattedDate]
+          `INSERT INTO deposits (customer_code, customer_name, amount, penalty, date, remark, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [cc, cn, amount, penalty, formattedDate, remark, userId]
         );
+        successCount++;
       }
 
       await client.query('COMMIT');
-      res.json({ message: 'Deposits imported successfully' });
+      res.json({ 
+        message: `Deposits imported successfully. ${successCount} records imported${skipCount > 0 ? `, ${skipCount} records skipped due to invalid data` : ''}` 
+      });
     } catch (err) {
       await client.query('ROLLBACK');
       console.error('Excel upload transaction error:', err.message);
@@ -224,7 +233,17 @@ router.post('/upload-excel', upload.single('excel'), async (req, res) => {
     }
   } catch (err) {
     console.error('Excel upload error:', err.message);
-    res.status(500).json({ error: 'Failed to process Excel file' });
+    
+    // Clean up file if it exists
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkErr) {
+        console.error('Failed to clean up uploaded file:', unlinkErr.message);
+      }
+    }
+    
+    res.status(500).json({ error: `Failed to process Excel file: ${err.message}` });
   }
 });
 

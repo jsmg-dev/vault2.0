@@ -101,13 +101,13 @@ router.post('/', async (req, res) => {
       INSERT INTO laundry_customers (
         name, phone, alt_phone, address, email, status, 
         expected_delivery_date, items, items_json, service_type, 
-        total_amount, paid_amount, balance_amount, special_instructions, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        total_amount, paid_amount, balance_amount, special_instructions, created_by, order_date
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
     `, [
       name, phone, alt_phone, address, email, status,
       expected_delivery_date, items, validItemsJson, service_type,
-      total_amount, req.body.paid_amount || 0, balance_amount, special_instructions, userId
+      total_amount, req.body.paid_amount || 0, balance_amount, special_instructions, userId, req.body.order_date || new Date().toISOString().split('T')[0]
     ]);
 
     res.status(201).json(result.rows[0]);
@@ -161,6 +161,11 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    console.log('=== UPDATE REQUEST DEBUG ===');
+    console.log('Request body:', req.body);
+    console.log('Order date from request:', req.body.order_date);
+    console.log('Order date type:', typeof req.body.order_date);
+
     const result = await query(`
       UPDATE laundry_customers SET
         name = COALESCE($1, name),
@@ -178,13 +183,14 @@ router.put('/:id', async (req, res) => {
         paid_amount = COALESCE($13, paid_amount),
         balance_amount = COALESCE($14, balance_amount),
         special_instructions = COALESCE($15, special_instructions),
+        order_date = COALESCE($16, order_date),
         updated_at = NOW()
-      WHERE id = $16
+      WHERE id = $17
       RETURNING *
     `, [
       name, phone, alt_phone, address, email, status,
       expected_delivery_date, delivery_date, items, validItemsJson, service_type,
-      total_amount, paid_amount, balance_amount, special_instructions, id
+      total_amount, paid_amount, balance_amount, special_instructions, req.body.order_date, id
     ]);
 
     if (result.rows.length === 0) {

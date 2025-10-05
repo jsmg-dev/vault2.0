@@ -87,11 +87,6 @@ export class ReportsComponent implements OnInit {
       return;
     }
 
-    if (this.activeTab === 'deposit' && !this.reportForm.customer_id) {
-      alert('Please select a customer for deposit reports');
-      return;
-    }
-
     try {
       let query = `${environment.apiUrl}/reports/generate?type=${this.activeTab}&start=${this.reportForm.start_date}&end=${this.reportForm.end_date}`;
       
@@ -152,4 +147,5 @@ export class ReportsComponent implements OnInit {
     sessionStorage.clear();
     this.router.navigate(['/login']);
   }
+
 }

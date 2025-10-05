@@ -1,11 +1,12 @@
-/* AISHA Standalone Page Styles */
+/* AISHA with Sidebar Layout Styles */
 .aisha-container {
   display: flex;
-  height: 100vh; /* Full viewport height */
+  height: calc(100vh - 80px); /* Adjust for header height */
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
   color: #ffffff;
   overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  margin-top: 80px; /* Space for header */
 }
 
 /* Avatar Section */

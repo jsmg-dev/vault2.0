@@ -1,6 +1,9 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, NavigationEnd } from '@angular/router';
+import { Subscription, filter } from 'rxjs';
+import { MainLayoutComponent } from '../../components/layout/main-layout.component';
 
 interface Message {
   id: string;
@@ -19,7 +22,7 @@ interface AISHAEmotion {
 @Component({
   selector: 'app-aisha',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MainLayoutComponent],
   templateUrl: './aisha.component.html',
   styleUrl: './aisha.component.css'
 })
@@ -49,21 +52,30 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
   private recognition: any;
   private synthesis: any;
   private lastResponseTime: number = 0;
-  private responseCooldown: number = 10000; // 10 seconds cooldown between responses
+  private responseCooldown: number = 1000; // 1 second cooldown for non-important commands
   private isWaitingForUser: boolean = false;
   private lastUserMessage: string = '';
   private shouldListenContinuously: boolean = true;
   private isStarting: boolean = false;
+  private consecutiveFailures: number = 0;
+  private maxFailures: number = 3;
+  protected listeningMode: 'auto' | 'manual' = 'auto'; // Controls whether to restart on onend
+  
+  // Navigation subscription for refreshing session data
+  private navigationSubscription?: Subscription;
+
+  constructor(private router: Router) {}
 
   ngOnInit() {
-    this.userRole = sessionStorage.getItem('role') || '';
+    this.refreshSessionData();
+    this.setupNavigationListener();
     this.initializeSpeechRecognition();
     this.initializeSpeechSynthesis();
     this.addWelcomeMessage();
     this.startBlinkingAnimation();
     this.startLipSyncAnimation();
-    // Start continuous listening with cooldown protection
     this.startContinuousListening();
+    this.listeningMode = 'auto'; // Auto-restart is default
   }
 
   ngAfterViewInit() {
@@ -105,22 +117,25 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
             continue;
           }
           
-          // Check for cooldown to prevent repeated responses
+          // Check for cooldown to prevent repeated responses (but allow important commands)
           const currentTime = Date.now();
-          if (currentTime - this.lastResponseTime < this.responseCooldown) {
+          const isImportantCommand = this.isImportantCommand(transcript);
+          
+          if (!isImportantCommand && currentTime - this.lastResponseTime < this.responseCooldown) {
             console.log('🎤 Response cooldown active, skipping:', transcript);
             continue;
           }
           
-          // Check if this is the same message as before
-          if (transcript === this.lastUserMessage) {
+          // Check if this is the same message as before (but allow important commands)
+          if (!isImportantCommand && transcript === this.lastUserMessage) {
             console.log('🎤 Same message as before, skipping:', transcript);
             continue;
           }
           
-          // Check if we're waiting for user response
-          if (this.isWaitingForUser && transcript.length < 10) {
-            console.log('🎤 Waiting for user response, skipping short message:', transcript);
+          // Check if we're waiting for user response (but allow important commands)
+          // Allow all commands when waiting for user, don't skip short messages
+          if (!isImportantCommand && this.isWaitingForUser && transcript.length < 3) {
+            console.log('🎤 Waiting for user response, skipping very short message:', transcript);
             continue;
           }
           
@@ -140,6 +155,9 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
           
           console.log('🎤 Processing command:', transcript);
           
+          // Reset failure counter on successful recognition
+          this.consecutiveFailures = 0;
+          
           // Update last response time and user message
           this.lastResponseTime = currentTime;
           this.lastUserMessage = transcript;
@@ -147,29 +165,49 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
           // Treat voice input EXACTLY like typing - no difference at all
           this.currentMessage = transcript;
           console.log('🎤 Setting message to:', this.currentMessage);
+          
+          // Add visual feedback that voice input was detected
+          this.showVoiceInputFeedback(transcript);
+          
           this.sendMessage(); // Same as typing
         }
       }
     };
 
     this.recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+      console.error('🎤 Speech recognition error:', event.error);
       this.isListening = false;
-      // Recreate recognition instance for next use
-      setTimeout(() => {
-        this.setupSpeechRecognition();
-      }, 1000);
+      this.consecutiveFailures++;
+      
+      // If too many consecutive failures, try to recover
+      if (this.consecutiveFailures >= this.maxFailures) {
+        console.log('🎤 Too many consecutive failures, attempting recovery...');
+        this.consecutiveFailures = 0;
+        this.shouldListenContinuously = false;
+        setTimeout(() => {
+          this.setupSpeechRecognition();
+          this.shouldListenContinuously = true;
+          this.startContinuousListening();
+        }, 2000);
+      } else {
+        // Recreate recognition instance for next use
+        setTimeout(() => {
+          this.setupSpeechRecognition();
+        }, 1000);
+      }
     };
 
     this.recognition.onend = () => {
       console.log('🎤 Speech recognition ended');
       this.isListening = false;
-      // Only restart if we're supposed to be listening continuously
-      if (this.shouldListenContinuously) {
+      // Only restart if we're supposed to be listening continuously AND in auto mode
+      if (this.shouldListenContinuously && this.listeningMode === 'auto') {
         console.log('🎤 Restarting continuous listening...');
         setTimeout(() => {
           this.startContinuousListening();
         }, 500);
+      } else {
+        console.log('🎤 Not restarting - manual mode or shouldListenContinuously = false');
       }
     };
   }
@@ -285,26 +323,10 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
           this.isWaitingForUser = false; // Reset waiting state for commands
           console.log('✅ System command executed. Response:', response);
         } else {
-          // Only respond to substantial questions, not short phrases
-          if (userText.length > 10 && (userText.includes('?') || userText.includes('how') || userText.includes('what') || userText.includes('where') || userText.includes('when') || userText.includes('why'))) {
-            const responses = [
-              "I understand! How can I help you with that?",
-              "I'm here to assist you. What would you like me to do?",
-              "Sure! What specific action do you need?",
-              "I'm ready to help. Please provide more details.",
-              "I'm listening. What can I do for you?",
-              "Yes, I'm here. What would you like me to do?",
-              "Tell me more about what you need help with.",
-              "I'm ready to assist. What's your request?"
-            ];
-            response = responses[Math.floor(Math.random() * responses.length)];
-            this.isWaitingForUser = true; // Set waiting state
-            console.log('💬 Using default response:', response);
-          } else {
-            // Don't respond to short or unclear messages
-            console.log('💬 Not responding to short/unclear message:', userText);
-            return; // Exit without adding response
-          }
+          // Generate AI response for ALL other queries
+          console.log('🤖 Generating AI response for:', userText);
+          response = this.generateAIResponse(userText);
+          this.isWaitingForUser = true; // Set waiting state
         }
       }
       
@@ -386,6 +408,7 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.isStarting = true;
     this.shouldListenContinuously = true;
+    this.listeningMode = 'auto'; // Resume auto-restart when manually started
 
     if (!this.recognition) {
       console.log('🎤 Recognition not available, recreating...');
@@ -396,22 +419,27 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
       this.recognition.start();
       this.isListening = true;
       this.isStarting = false;
-      console.log('🎤 Started CONTINUOUS listening with cooldown protection!');
+      this.consecutiveFailures = 0; // Reset failure counter on successful start
+      console.log('🎤 Started CONTINUOUS listening with improved reliability!');
     } catch (error) {
       console.error('Error starting continuous speech recognition:', error);
       this.isListening = false;
       this.isStarting = false;
-      // Try to recreate recognition instance
+      this.consecutiveFailures++;
+      
+      // Try to recreate recognition instance with exponential backoff
+      const delay = Math.min(1000 * Math.pow(2, this.consecutiveFailures), 5000);
       setTimeout(() => {
         this.setupSpeechRecognition();
         this.startContinuousListening();
-      }, 1000);
+      }, delay);
     }
   }
 
   stopContinuousListening() {
     this.shouldListenContinuously = false;
     this.isStarting = false;
+    this.listeningMode = 'manual'; // Stop auto-restart when manually stopped
     
     if (this.recognition && this.isListening) {
       this.recognition.stop();
@@ -971,9 +999,104 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
     return alternatives[0]; // Return the first alternative if no correction found
   }
 
+  private isImportantCommand(transcript: string): boolean {
+    const importantCommands = [
+      'stop', 'halt', 'pause', 'quit', 'exit',
+      'help', 'hello', 'hi', 'hey',
+      'open', 'click', 'go to', 'navigate', 'navigate to',
+      'dashboard', 'customers', 'deposits', 'loans', 'policies',
+      'clothaura', 'laundry', 'lic', 'aisha', 'user', 'users',
+      'calculator', 'notepad', 'browser', 'explorer', 'cmd', 'terminal'
+    ];
+    
+    return importantCommands.some(cmd => 
+      transcript.includes(cmd) || transcript.startsWith(cmd)
+    );
+  }
+
+  private showVoiceInputFeedback(transcript: string) {
+    // Add a temporary visual indicator that voice input was detected
+    console.log('🎤 Voice input detected and typed:', transcript);
+    
+    // You could add a toast notification or visual indicator here
+    // For now, we'll just log it and the textarea will show the text
+  }
+
+  private generateAIResponse(query: string): string {
+    console.log('🤖 Generating AI response for query:', query);
+    
+    // Simple AI responses based on query content
+    const lowerQuery = query.toLowerCase();
+    
+    // Weather related
+    if (lowerQuery.includes('weather') || lowerQuery.includes('rain') || lowerQuery.includes('sunny')) {
+      return "I don't have access to real-time weather data, but I can help you with other tasks!";
+    }
+    
+    // Time related
+    if (lowerQuery.includes('time') || lowerQuery.includes('clock')) {
+      const now = new Date();
+      return `The current time is ${now.toLocaleTimeString()}. How else can I help you?`;
+    }
+    
+    // Calculator
+    if (lowerQuery.includes('calculate') || lowerQuery.includes('math') || lowerQuery.includes('+') || lowerQuery.includes('-') || lowerQuery.includes('*') || lowerQuery.includes('/')) {
+      return "I can help with basic calculations! Try saying something like 'calculate 5 plus 3' or 'what is 10 times 2'.";
+    }
+    
+    // Help
+    if (lowerQuery.includes('help') || lowerQuery.includes('assist')) {
+      return "I'm here to help! I can navigate the application, open system programs, answer questions, and assist with various tasks. What would you like me to do?";
+    }
+    
+    // Self introduction
+    if (lowerQuery.includes('who are you') || lowerQuery.includes('what are you') || lowerQuery.includes('aisha')) {
+      return "I'm AISHA, your AI assistant! I can help you navigate the application, open programs, answer questions, and assist with various tasks. How can I help you today?";
+    }
+    
+    // Thanks
+    if (lowerQuery.includes('thank') || lowerQuery.includes('thanks')) {
+      return "You're welcome! I'm always here to help. Is there anything else you need?";
+    }
+    
+    // Goodbye
+    if (lowerQuery.includes('bye') || lowerQuery.includes('goodbye') || lowerQuery.includes('see you')) {
+      return "Goodbye! Feel free to come back anytime. I'll be here when you need me!";
+    }
+    
+    // Application specific
+    if (lowerQuery.includes('customer') || lowerQuery.includes('deposit') || lowerQuery.includes('loan') || lowerQuery.includes('policy')) {
+      return "I can help you navigate to the " + (lowerQuery.includes('customer') ? 'customers' : 
+             lowerQuery.includes('deposit') ? 'deposits' : 
+             lowerQuery.includes('loan') ? 'loans' : 'policies') + " section. Would you like me to take you there?";
+    }
+    
+    // Default responses
+    const defaultResponses = [
+      "I understand! How can I help you with that?",
+      "I'm here to assist you. What would you like me to do?",
+      "Sure! What specific action do you need?",
+      "I'm ready to help. Please provide more details.",
+      "I'm listening. What can I do for you?",
+      "Yes, I'm here. What would you like me to do?",
+      "Tell me more about what you need help with.",
+      "I'm ready to assist. What's your request?",
+      "That's interesting! How can I help you with that?",
+      "I'm here to help. What would you like to know?"
+    ];
+    
+    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+  }
+
+
   ngOnDestroy() {
     this.shouldListenContinuously = false;
     this.isStarting = false;
+    
+    // Clean up navigation subscription
+    if (this.navigationSubscription) {
+      this.navigationSubscription.unsubscribe();
+    }
     
     if (this.recognition) {
       this.recognition.stop();
@@ -981,6 +1104,56 @@ export class AISHAComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.synthesis) {
       this.synthesis.cancel();
+    }
+  }
+  
+  public refreshSessionData() {
+    const oldRole = this.userRole;
+    this.userRole = sessionStorage.getItem('role') || '';
+    console.log('🔄 AISHA session refresh:', { oldRole, newRole: this.userRole });
+    
+    // If role changed (logout/login), reset AISHA state
+    if (oldRole !== this.userRole) {
+      console.log('👤 User role changed, resetting AISHA state');
+      this.resetAISHAState();
+    }
+  }
+  
+  public refreshAISHAOnLogin() {
+    console.log('🔐 User logged in, refreshing AISHA');
+    this.refreshSessionData();
+  }
+  
+  private setupNavigationListener() {
+    // Listen for navigation events to refresh session data
+    this.navigationSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        console.log('🧭 Navigation detected, refreshing session data:', event.url);
+        this.refreshSessionData();
+      });
+  }
+  
+  private resetAISHAState() {
+    console.log('🔄 Resetting AISHA state after role change');
+    
+    // Clear messages except the first welcome message
+    if (this.messages.length > 0) {
+      const welcomeMsg = this.messages[0];
+      this.messages = [welcomeMsg];
+    }
+    
+    // Reset speech recognition state
+    this.lastResponseTime = 0;
+    this.lastUserMessage = '';
+    this.isWaitingForUser = false;
+    this.consecutiveFailures = 0;
+    
+    // Restart listening if needed
+    if (this.shouldListenContinuously) {
+      setTimeout(() => {
+        this.startContinuousListening();
+      }, 500);
     }
   }
 }

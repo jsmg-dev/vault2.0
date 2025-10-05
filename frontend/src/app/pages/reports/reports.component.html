@@ -63,10 +63,17 @@
       <!-- Customer Selection for Deposit Reports -->
       <div class="form-row" *ngIf="activeTab === 'deposit'">
         <div class="form-group">
-          <label for="customer_id">Customer</label>
-          <select id="customer_id" name="customer_id" [(ngModel)]="reportForm.customer_id">
-            <option value="">-- Select Customer --</option>
-            <option *ngFor="let customer of customers" [value]="customer.id">
+          <label>Select Customer</label>
+          <select 
+            class="form-control" 
+            [(ngModel)]="reportForm.customer_id"
+            name="customer_id"
+          >
+            <option value="">All Customers</option>
+            <option 
+              *ngFor="let customer of customers" 
+              [value]="customer.id"
+            >
               {{ customer.name }} ({{ customer.customer_code }})
             </option>
           </select>

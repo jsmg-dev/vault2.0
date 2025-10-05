@@ -188,30 +188,65 @@ export class DepositsComponent implements OnInit {
     const file = event.target.files[0];
     if (!file) return;
     
+    // Validate file type
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv' // .csv
+    ];
+    
+    if (!allowedTypes.includes(file.type) && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+      alert('Please upload a valid Excel file (.xlsx, .xls) or CSV file (.csv)');
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('excel', file);
     
     try {
+      console.log('Uploading file:', file.name, 'Type:', file.type, 'Size:', file.size);
+      
       const res = await fetch(`${environment.apiUrl}/deposits/upload-excel`, {
         method: 'POST',
         body: formData,
         credentials: 'include'
       });
       
+      const result = await res.json();
+      
       if (res.ok) {
-        alert('Excel imported successfully!');
+        alert(`Excel imported successfully! ${result.message || ''}`);
         await this.loadDeposits();
         this.calculateStats();
       } else {
-        alert('Import failed');
+        console.error('Upload failed:', result);
+        alert(`Import failed: ${result.error || 'Unknown error'}`);
       }
     } catch (err) {
-      alert('Import failed');
+      console.error('Upload error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Network error';
+      alert(`Import failed: ${errorMessage}`);
+    } finally {
+      // Clear the file input
+      event.target.value = '';
     }
   }
 
   downloadTemplate() {
-    window.location.href = '/deposits/template';
+    // Create a simple CSV template
+    const csvContent = 'Customer Code,Customer Name,Amount,Penalty,Date,Remark\n' +
+                      'CUST001,John Doe,10000,0,2024-01-15,Sample deposit\n' +
+                      'CUST002,Jane Smith,15000,500,2024-01-16,Another deposit';
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'deposits_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   onSidenavToggle(collapsed: boolean) {

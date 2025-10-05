@@ -23,10 +23,10 @@
           </button>
         </div>
         <div class="header-actions">
-          <button class="btn-primary" (click)="openCreateModal()">
+          <button type="button" class="btn-primary" (click)="openCreateModal()">
             <i class="fas fa-plus"></i> New Deposit
           </button>
-          <button class="btn-secondary" (click)="downloadTemplate()">
+          <button type="button" class="btn-secondary" (click)="downloadTemplate()">
             <i class="fas fa-download"></i> Template
           </button>
           <label class="btn-upload">
@@ -81,10 +81,25 @@
 <div class="modal" [class.show]="showModal">
   <div class="modal-content">
     <div class="modal-header">
-      <h3>{{ editingDeposit ? 'Edit' : 'Create' }} Deposit</h3>
-      <button class="modal-close" (click)="closeModal()">×</button>
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-piggy-bank"></i>
+        </div>
+        <div class="header-text">
+          <h3>{{ editingDeposit ? 'Edit' : 'Create' }} Deposit</h3>
+          <p>{{ editingDeposit ? 'Update deposit information and details' : 'Add a new deposit to the system' }}</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-secondary" (click)="closeModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" form="depositForm" class="btn-primary">
+          <i class="fas fa-save"></i> Save
+        </button>
+      </div>
     </div>
-    <form (submit)="saveDeposit($event)" class="deposit-form">
+    <form id="depositForm" (submit)="saveDeposit($event)" class="deposit-form">
       <div class="form-grid">
         <div class="form-group">
           <label>Customer *</label>
@@ -115,12 +130,6 @@
           <label>Remark</label>
           <textarea name="remark" [(ngModel)]="depositForm.remark" rows="3" placeholder="Optional remark"></textarea>
         </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
-        <button type="submit" class="btn-primary">
-          {{ editingDeposit ? 'Update' : 'Create' }} Deposit
-        </button>
       </div>
     </form>
   </div>

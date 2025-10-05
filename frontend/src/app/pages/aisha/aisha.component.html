@@ -1,5 +1,6 @@
-<!-- AISHA Standalone Page -->
-<div class="aisha-container">
+<!-- AISHA with Sidebar Navigation -->
+<app-main-layout>
+  <div class="aisha-container">
   <!-- Left Side - AISHA Avatar -->
   <div class="avatar-section">
     <div class="avatar-container" [class.glowing]="isGlowing" [class.blinking]="isBlinking">
@@ -121,7 +122,7 @@
           #messageInput
           [(ngModel)]="currentMessage"
           (keypress)="onKeyPress($event)"
-          placeholder="Type your message to AISHA..."
+          placeholder="Type your message to AISHA or speak..."
           class="message-input"
           rows="1">
         </textarea>
@@ -145,4 +146,5 @@
       </div>
     </div>
   </div>
-</div>
+  </div>
+</app-main-layout>

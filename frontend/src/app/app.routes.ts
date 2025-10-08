@@ -13,7 +13,6 @@ import { LicProductsComponent } from './pages/lic-products/lic-products.componen
 import { LicPremiumCalculatorComponent } from './pages/lic-premium-calculator/lic-premium-calculator.component';
 import { LaundryComponent } from './pages/laundry/laundry.component';
 import { BillingConfigComponent } from './pages/billing-config/billing-config.component';
-import { AISHAComponent } from './pages/aisha/aisha.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -30,7 +29,6 @@ export const routes: Routes = [
   { path: 'calculator', component: EmiCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
   { path: 'laundry', component: LaundryComponent, canActivate: [authGuard], data: { roles: ['admin', 'clothAura'] } },
   { path: 'billing-config', component: BillingConfigComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'clothAura'] } },
-  { path: 'aisha', component: AISHAComponent, canActivate: [authGuard], data: { roles: ['admin', 'lic'] } },
 
   { path: '**', redirectTo: 'login' }
 ];

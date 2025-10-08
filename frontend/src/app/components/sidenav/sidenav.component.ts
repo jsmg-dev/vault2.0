@@ -28,6 +28,37 @@ export interface NavItem {
           <span>Powered by SBBF</span>
         </div>
       </div>
+
+      <!-- Profile Picture Section -->
+      <div class="profile-section" [class.collapsed]="collapsed">
+        <div class="profile-picture-container" (click)="onProfilePictureClick()">
+          <img 
+            *ngIf="profilePicture"
+            [src]="profilePicture" 
+            alt="Profile Picture" 
+            class="profile-picture"
+            [class.profile-small]="collapsed"
+            (error)="onImageError()"
+          />
+          <div *ngIf="!profilePicture" class="profile-picture-placeholder">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="profile-upload-overlay" *ngIf="!collapsed">
+            <i class="fas fa-camera"></i>
+          </div>
+        </div>
+        <div class="profile-info" *ngIf="!collapsed">
+          <span class="profile-name">{{ userName || 'User' }}</span>
+          <span class="profile-role">{{ userRole || 'Role' }}</span>
+        </div>
+        <input 
+          type="file" 
+          #fileInput 
+          (change)="onProfilePictureChange($event)" 
+          accept="image/*" 
+          style="display: none;"
+        />
+      </div>
       
       <div class="nav-items">
         <a 
@@ -83,6 +114,103 @@ export interface NavItem {
       position: relative;
       box-sizing: border-box;
       padding: 10px;
+    }
+
+    .profile-section {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .profile-section.collapsed {
+      padding: 10px;
+    }
+
+    .profile-picture-container {
+      position: relative;
+      cursor: pointer;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .sidenav.collapsed .profile-picture-container {
+      width: 45px;
+      height: 45px;
+    }
+
+    .profile-picture {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: all 0.3s ease;
+    }
+
+    .profile-upload-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .profile-picture-container:hover .profile-upload-overlay {
+      opacity: 1;
+    }
+
+    .profile-upload-overlay i {
+      font-size: 24px;
+      color: white;
+    }
+
+    .profile-picture-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-picture-placeholder i {
+      font-size: 40px;
+      color: white;
+    }
+
+    .sidenav.collapsed .profile-picture-placeholder i {
+      font-size: 24px;
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .profile-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .profile-role {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: capitalize;
     }
 
 
@@ -255,9 +383,13 @@ export class SidenavComponent implements OnInit, OnDestroy {
   @Input() collapsed: boolean = false;
   @Input() userRole: string = '';
   @Input() navItems: NavItem[] = [];
+  @Input() userName: string = '';
+  @Input() profilePicture: string = '';
   @Output() toggle = new EventEmitter<boolean>();
+  @Output() profilePictureChange = new EventEmitter<File>();
 
   private languageSubscription: Subscription = new Subscription();
+  private fileInput: any;
 
   constructor(private languageService: LanguageService) {}
 
@@ -296,5 +428,32 @@ export class SidenavComponent implements OnInit, OnDestroy {
   toggleCollapse() {
     this.collapsed = !this.collapsed;
     this.toggle.emit(this.collapsed);
+  }
+
+  onProfilePictureClick() {
+    // Trigger file input click
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  onProfilePictureChange(event: any) {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      this.profilePictureChange.emit(file);
+      
+      // Create a preview of the uploaded image
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.profilePicture = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onImageError() {
+    // If image fails to load, clear the profile picture to show placeholder
+    this.profilePicture = '';
   }
 }

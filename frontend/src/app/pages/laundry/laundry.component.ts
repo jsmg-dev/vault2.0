@@ -144,6 +144,10 @@ declare var Chart: any;
       <div class="tab-content" *ngIf="activeTab === 'customers'">
         <div class="section-header">
           <div class="header-left">
+            <button class="btn secondary" (click)="goBack()" style="margin-right: 15px;">
+              <i class="fas fa-arrow-left"></i>
+              Back
+            </button>
             <div class="search-box">
               <i class="fas fa-search"></i>
               <input 
@@ -173,7 +177,10 @@ declare var Chart: any;
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ translate('common.actions') }}</th>
+                <th style="padding-right: 0;">
+                  <input type="checkbox" (change)="selectAll($event)" [checked]="selectAllChecked" />
+                </th>
+                <th style="padding-left: 0; width: auto;">{{ translate('common.actions') }}</th>
                 <th>ID</th>
                 <th>Name</th>
                 <th>Phone</th>
@@ -186,8 +193,13 @@ declare var Chart: any;
             </thead>
             <tbody>
               <tr *ngFor="let customer of filteredCustomers">
-                <td style="text-align: left;">
-                  <div class="action-buttons" style="display: flex; justify-content: flex-start; gap: 5px;">
+                <td style="padding-right: 0;">
+                  <input type="checkbox" 
+                         [checked]="isCustomerSelected(customer.id)"
+                         (change)="toggleCustomerSelection(customer.id)" />
+                </td>
+                <td style="text-align: left; padding-left: 0; width: auto;">
+                  <div class="action-buttons" style="display: flex; justify-content: flex-start; gap: 1px;">
                     <button class="btn-small primary" (click)="viewCustomer(customer.id)" title="{{ translate('common.view') }}">
                       <i class="fas fa-eye"></i>
                     </button>
@@ -221,6 +233,10 @@ declare var Chart: any;
       <div class="tab-content" *ngIf="activeTab === 'services'">
         <div class="section-header">
               <div class="header-left">
+                <button class="btn secondary" (click)="goBack()" style="margin-right: 15px;">
+                  <i class="fas fa-arrow-left"></i>
+                  Back
+                </button>
                 <div class="form-group">
                   <label for="servicesDropdown">Services</label>
                   <div class="dropdown-container">
@@ -4713,6 +4729,13 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   billItemsForView: any[] = []; // Cached bill items for view modal
   editingCustomer: any = null;
   
+  // Customer selection properties
+  selectedCustomers: string[] = [];
+  selectAllChecked: boolean = false;
+
+  // Track previous tab for back navigation
+  previousTab: string = 'board';
+
   // Chart instances for proper cleanup
   private barChart: any = null;
   private pieChart: any = null;
@@ -4842,7 +4865,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   services = [
     // Men's Services - Comprehensive Collection
-    { id: 'M001', name: 'Men Formal Shirt', description: 'Wash & Iron for Men Formal Shirts', price: 25, laundryPrice: 25, dryCleanPrice: 45, ironingPrice: 15, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
+    { id: 'M001', name: 'Men Formal Shirt', description: 'Wash & Iron for Men Formal Shirts', price: 25, laundryPrice: 25, dryCleanPrice: 45, ironingPrice: 15, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Formal Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT', hasChanges: false },
     { id: 'M002', name: 'Men Casual Shirt', description: 'Wash & Iron for Men Casual Shirts', price: 22, laundryPrice: 22, dryCleanPrice: 40, ironingPrice: 12, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Casual Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
     { id: 'M003', name: 'Men T-Shirt', description: 'Wash & Iron for Men T-Shirts', price: 20, laundryPrice: 20, dryCleanPrice: 35, ironingPrice: 10, icon: 'fas fa-tshirt', category: 'Men', clothType: 'T-Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
     { id: 'M004', name: 'Men Polo Shirt', description: 'Wash & Iron for Men Polo Shirts', price: 23, laundryPrice: 23, dryCleanPrice: 40, ironingPrice: 12, icon: 'fas fa-tshirt', category: 'Men', clothType: 'Polo Shirt', pickup: true, photo: 'https://via.placeholder.com/80x80/3b82f6/ffffff?text=SHIRT' },
@@ -4978,13 +5001,6 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
       this.updateBreadcrumbItems();
     });
-    
-    // Check for tab query parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const tab = urlParams.get('tab');
-    if (tab === 'whatsapp') {
-      this.activeTab = 'whatsapp';
-    }
     
     // Initialize price properties for all services
     this.initializeServicePrices();
@@ -5309,6 +5325,13 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setActiveTab(tab: string) {
     console.log('Switching to tab:', tab);
+    
+    // Save previous tab before switching (but not if we're on customers or services tab going somewhere)
+    // This prevents overwriting the original previousTab when navigating away from customers/services
+    if (this.activeTab !== tab && this.activeTab !== 'customers' && this.activeTab !== 'services') {
+      this.previousTab = this.activeTab;
+    }
+    
     this.activeTab = tab;
     
     // If switching to dashboard, reinitialize charts after a delay
@@ -5322,7 +5345,74 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   navigateToBoard() {
-    this.setActiveTab('board');
+    console.log('navigateToBoard called. Current tab:', this.activeTab, 'Previous tab:', this.previousTab);
+    
+    // Check if we have a previous tab to go back to
+    if (this.activeTab === 'customers' && this.previousTab && this.previousTab !== 'customers') {
+      // Go back to the previous tab
+      console.log('Going back to previous tab:', this.previousTab);
+      const backToTab = this.previousTab;
+      // Directly set activeTab without calling setActiveTab to avoid interference
+      this.activeTab = backToTab;
+      this.previousTab = 'board'; // Reset to default
+      // Clear the filter when going back
+      this.customerFilter = '';
+      this.filterCustomers();
+      
+      // If going back to dashboard, reinitialize charts
+      if (backToTab === 'dashboard') {
+        setTimeout(() => {
+          this.destroyCharts();
+          this.initCharts();
+        }, 300);
+      }
+    } else {
+      // Default behavior: go to board
+      console.log('Going to board tab (default behavior)');
+      this.activeTab = 'board';
+      this.customerFilter = '';
+      this.filterCustomers();
+    }
+  }
+
+  goBack() {
+    console.log('goBack called. Current tab:', this.activeTab, 'Previous tab:', this.previousTab);
+    
+    // Go back to the previous tab
+    if (this.previousTab && this.previousTab !== 'customers' && this.previousTab !== 'services') {
+      console.log('Navigating back to:', this.previousTab);
+      const backToTab = this.previousTab;
+      // Directly set activeTab
+      this.activeTab = backToTab;
+      this.previousTab = 'board'; // Reset to default
+      
+      // Clear filters based on current tab
+      if (this.activeTab === 'customers') {
+        this.customerFilter = '';
+        this.customerSearchTerm = '';
+        this.filterCustomers();
+      } else if (this.activeTab === 'services') {
+        this.serviceSearchTerm = '';
+        this.cartServiceTypeFilter = 'laundry';
+        this.selectedServiceFor = '';
+      }
+      
+      // If going back to dashboard, reinitialize charts
+      if (backToTab === 'dashboard') {
+        setTimeout(() => {
+          this.destroyCharts();
+          this.initCharts();
+        }, 300);
+      }
+    } else {
+      // Default: go to board if no previous tab
+      console.log('No previous tab, going to board');
+      this.activeTab = 'board';
+      this.customerFilter = '';
+      this.customerSearchTerm = '';
+      this.serviceSearchTerm = '';
+      this.filterCustomers();
+    }
   }
 
   // Services field methods
@@ -5407,7 +5497,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
         service.clothType.toLowerCase().includes(searchTerm)
       );
     }
-    
+
     this.filteredServices = filtered;
   }
 
@@ -5654,6 +5744,10 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       
       return matchesSearch && matchesFilter;
     });
+    
+    // Reset checkbox states when filtering
+    this.selectedCustomers = [];
+    this.selectAllChecked = false;
   }
 
 
@@ -7086,10 +7180,17 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Filter customers by status and switch to customers tab
   filterByStatus(statusId: string) {
-    console.log('Filtering by status:', statusId);
+    console.log('Filtering by status:', statusId, 'Current tab:', this.activeTab);
+    
+    // Save current tab before switching (don't overwrite if already set)
+    if (this.activeTab !== 'customers') {
+      this.previousTab = this.activeTab;
+      console.log('Saved previous tab:', this.previousTab);
+    }
     
     // Switch to customers tab
     this.activeTab = 'customers';
+    console.log('Switched to customers tab');
     
     // Set the filter
     this.customerFilter = statusId;
@@ -7100,6 +7201,34 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
     // Show success message
     const statusName = this.getStatusDisplayName(statusId);
     this.toastService.success(`Filtered customers by status: ${statusName}`);
+  }
+
+  // Checkbox functionality for customer selection
+  selectAll(event: any) {
+    const isChecked = event.target.checked;
+    this.selectAllChecked = isChecked;
+    
+    if (isChecked) {
+      this.selectedCustomers = this.filteredCustomers.map(customer => customer.id);
+    } else {
+      this.selectedCustomers = [];
+    }
+  }
+
+  toggleCustomerSelection(customerId: string) {
+    const index = this.selectedCustomers.indexOf(customerId);
+    if (index > -1) {
+      this.selectedCustomers.splice(index, 1);
+    } else {
+      this.selectedCustomers.push(customerId);
+    }
+    
+    // Update select all checkbox state
+    this.selectAllChecked = this.selectedCustomers.length === this.filteredCustomers.length;
+  }
+
+  isCustomerSelected(customerId: string): boolean {
+    return this.selectedCustomers.includes(customerId);
   }
 
   getStatusDisplayName(statusId: string): string {

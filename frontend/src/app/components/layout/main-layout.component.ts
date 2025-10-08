@@ -18,8 +18,11 @@ import { Subscription } from 'rxjs';
       <app-sidenav 
         [collapsed]="sidenavCollapsed" 
         [userRole]="userRole" 
+        [userName]="userName"
+        [profilePicture]="profilePicture"
         [navItems]="navItems"
         (toggle)="onSidenavToggle($event)"
+        (profilePictureChange)="onProfilePictureChange($event)"
       ></app-sidenav>
 
       <div class="content-area" [class.sidenav-collapsed]="sidenavCollapsed">
@@ -94,11 +97,18 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   // Centralized navigation items
   navItems: NavItem[] = [];
 
+  // User profile information
+  userName: string = '';
+  profilePicture: string = '';
+
   constructor(private languageService: LanguageService) {}
 
   ngOnInit() {
     // Initialize navigation items
     this.initializeNavigationItems();
+    
+    // Load user profile information
+    this.loadUserProfile();
     
     // Subscribe to language changes to update navigation labels
     this.languageSubscription = this.languageService.currentLanguage$.subscribe(() => {
@@ -119,7 +129,6 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
-      { label: 'AISHA', icon: 'fas fa-robot', route: '/aisha', roles: ['admin', 'lic'] },
     ];
     console.log('MainLayout - Initialized navItems:', this.navItems);
   }
@@ -141,7 +150,6 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
-      { label: 'AISHA', icon: 'fas fa-robot', route: '/aisha', roles: ['admin', 'lic'] },
     ];
     console.log('MainLayout - Updated navItems:', this.navItems);
   }
@@ -168,6 +176,86 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     // Refresh the profile picture in header after profile panel is closed
     if (this.headerComponent) {
       this.headerComponent.refreshProfilePic();
+    }
+    // Reload user profile to update sidebar picture
+    this.loadUserProfile();
+  }
+
+  async loadUserProfile() {
+    // Get user info from session storage
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        this.userName = user.name || user.username || 'User';
+        console.log('Loading profile for user:', this.userName, 'ID:', user.id);
+        
+        // Fetch profile picture from backend
+        if (user.id) {
+          try {
+            const response = await fetch(`http://localhost:3000/api/users/profile/${user.id}`, {
+              credentials: 'include'
+            });
+            
+            if (response.ok) {
+              const userData = await response.json();
+              console.log('User data from API:', userData);
+              
+              // Check if user has a profile picture
+              if (userData.profile_pic) {
+                const timestamp = new Date().getTime();
+                this.profilePicture = `http://localhost:3000/uploads/profile/${userData.profile_pic}?t=${timestamp}`;
+                console.log('Setting profile picture URL:', this.profilePicture);
+              } else {
+                this.profilePicture = '';
+                console.log('No profile picture found in database');
+              }
+            } else {
+              console.error('API response not OK:', response.status);
+              this.profilePicture = '';
+            }
+          } catch (error) {
+            console.error('Error fetching user profile from API:', error);
+            this.profilePicture = '';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      }
+    }
+  }
+
+  async onProfilePictureChange(file: File) {
+    // Get user info
+    const userStr = sessionStorage.getItem('user');
+    if (!userStr) return;
+
+    const user = JSON.parse(userStr);
+    const userId = user.id;
+
+    // Upload profile picture
+    const formData = new FormData();
+    formData.append('profile_pic', file);
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/users/upload-profile-pic/${userId}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      const data = await response.json();
+      console.log('Upload response:', data);
+      
+      if (response.ok && data.profile_pic) {
+        // Reload profile to get the updated picture
+        await this.loadUserProfile();
+        console.log('Profile picture uploaded and sidebar updated');
+      } else {
+        console.error('Upload failed:', data);
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
     }
   }
 }

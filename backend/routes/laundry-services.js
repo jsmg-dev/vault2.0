@@ -1,20 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
-
-// Database connection
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'vault_db',
-  password: 'postgres',
-  port: 5432,
-});
+const db = require('../db'); // Use shared database connection
 
 // Get all laundry services
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         id,
         service_id,
@@ -46,7 +37,7 @@ router.get('/', async (req, res) => {
 router.get('/category/:category', async (req, res) => {
   try {
     const { category } = req.params;
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         id,
         service_id,
@@ -79,7 +70,7 @@ router.get('/category/:category', async (req, res) => {
 router.get('/cloth-type/:clothType', async (req, res) => {
   try {
     const { clothType } = req.params;
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         id,
         service_id,
@@ -112,7 +103,7 @@ router.get('/cloth-type/:clothType', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         id,
         service_id,
@@ -167,7 +158,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await pool.query(`
+    const result = await db.query(`
       INSERT INTO laundry_services (
         service_id, name, description, price, laundry_price, dry_clean_price, ironing_price,
         category, cloth_type, icon, pickup, photo
@@ -207,7 +198,7 @@ router.put('/:id', async (req, res) => {
       photo
     } = req.body;
 
-    const result = await pool.query(`
+    const result = await db.query(`
       UPDATE laundry_services 
       SET 
         name = COALESCE($2, name),
@@ -241,7 +232,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(`
+    const result = await db.query(`
       DELETE FROM laundry_services 
       WHERE id = $1 OR service_id = $1
       RETURNING *
@@ -262,7 +253,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/search/:query', async (req, res) => {
   try {
     const { query } = req.params;
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         id,
         service_id,

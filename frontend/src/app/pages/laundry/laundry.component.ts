@@ -3005,7 +3005,7 @@ declare var Chart: any;
 
     .modal-header {
       padding: 20px 25px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -3041,53 +3041,58 @@ declare var Chart: any;
     }
 
     .modal-header .header-actions .btn-secondary {
-      background: rgba(255, 255, 255, 0.2);
+      background: #6b7280;
       color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 8px 16px;
-      font-size: 13px;
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
+      min-width: 100px;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
     }
 
     .modal-header .header-actions .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: rgba(255, 255, 255, 0.5);
+      background: #4b5563;
       transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
     }
 
     .modal-header .header-actions .btn-primary {
-      background: rgba(255, 255, 255, 0.9);
-      color: #3b82f6;
-      border: 1px solid rgba(255, 255, 255, 0.9);
-      padding: 8px 16px;
-      font-size: 13px;
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
+      min-width: 120px;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
     }
 
     .modal-header .header-actions .btn-primary:hover {
-      background: white;
-      color: #1d4ed8;
+      background: #059669;
       transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
     }
 
     .modal-header .header-actions .btn-primary:disabled {
       background: #9ca3af;
-      border-color: #9ca3af;
+      color: #6b7280;
       cursor: not-allowed;
       transform: none;
       box-shadow: none;
@@ -3150,62 +3155,83 @@ declare var Chart: any;
       box-shadow: none;
     }
 
-    /* Themed Save Button - Matching Loan Customer Style */
+    /* Modern Save Button - Clean Design */
     .modal-header .header-actions .btn-save-themed {
-      background: rgba(255, 255, 255, 0.9);
-      color: #000000;
-      border: 1px solid rgba(255, 255, 255, 0.9);
+      background: #10b981 !important;
+      color: white !important;
+      border: none !important;
+      outline: none !important;
       font-weight: 600;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      padding: 8px 16px;
-      font-size: 13px;
+      padding: 12px 20px;
+      font-size: 14px;
       border-radius: 6px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
+      min-width: 120px;
+      justify-content: center;
+      box-shadow: none !important;
     }
 
     .modal-header .header-actions .btn-save-themed:hover {
-      background: white;
-      color: #000000;
+      background: #059669 !important;
       transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
     }
 
     .modal-header .header-actions .btn-save-themed:disabled {
-      background: rgba(255, 255, 255, 0.5);
-      color: rgba(0, 0, 0, 0.5);
-      border-color: rgba(255, 255, 255, 0.5);
+      background: #9ca3af !important;
+      color: #6b7280 !important;
       cursor: not-allowed;
       transform: none;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: none;
     }
 
-    /* Cancel Button - Matching Loan Customer Style */
+    /* Modern Cancel Button - Clean Design */
     .modal-header .header-actions .btn-cancel-themed {
-      background: rgba(255, 255, 255, 0.2);
-      color: #000000;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: #6b7280 !important;
+      color: white !important;
+      border: none !important;
+      outline: none !important;
       font-weight: 600;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      padding: 8px 16px;
-      font-size: 13px;
+      padding: 12px 20px;
+      font-size: 14px;
       border-radius: 6px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
+      min-width: 100px;
+      justify-content: center;
+      box-shadow: none !important;
     }
 
     .modal-header .header-actions .btn-cancel-themed:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: rgba(255, 255, 255, 0.5);
-      color: #000000;
+      background: #4b5563 !important;
       transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+    }
+
+    /* Force override any conflicting button styles */
+    .modal-header .header-actions button.btn-cancel-themed {
+      background: #6b7280 !important;
+      color: white !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    .modal-header .header-actions button.btn-save-themed {
+      background: #10b981 !important;
+      color: white !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
     }
 
     .close-btn {
@@ -3513,25 +3539,26 @@ declare var Chart: any;
     .btn.primary {
       background: #3b82f6;
       color: white;
-      border: 2px solid #3b82f6;
+      border: none;
       box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }
 
     .btn.primary:hover {
       background: #2563eb;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
 
     .btn.secondary {
       background: #6b7280;
       color: white;
+      border: none;
     }
 
     .btn.secondary:hover {
       background: #4b5563;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+      box-shadow: 0 4px 8px rgba(75, 85, 99, 0.3);
     }
 
     /* Responsive */
@@ -3618,14 +3645,16 @@ declare var Chart: any;
       gap: 8px;
       align-items: center;
       flex-wrap: nowrap;
-      background-color: white;
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #dee2e6;
       width: 100%;
       max-width: none;
       flex: 1;
       overflow: visible;
+    }
+
+    /* Specific alignment for modal header actions */
+    .modal-header .header-actions {
+      justify-content: flex-end;
+      margin-left: auto;
     }
 
     .header-actions .btn {

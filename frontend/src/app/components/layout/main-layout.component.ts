@@ -22,7 +22,6 @@ import { Subscription } from 'rxjs';
         [profilePicture]="profilePicture"
         [navItems]="navItems"
         (toggle)="onSidenavToggle($event)"
-        (profilePictureChange)="onProfilePictureChange($event)"
       ></app-sidenav>
 
       <div class="content-area" [class.sidenav-collapsed]="sidenavCollapsed">
@@ -98,7 +97,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   navItems: NavItem[] = [];
 
   // User profile information
-  userName: string = '';
+  userName: string = 'User';
   profilePicture: string = '';
 
   constructor(private languageService: LanguageService) {}
@@ -127,6 +126,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       { label: this.languageService.translate('nav.policies'), icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'lic'] },
       { label: this.languageService.translate('nav.emi_calculator'), icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
+      { label: this.languageService.translate('nav.settings'), icon: 'fas fa-cog', route: '/whatsapp-settings', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
     ];
@@ -148,6 +148,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       { label: this.languageService.translate('nav.policies'), icon: 'fas fa-file-contract', route: '/policies', roles: ['admin', 'lic'] },
       { label: this.languageService.translate('nav.emi_calculator'), icon: 'fas fa-calculator', route: '/calculator', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.clothaura'), icon: 'fas fa-tshirt', route: '/laundry', roles: ['admin', 'clothAura'] },
+      { label: this.languageService.translate('nav.settings'), icon: 'fas fa-cog', route: '/whatsapp-settings', roles: ['admin', 'clothAura'] },
       { label: this.languageService.translate('nav.reports'), icon: 'fas fa-chart-bar', route: '/reports', roles: ['admin', 'user'] },
       { label: this.languageService.translate('nav.user_management'), icon: 'fas fa-user-cog', route: '/users', roles: ['admin'] },
     ];
@@ -188,12 +189,11 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       try {
         const user = JSON.parse(userStr);
         this.userName = user.name || user.username || 'User';
-        console.log('Loading profile for user:', this.userName, 'ID:', user.id);
         
         // Fetch profile picture from backend
         if (user.id) {
           try {
-            const response = await fetch(`http://localhost:3000/api/users/profile/${user.id}`, {
+            const response = await fetch(`http://localhost:8080/api/users/profile/${user.id}`, {
               credentials: 'include'
             });
             
@@ -204,7 +204,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
               // Check if user has a profile picture
               if (userData.profile_pic) {
                 const timestamp = new Date().getTime();
-                this.profilePicture = `http://localhost:3000/uploads/profile/${userData.profile_pic}?t=${timestamp}`;
+                this.profilePicture = `http://localhost:8080/uploads/profile/${userData.profile_pic}?t=${timestamp}`;
                 console.log('Setting profile picture URL:', this.profilePicture);
               } else {
                 this.profilePicture = '';
@@ -238,7 +238,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     formData.append('profile_pic', file);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/users/upload-profile-pic/${userId}`, {
+      const response = await fetch(`http://localhost:8080/api/users/upload-profile-pic/${userId}`, {
         method: 'POST',
         credentials: 'include',
         body: formData

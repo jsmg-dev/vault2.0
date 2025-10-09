@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LanguageService } from '../../services/language.service';
@@ -29,9 +29,9 @@ export interface NavItem {
         </div>
       </div>
 
-      <!-- Profile Picture Section -->
+      <!-- Profile Picture Section (below logo) -->
       <div class="profile-section" [class.collapsed]="collapsed">
-        <div class="profile-picture-container" (click)="onProfilePictureClick()">
+        <div class="profile-picture-container">
           <img 
             *ngIf="profilePicture"
             [src]="profilePicture" 
@@ -43,21 +43,11 @@ export interface NavItem {
           <div *ngIf="!profilePicture" class="profile-picture-placeholder">
             <i class="fas fa-user"></i>
           </div>
-          <div class="profile-upload-overlay" *ngIf="!collapsed">
-            <i class="fas fa-camera"></i>
-          </div>
         </div>
         <div class="profile-info" *ngIf="!collapsed">
           <span class="profile-name">{{ userName || 'User' }}</span>
           <span class="profile-role">{{ userRole || 'Role' }}</span>
         </div>
-        <input 
-          type="file" 
-          #fileInput 
-          (change)="onProfilePictureChange($event)" 
-          accept="image/*" 
-          style="display: none;"
-        />
       </div>
       
       <div class="nav-items">
@@ -117,7 +107,7 @@ export interface NavItem {
     }
 
     .profile-section {
-      padding: 20px;
+      padding: 15px 20px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       flex-direction: column;
@@ -132,7 +122,6 @@ export interface NavItem {
 
     .profile-picture-container {
       position: relative;
-      cursor: pointer;
       width: 80px;
       height: 80px;
       border-radius: 50%;
@@ -151,29 +140,6 @@ export interface NavItem {
       height: 100%;
       object-fit: cover;
       transition: all 0.3s ease;
-    }
-
-    .profile-upload-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .profile-picture-container:hover .profile-upload-overlay {
-      opacity: 1;
-    }
-
-    .profile-upload-overlay i {
-      font-size: 24px;
-      color: white;
     }
 
     .profile-picture-placeholder {
@@ -212,7 +178,6 @@ export interface NavItem {
       color: rgba(255, 255, 255, 0.7);
       text-transform: capitalize;
     }
-
 
     .logo {
       width: calc(100% - 4px);
@@ -379,19 +344,21 @@ export interface NavItem {
     }
   `]
 })
-export class SidenavComponent implements OnInit, OnDestroy {
+export class SidenavComponent implements OnInit, OnDestroy, OnChanges {
   @Input() collapsed: boolean = false;
   @Input() userRole: string = '';
   @Input() navItems: NavItem[] = [];
   @Input() userName: string = '';
   @Input() profilePicture: string = '';
   @Output() toggle = new EventEmitter<boolean>();
-  @Output() profilePictureChange = new EventEmitter<File>();
 
   private languageSubscription: Subscription = new Subscription();
-  private fileInput: any;
 
   constructor(private languageService: LanguageService) {}
+
+  ngOnChanges(changes: SimpleChanges) {
+    // Handle input changes if needed
+  }
 
   ngOnInit() {
     // Subscribe to language changes to update navigation labels
@@ -428,28 +395,6 @@ export class SidenavComponent implements OnInit, OnDestroy {
   toggleCollapse() {
     this.collapsed = !this.collapsed;
     this.toggle.emit(this.collapsed);
-  }
-
-  onProfilePictureClick() {
-    // Trigger file input click
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.click();
-    }
-  }
-
-  onProfilePictureChange(event: any) {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      this.profilePictureChange.emit(file);
-      
-      // Create a preview of the uploaded image
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.profilePicture = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
   }
 
   onImageError() {

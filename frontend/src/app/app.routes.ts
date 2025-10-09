@@ -13,6 +13,7 @@ import { LicProductsComponent } from './pages/lic-products/lic-products.componen
 import { LicPremiumCalculatorComponent } from './pages/lic-premium-calculator/lic-premium-calculator.component';
 import { LaundryComponent } from './pages/laundry/laundry.component';
 import { BillingConfigComponent } from './pages/billing-config/billing-config.component';
+import { WhatsappSettingsComponent } from './pages/whatsapp-settings/whatsapp-settings.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -29,6 +30,7 @@ export const routes: Routes = [
   { path: 'calculator', component: EmiCalculatorComponent, canActivate: [authGuard], data: { roles: ['admin', 'user'] } },
   { path: 'laundry', component: LaundryComponent, canActivate: [authGuard], data: { roles: ['admin', 'clothAura'] } },
   { path: 'billing-config', component: BillingConfigComponent, canActivate: [authGuard], data: { roles: ['admin', 'user', 'clothAura'] } },
+  { path: 'whatsapp-settings', component: WhatsappSettingsComponent, canActivate: [authGuard], data: { roles: ['admin', 'clothAura'] } },
 
   { path: '**', redirectTo: 'login' }
 ];

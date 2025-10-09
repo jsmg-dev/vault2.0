@@ -68,14 +68,6 @@ declare var Chart: any;
           <i class="fas fa-receipt"></i>
           Billing
         </button>
-        <button 
-          class="tab-btn" 
-          [class.active]="activeTab === 'whatsapp'"
-          (click)="setActiveTab('whatsapp')"
-        >
-          <i class="fas fa-cog"></i>
-          {{ translate('nav.settings') }}
-        </button>
       </div>
 
       <!-- Dashboard Tab -->
@@ -270,15 +262,36 @@ declare var Chart: any;
                 </div>
               </div>
                 </div>
-          <button class="btn primary" (click)="openServiceModal()">
-            <i class="fas fa-plus"></i>
-            Add New Service
-          </button>
+          <div class="header-right">
+            <div class="view-toggle">
+              <button 
+                class="view-btn" 
+                [class.active]="servicesViewMode === 'grid'"
+                (click)="servicesViewMode = 'grid'"
+                title="Grid View"
+              >
+                <i class="fas fa-th"></i>
+              </button>
+              <button 
+                class="view-btn" 
+                [class.active]="servicesViewMode === 'list'"
+                (click)="servicesViewMode = 'list'"
+                title="List View"
+              >
+                <i class="fas fa-list"></i>
+              </button>
+            </div>
+            <button class="btn primary" (click)="openServiceModal()">
+              <i class="fas fa-plus"></i>
+              Add New Service
+            </button>
+          </div>
         </div>
 
         <!-- Filtered Services -->
         <div class="service-category">
-          <div class="services-grid" *ngIf="filteredServices.length > 0">
+          <!-- Grid View -->
+          <div class="services-grid" *ngIf="filteredServices.length > 0 && servicesViewMode === 'grid'">
             <div class="service-card" *ngFor="let service of filteredServices; trackBy: trackByServiceId">
               <div class="service-image-section">
                 <div class="service-photo" [style.background-color]="getServiceColor(service.category, service.clothType)">
@@ -311,10 +324,66 @@ declare var Chart: any;
                 <div class="service-actions">
                   <button class="btn-small primary" (click)="editService(service.id)">Edit</button>
                   <button class="btn-small danger" (click)="deleteService(service.id)">Delete</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+
+          <!-- List View -->
+          <div class="services-list" *ngIf="filteredServices.length > 0 && servicesViewMode === 'list'">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Service Name</th>
+                  <th>Category</th>
+                  <th>Cloth Type</th>
+                  <th>{{ getServiceTypeDisplayName() }} Price</th>
+                  <th>Pickup Available</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let service of filteredServices; trackBy: trackByServiceId">
+                  <td>
+                    <div class="service-name-cell">
+                      <span class="service-emoji">{{ getServiceEmoji(service.clothType) }}</span>
+                      <span>{{ translateServiceName(service.name) }}</span>
+                    </div>
+                  </td>
+                  <td>{{ service.category }}</td>
+                  <td>{{ service.clothType }}</td>
+                  <td>
+                    <div class="price-display">
+                      ₹<input 
+                        type="number" 
+                        [value]="getServicePrice(service)" 
+                        (input)="onPriceInput(service, $event)"
+                        class="price-input-inline" 
+                        min="0" 
+                        step="1"
+                      >
+                    </div>
+                  </td>
+                  <td>
+                    <span class="pickup-badge" [class]="service.pickup ? 'available' : 'unavailable'">
+                      <i class="fas fa-truck"></i>
+                      {{ service.pickup ? 'Yes' : 'No' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button class="btn-small primary" (click)="editService(service.id)" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-small danger" (click)="deleteService(service.id)" title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           <!-- No services found message -->
           <div class="no-services-message" *ngIf="filteredServices.length === 0">
@@ -322,7 +391,7 @@ declare var Chart: any;
               <i class="fas fa-search"></i>
               <h3>No services found</h3>
               <p>No services match the selected criteria. Try adjusting your filters.</p>
-                  </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2083,11 +2152,130 @@ declare var Chart: any;
       background: #f9fafb;
     }
 
+    /* View Toggle */
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-right: 10px;
+    }
+
+    .view-btn {
+      padding: 8px 12px;
+      border: none;
+      background: white;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-right: 1px solid #ddd;
+    }
+
+    .view-btn:last-child {
+      border-right: none;
+    }
+
+    .view-btn.active {
+      background: #007bff;
+      color: white;
+    }
+
+    .view-btn:hover:not(.active) {
+      background: #f8f9fa;
+    }
+
+    .view-btn i {
+      font-size: 14px;
+    }
+
     /* Services Grid */
     .services-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
+    }
+
+    /* Services List View */
+    .services-list {
+      margin-top: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .services-list .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .services-list .data-table th {
+      background: #f8f9fa;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .services-list .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e9ecef;
+      color: #666;
+    }
+
+    .services-list .data-table tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .service-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .service-name-cell .service-emoji {
+      font-size: 24px;
+    }
+
+    .price-display {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .price-input-inline {
+      width: 80px;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-align: right;
+    }
+
+    .price-input-inline:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    .pickup-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .pickup-badge.available {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .pickup-badge.unavailable {
+      background: #f8d7da;
+      color: #721c24;
     }
 
     /* No Services Message */
@@ -4346,6 +4534,19 @@ declare var Chart: any;
     }
 
     /* Bill Setup Modal Styles */
+    .settings-content {
+      padding: 20px;
+    }
+
+    .settings-content h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .settings-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -4735,6 +4936,9 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Track previous tab for back navigation
   previousTab: string = 'board';
+
+  // Services view mode
+  servicesViewMode = 'grid';
 
   // Chart instances for proper cleanup
   private barChart: any = null;
@@ -5394,7 +5598,7 @@ export class LaundryComponent implements OnInit, AfterViewInit, OnDestroy {
       } else if (this.activeTab === 'services') {
         this.serviceSearchTerm = '';
         this.cartServiceTypeFilter = 'laundry';
-        this.selectedServiceFor = '';
+        this.selectedServiceFor = 'man';
       }
       
       // If going back to dashboard, reinitialize charts

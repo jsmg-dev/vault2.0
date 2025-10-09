@@ -13,3 +13,4 @@ CREATE INDEX IF NOT EXISTS idx_customers_customer_id ON customers(customer_id);
 
 
 
+

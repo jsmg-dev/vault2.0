@@ -1180,10 +1180,17 @@ declare var Chart: any;
       <div class="modal bill-modal" [class.active]="showBillModal" (click)="closeModal($event)">
         <div class="modal-content bill-modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>Generate New Bill</h3>
-            <button class="close-btn" (click)="closeBillModal()">
-              <i class="fas fa-times"></i>
-            </button>
+            <div class="header-content">
+              <h3>Generate New Bill</h3>
+            </div>
+            <div class="header-actions">
+              <button type="button" class="btn-cancel-themed" (click)="closeBillModal()">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+              <button type="submit" class="btn-save-themed" (click)="submitBill()" [disabled]="selectedBillItems.length === 0">
+                <i class="fas fa-receipt"></i> Generate Bill
+              </button>
+            </div>
           </div>
           <div class="modal-body bill-modal-body">
             <div class="bill-modal-layout">
@@ -1322,14 +1329,6 @@ declare var Chart: any;
                       placeholder="Any additional notes or special instructions"
                       rows="2"
                     ></textarea>
-                  </div>
-                  <div class="form-actions">
-                    <button type="button" class="btn secondary" (click)="closeBillModal()">
-                      {{ translate('clothaura.cancel') }}
-                    </button>
-                    <button type="submit" class="btn primary" [disabled]="selectedBillItems.length === 0">
-                      {{ translate('clothaura.generate_bill') }}
-                    </button>
                   </div>
                 </form>
               </div>
@@ -2319,6 +2318,67 @@ declare var Chart: any;
       width: 95%;
       max-width: 1400px;
       max-height: 90vh;
+    }
+
+    /* Ensure Generate Bill modal buttons match Add New Customer styling */
+    .bill-modal .modal-header .header-actions .btn-cancel-themed {
+      background: #6b7280 !important;
+      color: white !important;
+      border: none !important;
+      outline: none !important;
+      font-weight: 600;
+      padding: 12px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      min-width: 100px;
+      justify-content: center;
+      box-shadow: none !important;
+    }
+
+    .bill-modal .modal-header .header-actions .btn-cancel-themed:hover {
+      background: #4b5563 !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+    }
+
+    .bill-modal .modal-header .header-actions .btn-save-themed {
+      background: #10b981 !important;
+      color: white !important;
+      border: none !important;
+      outline: none !important;
+      font-weight: 600;
+      padding: 12px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      min-width: 120px;
+      justify-content: center;
+      box-shadow: none !important;
+    }
+
+    .bill-modal .modal-header .header-actions .btn-save-themed:hover {
+      background: #059669 !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .bill-modal .modal-header .header-actions .btn-save-themed:disabled {
+      background: #9ca3af !important;
+      color: #6b7280 !important;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .bill-modal-body {

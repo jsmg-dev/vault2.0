@@ -31,10 +31,20 @@ const port = config.server.port;
 // CORS
 app.use(
   cors({
-    origin: ['https://vault.sbbf.in','http://localhost:4200', 'http://localhost:4201', 'http://127.0.0.1:4200', 'https://vaultssb.netlify.app', 'https://vaultsbbf.netlify.app', /^http:\/\/192\.168\.\d+\.\d+:4200$/, /^http:\/\/10\.\d+\.\d+\.\d+:4200$/],
+    origin: [
+      'https://vault.sbbf.in',
+      'http://localhost:4200', 
+      'http://localhost:4201', 
+      'http://127.0.0.1:4200', 
+      'https://vaultssb.netlify.app', 
+      'https://vaultsbbf.netlify.app', 
+      /^http:\/\/192\.168\.\d+\.\d+:4200$/, 
+      /^http:\/\/10\.\d+\.\d+\.\d+:4200$/
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control'],
+    optionsSuccessStatus: 200
   })
 );
 

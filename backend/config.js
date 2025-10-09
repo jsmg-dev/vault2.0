@@ -16,7 +16,9 @@ module.exports = {
     saveUninitialized: false,
     cookie: { 
       maxAge: 60 * 60 * 1000, // 1 hour
-      secure: false // set to true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production', // true in production with HTTPS
+      httpOnly: true,
+      sameSite: 'none' // Required for cross-origin requests
     }
   },
 
@@ -36,7 +38,9 @@ module.exports = {
         'http://127.0.0.1:4200',
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-        'https://vaultssb.netlify.app'
+        'https://vaultssb.netlify.app',
+        'https://vault.sbbf.in',
+        'https://vaultsbbf.netlify.app'
       ];
       
       if (allowedOrigins.indexOf(origin) !== -1) {

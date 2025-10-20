@@ -17,16 +17,12 @@ export interface NavItem {
   imports: [CommonModule, RouterModule],
   template: `
     <div class="sidenav" [class.collapsed]="collapsed">
-      <div class="sidenav-header">
+      <div class="sidenav-header" *ngIf="!collapsed">
         <img 
           src="assets/images/Vaultlogo5_cropped.png" 
           alt="Vault Logo" 
           class="logo"
-          [class.logo-small]="collapsed"
         />
-        <div class="powered-by" [class.hidden]="collapsed">
-          <span>Powered by SBBF</span>
-        </div>
       </div>
 
       <!-- Profile Picture Section (below logo) -->
@@ -198,23 +194,6 @@ export interface NavItem {
       margin-bottom: 0;
     }
 
-    .powered-by {
-      text-align: center;
-      transition: opacity 0.3s ease;
-    }
-
-    .powered-by span {
-      font-size: 8px;
-      color: rgba(255, 255, 255, 0.7);
-      font-weight: 500;
-      letter-spacing: 0.3px;
-    }
-
-    .powered-by.hidden {
-      opacity: 0;
-      height: 0;
-      overflow: hidden;
-    }
 
     .logo-text {
       font-size: 20px;
@@ -261,12 +240,13 @@ export interface NavItem {
 
     .nav-item:hover {
       background: rgba(255, 255, 255, 0.1);
-      border-left-color: #ef4444;
+      border-left-color: #667eea;
     }
 
     .nav-item.active {
-      background: rgba(239, 68, 68, 0.2);
-      border-left-color: #ef4444;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+      border-left-color: #667eea;
+      box-shadow: inset 0 0 10px rgba(102, 126, 234, 0.1);
     }
 
     .nav-item.collapsed {

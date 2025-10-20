@@ -136,7 +136,7 @@ declare var Chart: any;
       <div class="tab-content" *ngIf="activeTab === 'customers'">
         <div class="section-header">
           <div class="header-left">
-            <button class="btn secondary" (click)="goBack()" style="margin-right: 15px;">
+            <button class="btn secondary" (click)="goBack()">
               <i class="fas fa-arrow-left"></i>
               Back
             </button>
@@ -446,7 +446,7 @@ declare var Chart: any;
       <div class="tab-content" *ngIf="activeTab === 'board'">
         <div class="laundry-board-container">
           <div class="board-header">
-            <h2><i class="fas fa-columns"></i> ClothAura Board</h2>
+            <h2></h2>
           <div class="header-actions">
               <input 
                 type="text" 
@@ -1954,7 +1954,7 @@ declare var Chart: any;
         .header-left {
           display: flex;
           align-items: center;
-          gap: 30px;
+          gap: 12px;
         }
 
         .header-left .form-group {
@@ -2023,8 +2023,8 @@ declare var Chart: any;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 25px;
-      padding: 20px;
+      margin-bottom: 15px;
+      padding: 12px 20px;
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -2033,6 +2033,7 @@ declare var Chart: any;
     .header-left {
       display: flex;
       align-items: center;
+      gap: 12px;
     }
 
     .header-right {
@@ -2074,10 +2075,10 @@ declare var Chart: any;
 
     .search-box input {
       width: 100%;
-      padding: 12px 15px 12px 45px;
+      padding: 8px 12px 8px 40px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.9rem;
       transition: border-color 0.2s ease;
     }
 
@@ -2088,10 +2089,10 @@ declare var Chart: any;
     }
 
     .filter-options select {
-      padding: 12px 15px;
+      padding: 8px 12px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.9rem;
       background: white;
       cursor: pointer;
     }
@@ -2108,7 +2109,7 @@ declare var Chart: any;
 
     .data-table th,
     .data-table td {
-      padding: 15px;
+      padding: 10px 12px;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
     }
@@ -2124,27 +2125,31 @@ declare var Chart: any;
     .action-buttons {
       display: flex;
       flex-direction: row;
-      gap: 4px;
+      gap: 2px;
       align-items: center;
       justify-content: center;
       flex-wrap: nowrap;
-      min-width: 200px;
+      min-width: auto;
     }
 
     /* Ensure table action buttons are horizontal */
     .data-table .action-buttons {
       display: flex !important;
       flex-direction: row !important;
-      gap: 4px !important;
+      gap: 2px !important;
       align-items: center !important;
       justify-content: center !important;
       flex-wrap: nowrap !important;
     }
 
     .data-table th {
-      background: #f9fafb;
+      background: #6b7280;
       font-weight: 600;
-      color: #374151;
+      color: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border: 1px solid #6b7280;
     }
 
     .data-table tbody tr:hover {
@@ -2210,16 +2215,19 @@ declare var Chart: any;
     }
 
     .services-list .data-table th {
-      background: #f8f9fa;
-      padding: 12px;
+      background: #6b7280;
+      padding: 10px 12px;
       text-align: left;
       font-weight: 600;
-      color: #495057;
-      border-bottom: 2px solid #dee2e6;
+      color: #ffffff;
+      border: 1px solid #6b7280;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     .services-list .data-table td {
-      padding: 12px;
+      padding: 10px 12px;
       border-bottom: 1px solid #e9ecef;
       color: #666;
     }
@@ -2996,10 +3004,10 @@ declare var Chart: any;
     }
 
     .btn-small {
-      padding: 6px 10px;
+      padding: 4px 8px;
       border: none;
-      border-radius: 6px;
-      font-size: 0.875rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
       cursor: pointer;
       margin-right: 0;
       transition: all 0.2s ease;
@@ -4328,6 +4336,111 @@ declare var Chart: any;
       margin-top: 8px;
     }
 
+    /* Board Header Styling */
+    .board-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .board-header h2 {
+      margin: 0;
+      color: #374151;
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .board-header h2 i {
+      color: #667eea;
+      font-size: 1.5rem;
+    }
+
+    .board-header .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .board-header .search-input {
+      padding: 6px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+      color: #374151;
+      font-size: 0.85rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .board-header .search-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .board-header .filter-select {
+      padding: 6px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+      color: #374151;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .board-header .btn.primary {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+
+    .board-header .btn.primary:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .board-header .btn.primary i {
+      margin-right: 8px;
+      color: white;
+    }
+
+    /* Kanban Column Headers - Theme Colors */
+    .column-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      padding: 15px 20px;
+      border-radius: 12px 12px 0 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .column-header:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .column-header h3 {
+      margin: 0;
+      color: white !important;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
     @media (max-width: 768px) {
       .customer-modal-large {
         width: 95vw;
@@ -4361,7 +4474,9 @@ declare var Chart: any;
       .board-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 8px;
+        padding: 6px 12px;
+        margin-bottom: 8px;
       }
 
       .header-actions {

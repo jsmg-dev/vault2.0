@@ -46,19 +46,16 @@
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
 .btn-primary:hover {
   background: #2563eb;
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -286,18 +283,6 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
-.deposits-table th:first-child,
-.deposits-table td:first-child {
-  padding: 12px 8px;
-  width: 50px;
-}
-
-.deposits-table th:nth-child(2),
-.deposits-table td:nth-child(2) {
-  padding: 12px 8px;
-  width: 80px;
-}
-
 .deposits-table th {
   background: #6b7280;
   font-weight: 600;
@@ -388,95 +373,27 @@
 .modal-content {
   background: white;
   border-radius: 12px;
-  width: 95%;
-  max-width: 800px;
+  width: 90%;
+  max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
-  padding: 24px 32px;
+  padding: 24px;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
-  border-radius: 16px 16px 0 0;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.header-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
-.header-text h3 {
+.modal-header h3 {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: white;
+  color: #111827;
 }
-
-.header-text p {
-  margin: 4px 0 0 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.header-actions button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  font-size: 14px;
-}
-
-.modal-header .header-actions .btn-secondary {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.modal-header .header-actions .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.modal-header .header-actions .btn-primary {
-  background: rgba(255, 255, 255, 0.9);
-  color: #3b82f6;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-}
-
-.modal-header .header-actions .btn-primary:hover {
-  background: white;
-  color: #1d4ed8;
-}
-
 
 .modal-close {
   background: none;
@@ -559,16 +476,6 @@
   .header-actions {
     justify-content: center;
     flex-wrap: wrap;
-  }
-
-  .modal-header .header-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .modal-header .header-actions button {
-    padding: 6px 12px;
-    font-size: 12px;
   }
   
   .stats-grid {

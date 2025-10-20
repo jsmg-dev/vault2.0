@@ -8,6 +8,7 @@ import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
 import { ProfilePanelComponent } from '../profile-panel/profile-panel.component';
 import { LanguageService } from '../../services/language.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-main-layout',
@@ -183,19 +184,28 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   async loadUserProfile() {
+    console.log('Loading user profile...');
     // Get user info from session storage
     const userStr = sessionStorage.getItem('user');
+    console.log('Session user data:', userStr);
+    
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         this.userName = user.name || user.username || 'User';
+        console.log('User name set to:', this.userName);
         
         // Fetch profile picture from backend
         if (user.id) {
+          console.log('Fetching profile for user ID:', user.id);
+          console.log('API URL:', environment.apiUrl);
+          
           try {
-            const response = await fetch(`http://localhost:8080/api/users/profile/${user.id}`, {
+            const response = await fetch(`${environment.apiUrl}/users/profile/${user.id}`, {
               credentials: 'include'
             });
+            
+            console.log('Profile API response status:', response.status);
             
             if (response.ok) {
               const userData = await response.json();
@@ -204,7 +214,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
               // Check if user has a profile picture
               if (userData.profile_pic) {
                 const timestamp = new Date().getTime();
-                this.profilePicture = `http://localhost:8080/uploads/profile/${userData.profile_pic}?t=${timestamp}`;
+                this.profilePicture = `${environment.apiUrl}/uploads/profile/${userData.profile_pic}?t=${timestamp}`;
                 console.log('Setting profile picture URL:', this.profilePicture);
               } else {
                 this.profilePicture = '';
@@ -212,16 +222,22 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
               }
             } else {
               console.error('API response not OK:', response.status);
+              const errorText = await response.text();
+              console.error('Error response:', errorText);
               this.profilePicture = '';
             }
           } catch (error) {
             console.error('Error fetching user profile from API:', error);
             this.profilePicture = '';
           }
+        } else {
+          console.log('No user ID found in session');
         }
       } catch (error) {
         console.error('Error loading user profile:', error);
       }
+    } else {
+      console.log('No user data found in session storage');
     }
   }
 
@@ -238,7 +254,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     formData.append('profile_pic', file);
 
     try {
-      const response = await fetch(`http://localhost:8080/api/users/upload-profile-pic/${userId}`, {
+      const response = await fetch(`${environment.apiUrl}/users/upload-profile-pic/${userId}`, {
         method: 'POST',
         credentials: 'include',
         body: formData
